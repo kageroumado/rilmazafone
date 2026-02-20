@@ -1,0 +1,167 @@
+import AppKit
+import SwiftUI
+
+struct CanvasItemView: View, Equatable {
+    let item: CanvasItem
+    let isSelected: Bool
+    let iconSize: CGFloat
+    let textSize: CGFloat
+    let zoom: CGFloat
+    let windowSize: CGSize
+    let hideExtensions: Bool
+    let onDragChanged: (CGPoint) -> CGPoint
+    let onMove: (CGPoint) -> Void
+    let onSelect: () -> Void
+
+    nonisolated static func == (lhs: CanvasItemView, rhs: CanvasItemView) -> Bool {
+        lhs.item == rhs.item
+            && lhs.isSelected == rhs.isSelected
+            && lhs.iconSize == rhs.iconSize
+            && lhs.textSize == rhs.textSize
+            && lhs.zoom == rhs.zoom
+            && lhs.windowSize == rhs.windowSize
+            && lhs.hideExtensions == rhs.hideExtensions
+    }
+
+    @State private var dragOffset: CGSize = .zero
+    @State private var isDragging = false
+    @State private var cachedIcon: NSImage?
+
+    private var displayIconSize: CGFloat {
+        iconSize * zoom
+    }
+    private var maxLabelWidth: CGFloat {
+        (iconSize + 40) * zoom
+    }
+
+    /// Finder draws icon in a cell with 10px padding, then text 4px below.
+    /// The iloc position is the center of the combined icon cell + text area.
+    private static let iconCellPadding: CGFloat = 10
+    private static let textGap: CGFloat = 4
+
+    var body: some View {
+        VStack(spacing: Self.textGap * zoom) {
+            iconImage
+                .frame(width: displayIconSize, height: displayIconSize)
+                .padding(Self.iconCellPadding * zoom)
+
+            Text(displayLabel)
+                .font(.system(size: textSize * zoom))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: maxLabelWidth)
+        }
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 4 * zoom)
+                    .fill(Color.accentColor.opacity(0.12))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 4 * zoom)
+                            .strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 2)
+                    }
+            }
+        }
+        .scaleEffect(isDragging ? 0.97 : 1.0)
+        .shadow(
+            color: .black.opacity(isDragging ? 0.15 : 0),
+            radius: isDragging ? 8 : 0,
+            y: isDragging ? 4 : 0
+        )
+        .position(
+            x: item.position.x * zoom + dragOffset.width,
+            y: item.position.y * zoom + dragOffset.height
+        )
+        .gesture(dragGesture)
+        .onTapGesture {
+            onSelect()
+        }
+        .task(id: item.sourcePath) {
+            cachedIcon = Self.resolveIcon(for: item)
+        }
+        .accessibilityLabel("\(item.label), position \(Int(item.position.x)), \(Int(item.position.y))")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    // MARK: - Display Label
+
+    private var displayLabel: String {
+        guard hideExtensions else { return item.label }
+        let name = item.label as NSString
+        let ext = name.pathExtension
+        guard !ext.isEmpty else { return item.label }
+        return name.deletingPathExtension
+    }
+
+    // MARK: - Icon
+
+    @ViewBuilder
+    private var iconImage: some View {
+        if let nsImage = cachedIcon {
+            Image(nsImage: nsImage)
+                .resizable()
+                .scaledToFit()
+        } else {
+            genericIcon
+        }
+    }
+
+    static func resolveIcon(for item: CanvasItem) -> NSImage? {
+        CanvasItem.resolveIcon(for: item)
+    }
+
+    @ViewBuilder
+    private var genericIcon: some View {
+        switch item.kind {
+        case .app:
+            Image(systemName: "app.dashed")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(.blue)
+
+        case .applicationsSymlink:
+            Image(systemName: "folder.fill")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(.blue)
+
+        case .file:
+            Image(systemName: "doc.fill")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(.secondary)
+
+        case .folder:
+            Image(systemName: "folder.fill")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(.blue)
+        }
+    }
+
+    // MARK: - Drag
+
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 2)
+            .onChanged { value in
+                if !isDragging {
+                    isDragging = true
+                    onSelect()
+                }
+                let rawX = item.position.x + value.translation.width / zoom
+                let rawY = item.position.y + value.translation.height / zoom
+                let snapped = onDragChanged(CGPoint(x: rawX, y: rawY))
+                dragOffset = CGSize(
+                    width: (snapped.x - item.position.x) * zoom,
+                    height: (snapped.y - item.position.y) * zoom
+                )
+            }
+            .onEnded { value in
+                isDragging = false
+                let rawX = item.position.x + value.translation.width / zoom
+                let rawY = item.position.y + value.translation.height / zoom
+                let snapped = onDragChanged(CGPoint(x: rawX, y: rawY))
+                dragOffset = .zero
+                onMove(snapped)
+            }
+    }
+}
