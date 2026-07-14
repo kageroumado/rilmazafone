@@ -59,18 +59,24 @@
   "items" : [
     {
       "background" : {
+        "bevel" : {
+          "depth" : 3,
+          "enabled" : true,
+          "intensity" : 0.25,
+          "lightAngle" : 120
+        },
         "blendMode" : "normal",
         "blurFeather" : 0,
         "blurRadius" : 22,
         "color" : {
-          "blue" : 0.03,
-          "green" : 0.02,
-          "red" : 0.02
+          "blue" : 0.63,
+          "green" : 0.6,
+          "red" : 0.6
         },
         "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.35,
-        "padding" : 10,
+        "opacity" : 0.62,
+        "padding" : 22,
         "shadow" : {
           "color" : {
             "blue" : 0,
@@ -96,18 +102,24 @@
     },
     {
       "background" : {
+        "bevel" : {
+          "depth" : 3,
+          "enabled" : true,
+          "intensity" : 0.25,
+          "lightAngle" : 120
+        },
         "blendMode" : "normal",
         "blurFeather" : 0,
         "blurRadius" : 22,
         "color" : {
-          "blue" : 0.03,
-          "green" : 0.02,
-          "red" : 0.02
+          "blue" : 0.63,
+          "green" : 0.6,
+          "red" : 0.6
         },
         "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.35,
-        "padding" : 10,
+        "opacity" : 0.62,
+        "padding" : 22,
         "shadow" : {
           "color" : {
             "blue" : 0,

@@ -5,10 +5,65 @@
       "green" : 0.953,
       "red" : 0.965
     },
+    "gradient" : {
+      "angle" : 90,
+      "centerX" : 0.5,
+      "centerY" : 0.5,
+      "endRadius" : 0.5,
+      "startRadius" : 0,
+      "stops" : [
+        {
+          "color" : {
+            "blue" : 0.925,
+            "green" : 0.953,
+            "red" : 0.965
+          },
+          "id" : "2B0305F4-C6E5-4695-8986-4206CB048103",
+          "location" : 0
+        },
+        {
+          "color" : {
+            "blue" : 0.875,
+            "green" : 0.91,
+            "red" : 0.93
+          },
+          "id" : "01D665EB-CC22-40A1-890F-BFE72DB8FAA0",
+          "location" : 0.42
+        },
+        {
+          "color" : {
+            "blue" : 0.45,
+            "green" : 0.54,
+            "red" : 0.6
+          },
+          "id" : "0785516E-FEE7-43DD-95FB-BFCBBCDC15F7",
+          "location" : 0.66
+        },
+        {
+          "color" : {
+            "blue" : 0.38,
+            "green" : 0.46,
+            "red" : 0.52
+          },
+          "id" : "36BD4751-2A5D-478A-8C89-20350AA54699",
+          "location" : 0.82
+        },
+        {
+          "color" : {
+            "blue" : 0.33,
+            "green" : 0.4,
+            "red" : 0.46
+          },
+          "id" : "6678278B-026B-4C1A-ABF9-20F812A515AD",
+          "location" : 1
+        }
+      ],
+      "type" : "linear"
+    },
     "layers" : [
 
     ],
-    "type" : "color"
+    "type" : "gradient"
   },
   "codeSign" : {
     "enabled" : false

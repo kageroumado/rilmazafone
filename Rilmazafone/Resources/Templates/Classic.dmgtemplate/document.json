@@ -14,20 +14,47 @@
       "stops" : [
         {
           "color" : {
-            "blue" : 0.988,
-            "green" : 0.98,
-            "red" : 0.98
+            "blue" : 0.965,
+            "green" : 0.94,
+            "red" : 0.93
           },
-          "id" : "EA4F8D44-31C0-41B0-93C4-8D5EF195D809",
+          "id" : "352B7A84-395B-40FA-8B69-128EBCE6EB29",
           "location" : 0
         },
         {
           "color" : {
-            "blue" : 0.929,
-            "green" : 0.906,
-            "red" : 0.906
+            "blue" : 0.91,
+            "green" : 0.87,
+            "red" : 0.85
           },
-          "id" : "64D77925-E67B-44BA-886B-C3465B7AFA1A",
+          "id" : "0548F03D-9F47-4422-8AF1-1B137C5AA292",
+          "location" : 0.3
+        },
+        {
+          "color" : {
+            "blue" : 0.62,
+            "green" : 0.54,
+            "red" : 0.5
+          },
+          "id" : "9BB94D4E-3E75-4C56-B89C-DEB2D066C70D",
+          "location" : 0.55
+        },
+        {
+          "color" : {
+            "blue" : 0.56,
+            "green" : 0.48,
+            "red" : 0.44
+          },
+          "id" : "972813B8-434C-46A5-AE9C-226747B91C47",
+          "location" : 0.72
+        },
+        {
+          "color" : {
+            "blue" : 0.52,
+            "green" : 0.44,
+            "red" : 0.4
+          },
+          "id" : "41559A38-0513-4928-85C2-85244DF78AA3",
           "location" : 1
         }
       ],

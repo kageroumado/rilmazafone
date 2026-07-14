@@ -76,6 +76,38 @@
   "isGridSpacingAuto" : true,
   "items" : [
     {
+      "background" : {
+        "bevel" : {
+          "depth" : 3,
+          "enabled" : true,
+          "intensity" : 0.3,
+          "lightAngle" : 120
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 26,
+        "color" : {
+          "blue" : 0.58,
+          "green" : 0.56,
+          "red" : 0.24
+        },
+        "cornerRadius" : 22,
+        "enabled" : true,
+        "opacity" : 0.62,
+        "padding" : 22,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.35,
+          "radius" : 16
+        }
+      },
       "id" : "3E283770-5060-4D3C-9B21-6FF5603CB828",
       "isPlaceholder" : true,
       "kind" : "app",
@@ -87,6 +119,38 @@
       ]
     },
     {
+      "background" : {
+        "bevel" : {
+          "depth" : 3,
+          "enabled" : true,
+          "intensity" : 0.3,
+          "lightAngle" : 120
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 26,
+        "color" : {
+          "blue" : 0.58,
+          "green" : 0.56,
+          "red" : 0.24
+        },
+        "cornerRadius" : 22,
+        "enabled" : true,
+        "opacity" : 0.62,
+        "padding" : 22,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.35,
+          "radius" : 16
+        }
+      },
       "id" : "31CCE24A-C612-4E95-8548-236A8259FE30",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",

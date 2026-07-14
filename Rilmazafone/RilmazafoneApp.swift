@@ -33,6 +33,7 @@ struct RilmazafoneApp: App {
 
                 newFromTemplateMenu
             }
+            SaveAsTemplateCommands()
             CommandGroup(after: .importExport) {
                 Button("Import DMG\u{2026}") {
                     DMGImportCoordinator.shared.presentOpenPanel()
@@ -68,6 +69,28 @@ struct RilmazafoneApp: App {
                 TemplateChooserController.shared.show()
             }
             .keyboardShortcut("n", modifiers: [.command, .option])
+            Button("Template from DMG\u{2026}") {
+                TemplateSaveCoordinator.shared.createTemplateFromDMG()
+            }
+        }
+    }
+}
+
+// MARK: - Save as Template
+
+/// File → Save as Template…, placed with the save items and enabled only
+/// while a document window is focused.
+struct SaveAsTemplateCommands: Commands {
+    @FocusedValue(\.document) private var document
+
+    var body: some Commands {
+        CommandGroup(after: .saveItem) {
+            Button("Save as Template\u{2026}") {
+                if let document {
+                    TemplateSaveCoordinator.shared.saveAsTemplate(document)
+                }
+            }
+            .disabled(document == nil)
         }
     }
 }

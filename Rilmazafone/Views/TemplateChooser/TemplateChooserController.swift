@@ -49,6 +49,17 @@ enum TemplateChooserSelection: Hashable {
     }
 }
 
+// MARK: - Chooser State
+
+/// The chooser's selection, owned by the controller (not view-local state) so
+/// flows outside the view — Template from DMG saving a new entry — can select
+/// a tile programmatically.
+@MainActor
+@Observable
+final class TemplateChooserState {
+    var selection: TemplateChooserSelection = .blank
+}
+
 // MARK: - Chooser Controller
 
 /// Owns the template chooser's auxiliary window and routes creation through
@@ -68,6 +79,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
     }
 
     private var window: NSWindow?
+    private let state = TemplateChooserState()
 
     // MARK: Entry Points
 
@@ -94,8 +106,10 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
             return
         }
 
+        state.selection = .blank
         let rootView = TemplateChooserView(
             registry: .shared,
+            state: state,
             onCreate: { [weak self] selection, windowSizeOverride in
                 self?.create(selection, windowSizeOverride: windowSizeOverride)
             },
@@ -120,6 +134,13 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
         let milliseconds = Double(elapsed.components.attoseconds) / 1e15
             + Double(elapsed.components.seconds) * 1_000
         Self.logger.info("Template chooser opened in \(milliseconds, format: .fixed(precision: 1)) ms")
+    }
+
+    /// Opens (or brings forward) the chooser with `entry` selected — the
+    /// landing spot for a template freshly created from a DMG.
+    func show(selecting entry: TemplateEntry) {
+        show()
+        state.selection = .template(entry)
     }
 
     /// Creates a document from a template with its own default window size —

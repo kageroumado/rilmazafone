@@ -9,6 +9,16 @@ enum InspectorTab: Hashable {
     case element // Selected item/layer properties and effects
 }
 
+// MARK: - Focused Document
+
+extension FocusedValues {
+    /// The document of the focused (key) document window, published by
+    /// `DocumentContentView` so document-scoped menu commands (File → Save as
+    /// Template…) can reach it and disable themselves when no document is
+    /// focused.
+    @Entry var document: RilmazafoneDocument?
+}
+
 // MARK: - Content View
 
 struct DocumentContentView: View {
@@ -67,6 +77,7 @@ struct DocumentContentView: View {
             BuildSheet()
         }
         .environment(buildManager)
+        .focusedSceneValue(\.document, document)
         .frame(minWidth: 900, minHeight: 600)
         .onChange(of: documentConfiguration?.fileURL, initial: true) { _, newURL in
             document.documentFileURLDidChange(newURL)

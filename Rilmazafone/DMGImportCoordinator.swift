@@ -22,17 +22,27 @@ final class DMGImportCoordinator {
     /// File → Import DMG…: prompts for a disk image and imports its layout
     /// into a new untitled document.
     func presentOpenPanel() {
+        guard let url = promptForDiskImage(
+            message: "Choose a disk image to import its layout.",
+            prompt: "Import"
+        ) else { return }
+        Task {
+            await importIntoNewDocument(from: url)
+        }
+    }
+
+    /// Runs the standard disk-image open panel and returns the chosen image,
+    /// or `nil` on cancel. Shared with the Template from DMG flow.
+    func promptForDiskImage(message: String, prompt: String) -> URL? {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.diskImage]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        panel.message = "Choose a disk image to import its layout."
-        panel.prompt = "Import"
+        panel.message = message
+        panel.prompt = prompt
 
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        Task {
-            await importIntoNewDocument(from: url)
-        }
+        guard panel.runModal() == .OK else { return nil }
+        return panel.url
     }
 
     /// Imports `url` and opens the result as a new untitled document.

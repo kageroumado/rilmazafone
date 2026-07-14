@@ -31,10 +31,10 @@ nonisolated enum WindowSizePreset {
 /// then user templates. Double-click or Return creates; Esc cancels.
 struct TemplateChooserView: View {
     let registry: TemplateRegistry
+    let state: TemplateChooserState
     let onCreate: (TemplateChooserSelection, CGSize?) -> Void
     let onCancel: () -> Void
 
-    @State private var selection: TemplateChooserSelection = .blank
     @State private var sizeChoice: WindowSizeChoice = .templateDefault
     @State private var customWidth: Double = Double(WindowSizePreset.standard.width)
     @State private var customHeight: Double = Double(WindowSizePreset.standard.height)
@@ -56,7 +56,7 @@ struct TemplateChooserView: View {
             footer
         }
         .frame(width: Layout.windowWidth, height: Layout.windowHeight)
-        .onChange(of: selection) {
+        .onChange(of: state.selection) {
             sizeChoice = .templateDefault
         }
         .onChange(of: sizeChoice) {
@@ -83,8 +83,8 @@ struct TemplateChooserView: View {
                     title: "Blank",
                     entry: nil,
                     registry: registry,
-                    isSelected: selection == .blank,
-                    onSelect: { selection = .blank },
+                    isSelected: state.selection == .blank,
+                    onSelect: { state.selection = .blank },
                     onCreate: { createSelection(.blank) }
                 )
                 ForEach(registry.bundled) { entry in
@@ -98,42 +98,113 @@ struct TemplateChooserView: View {
         }
     }
 
+    @ViewBuilder
     private func tile(for entry: TemplateEntry) -> some View {
-        TemplateTile(
+        let tile = TemplateTile(
             title: entry.name,
             entry: entry,
             registry: registry,
-            isSelected: selection == .template(entry),
-            onSelect: { selection = .template(entry) },
+            isSelected: state.selection == .template(entry),
+            onSelect: { state.selection = .template(entry) },
             onCreate: { createSelection(.template(entry)) }
         )
+        if entry.isBuiltIn {
+            tile
+        } else {
+            tile.contextMenu {
+                Button("Rename\u{2026}") { rename(entry) }
+                Button("Show in Finder") { registry.revealInFinder(entry) }
+                Divider()
+                Button("Delete\u{2026}", role: .destructive) { delete(entry) }
+            }
+        }
     }
 
     private func createSelection(_ newSelection: TemplateChooserSelection) {
-        selection = newSelection
+        state.selection = newSelection
         onCreate(newSelection, windowSizeOverride)
+    }
+
+    // MARK: User Template Actions
+
+    /// Renames a user template via a name prompt, keeping the selection on the
+    /// renamed entry.
+    private func rename(_ entry: TemplateEntry) {
+        guard let name = TemplateSaveCoordinator.promptForTemplateName(
+            title: "Rename Template",
+            informativeText: "Enter a new name for \u{201C}\(entry.name)\u{201D}.",
+            defaultName: entry.name,
+            confirmTitle: "Rename"
+        ), name != entry.name else { return }
+
+        do {
+            let renamed = try registry.renameUserTemplate(entry, to: name)
+            if state.selection == .template(entry) {
+                state.selection = .template(renamed)
+            }
+        } catch {
+            presentActionError(error, title: "Couldn\u{2019}t Rename \u{201C}\(entry.name)\u{201D}")
+        }
+    }
+
+    /// Deletes a user template after confirmation; the package moves to the
+    /// Trash, never a hard delete.
+    private func delete(_ entry: TemplateEntry) {
+        let alert = NSAlert()
+        alert.messageText = "Delete \u{201C}\(entry.name)\u{201D}?"
+        alert.informativeText = "The template will be moved to the Trash."
+        alert.addButton(withTitle: "Delete").hasDestructiveAction = true
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        do {
+            try registry.deleteUserTemplate(entry)
+            if state.selection == .template(entry) {
+                state.selection = .blank
+            }
+        } catch {
+            presentActionError(error, title: "Couldn\u{2019}t Delete \u{201C}\(entry.name)\u{201D}")
+        }
+    }
+
+    private func presentActionError(_ error: any Error, title: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = error.localizedDescription
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
     // MARK: Footer
 
     private var footer: some View {
-        HStack(spacing: 12) {
-            Toggle("Don't show this dialog again", isOn: dontShowAgainBinding)
-                .controlSize(.small)
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
+                Toggle("Don't show this dialog again", isOn: dontShowAgainBinding)
+                    .controlSize(.small)
 
-            Spacer()
+                Spacer()
 
-            sizeControl
-
-            Button("Cancel") {
-                onCancel()
+                sizeControl
             }
-            .keyboardShortcut(.cancelAction)
 
-            Button("Create") {
-                onCreate(selection, windowSizeOverride)
+            HStack(spacing: 12) {
+                Button("Template from DMG\u{2026}") {
+                    TemplateSaveCoordinator.shared.createTemplateFromDMG()
+                }
+
+                Spacer()
+
+                Button("Cancel") {
+                    onCancel()
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Button("Create") {
+                    onCreate(state.selection, windowSizeOverride)
+                }
+                .keyboardShortcut(.defaultAction)
             }
-            .keyboardShortcut(.defaultAction)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -165,9 +236,9 @@ struct TemplateChooserView: View {
     }
 
     private var templateDefaultLabel: String {
-        let size = selection.defaultWindowSize
+        let size = state.selection.defaultWindowSize
         let dimensions = "\(Int(size.width))\u{00D7}\(Int(size.height))"
-        switch selection {
+        switch state.selection {
         case .blank: return "Default (\(dimensions))"
         case .template: return "Template Default (\(dimensions))"
         }
@@ -207,7 +278,7 @@ struct TemplateChooserView: View {
 
     /// The size currently in effect, for seeding the custom fields.
     private var resolvedWindowSize: CGSize {
-        windowSizeOverride ?? selection.defaultWindowSize
+        windowSizeOverride ?? state.selection.defaultWindowSize
     }
 }
 
