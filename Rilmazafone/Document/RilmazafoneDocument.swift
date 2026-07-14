@@ -8,15 +8,19 @@ import UniformTypeIdentifiers
 /// fine-grained view observation, while objectWillChange signals document dirtiness
 /// for auto-save. Both conformances are intentional and required.
 ///
-/// The class is MainActor-isolated (the project default), which also makes it
-/// `Sendable` — the compiler now enforces the main-thread access that the undo
-/// machinery's `assumeIsolated` previously only asserted at runtime. The two
-/// deliberately `nonisolated` members are the ones AppKit/SwiftUI invoke off
-/// the main thread: `init()` (document shell instantiation) and
-/// `fileWrapper(snapshot:configuration:)` (background write of a Sendable
-/// snapshot).
+/// `@unchecked Sendable` is forced by the SDK: `ReferenceFileDocument` is
+/// declared `: ObservableObject, Sendable` with nonisolated requirements
+/// (`init()`, `snapshot`, `fileWrapper` run off-main), so the class can be
+/// neither statically MainActor (the conformance would cross isolation —
+/// a hard error) nor honestly Sendable (mutable stored properties). The
+/// module's MainActor-by-default isolation does NOT apply here — conformance
+/// inference makes the type nonisolated. The actual safety contract is
+/// AppKit/SwiftUI's: all mutations happen on the main thread, asserted at
+/// runtime where the compiler needs convincing (`withUndo`), with background
+/// file I/O confined to `init()` and the Sendable-snapshot write in
+/// `fileWrapper(snapshot:configuration:)`.
 @Observable
-final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
+final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unchecked Sendable {
     @ObservationIgnored let objectWillChange = ObservableObjectPublisher()
 
     // MARK: - Persisted State (Observation Slices)
@@ -300,15 +304,19 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
         _ actionName: String,
         _ handler: @escaping @MainActor @Sendable (RilmazafoneDocument, UndoManager?) -> Void,
     ) {
-        undoManager?.registerUndo(withTarget: self) { doc in
-            // NSUndoManager fires document undo actions on the main thread;
-            // this is the one runtime assertion of that contract, so the
-            // MainActor-typed handler can run statically checked.
-            MainActor.assumeIsolated {
-                handler(doc, undoManager)
+        // ReferenceFileDocument's nonisolated conformance requirements keep
+        // this class from being statically MainActor, so the SDK's
+        // MainActor-only UndoManager registration is asserted at runtime here
+        // — the same contract the handler below relies on: NSUndoManager
+        // fires document undo actions on the main thread.
+        MainActor.assumeIsolated {
+            undoManager?.registerUndo(withTarget: self) { doc in
+                MainActor.assumeIsolated {
+                    handler(doc, undoManager)
+                }
             }
+            undoManager?.setActionName(actionName)
         }
-        undoManager?.setActionName(actionName)
     }
 
     // MARK: - Undo-Aware Mutations
