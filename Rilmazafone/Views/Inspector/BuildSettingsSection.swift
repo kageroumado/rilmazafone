@@ -64,7 +64,7 @@ struct BuildSettingsSection: View {
             if let cached = Self.identitiesCache {
                 signingIdentities = cached
             } else {
-                let result = await Self.discoverSigningIdentities()
+                let result = await Task.detached { DMGBuilder.listSigningIdentities() }.value
                 Self.identitiesCache = result
                 signingIdentities = result
             }
@@ -183,25 +183,3 @@ struct BuildSettingsSection: View {
     }
 }
 
-// MARK: - Identity Discovery
-
-extension BuildSettingsSection {
-    /// Discovers available code signing identities by running `security find-identity`.
-    private static func discoverSigningIdentities() async -> [String] {
-        guard let output = try? await ProcessRunner.runString(
-            "/usr/bin/security",
-            arguments: ["find-identity", "-v", "-p", "codesigning"]
-        ) else { return [] }
-
-        var names: [String] = []
-        for line in output.split(separator: "\n") {
-            let str = String(line)
-            guard let firstQuote = str.firstIndex(of: "\"") else { continue }
-            let afterQuote = str.index(after: firstQuote)
-            guard afterQuote < str.endIndex,
-                  let lastQuote = str[afterQuote...].firstIndex(of: "\"") else { continue }
-            names.append(String(str[afterQuote ..< lastQuote]))
-        }
-        return names
-    }
-}

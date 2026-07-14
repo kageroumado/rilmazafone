@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 /// Wraps `hdiutil` and `codesign` to create, mount, convert, and sign DMG images.
 nonisolated enum DMGBuilder {
@@ -27,12 +28,12 @@ nonisolated enum DMGBuilder {
     private enum Executable {
         static let hdiutil = "/usr/bin/hdiutil"
         static let codesign = "/usr/bin/codesign"
-        static let setFile = "/usr/bin/SetFile"
-        static let ln = "/bin/ln"
-        static let cp = "/bin/cp"
-        static let mkdir = "/bin/mkdir"
-        static let security = "/usr/bin/security"
     }
+
+    /// DER-encoded content of the id-kp-codeSigning extended-key-usage OID
+    /// (`1.3.6.1.5.5.7.3.3`), used to filter identities to signing-capable ones —
+    /// the same set `security find-identity -v -p codesigning` reports.
+    private static let codeSigningEKUBytes = Data([0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x03])
 
     /// Maximum retries for detach when the device is busy.
     private static let detachRetries = 5
@@ -46,7 +47,7 @@ nonisolated enum DMGBuilder {
         filesystem: DMGFilesystem = .hfsPlus
     ) async throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
-        let tempPath = tempDir.appending(path: "\(UUID().uuidString).dmg")
+        let tempPath = tempDir.appending(path: "rilmazafone-writable-\(UUID().uuidString).dmg")
 
         try await ProcessRunner.run(
             Executable.hdiutil,
@@ -140,42 +141,34 @@ nonisolated enum DMGBuilder {
     static func copyItems(
         _ items: [CanvasItem],
         to mountPoint: URL
-    ) async throws {
+    ) throws {
+        let fileManager = FileManager.default
         for item in items {
+            let destination = mountPoint.appending(path: item.label)
             switch item.kind {
             case .applicationsSymlink:
-                try await ProcessRunner.run(
-                    Executable.ln,
-                    arguments: [
-                        "-s", "/Applications",
-                        mountPoint.appending(path: item.label).path,
-                    ]
+                // String-path variant stores "/Applications" verbatim; the URL variant
+                // would resolve/rewrite the destination.
+                try fileManager.createSymbolicLink(
+                    atPath: destination.path,
+                    withDestinationPath: "/Applications"
                 )
 
             case .app, .file, .folder:
                 if item.linkType == .symlink {
                     guard let target = item.sourcePath, !target.isEmpty else { continue }
-                    try await ProcessRunner.run(
-                        Executable.ln,
-                        arguments: [
-                            "-s", target,
-                            mountPoint.appending(path: item.label).path,
-                        ]
+                    try fileManager.createSymbolicLink(
+                        atPath: destination.path,
+                        withDestinationPath: target
                     )
                 } else {
                     guard let sourcePath = item.sourcePath else { continue }
                     let source = URL(fileURLWithPath: sourcePath)
-                    guard FileManager.default.fileExists(atPath: source.path) else {
+                    guard fileManager.fileExists(atPath: source.path) else {
                         throw ValidationError.missingSourceFile(sourcePath)
                     }
-                    try await ProcessRunner.run(
-                        Executable.cp,
-                        arguments: [
-                            "-R",
-                            source.path,
-                            mountPoint.appending(path: item.label).path,
-                        ]
-                    )
+                    // copyItem preserves symlinks inside .app bundles.
+                    try fileManager.copyItem(at: source, to: destination)
                 }
             }
         }
@@ -186,27 +179,18 @@ nonisolated enum DMGBuilder {
         named imageName: String,
         from assetsDirectory: URL,
         to mountPoint: URL
-    ) async throws {
+    ) throws {
         let bgDir = mountPoint.appending(path: ".background")
 
-        try await ProcessRunner.run(
-            Executable.mkdir,
-            arguments: ["-p", bgDir.path]
-        )
+        try FileManager.default.createDirectory(at: bgDir, withIntermediateDirectories: true)
 
         let sourceImage = assetsDirectory.appending(path: imageName)
         let destImage = bgDir.appending(path: imageName)
 
-        try await ProcessRunner.run(
-            Executable.cp,
-            arguments: [sourceImage.path, destImage.path]
-        )
+        try FileManager.default.copyItem(at: sourceImage, to: destImage)
 
         // Set the invisible flag on .background directory
-        try await ProcessRunner.run(
-            Executable.setFile,
-            arguments: ["-a", "V", bgDir.path]
-        )
+        try FinderInfo.setInvisible(at: bgDir)
     }
 
     /// Sets the volume icon on the mounted DMG.
@@ -218,18 +202,12 @@ nonisolated enum DMGBuilder {
         try icnsData.write(to: iconPath)
 
         // Set the custom icon flag on the volume root
-        try await ProcessRunner.run(
-            Executable.setFile,
-            arguments: ["-a", "C", mountPoint.path]
-        )
+        try FinderInfo.setCustomIconFlag(at: mountPoint.path)
 
         // Make the icon file invisible to Finder (kIsInvisible flag).
         // This prevents it from appearing even with "Show Hidden Files"
         // and excludes it from scroll extent calculations.
-        try await ProcessRunner.run(
-            Executable.setFile,
-            arguments: ["-a", "V", iconPath.path]
-        )
+        try FinderInfo.setInvisible(at: iconPath)
     }
 
     // MARK: - Bless
@@ -255,11 +233,7 @@ nonisolated enum DMGBuilder {
         dmgPath: URL,
         identity: String?
     ) async throws {
-        let resolvedIdentity: String = if let identity {
-            identity
-        } else {
-            try await resolveSigningIdentity()
-        }
+        let resolvedIdentity = try identity ?? resolveSigningIdentity()
 
         try await ProcessRunner.run(
             Executable.codesign,
@@ -270,70 +244,114 @@ nonisolated enum DMGBuilder {
         )
     }
 
-    /// Extracts the signing authority from a signed app bundle.
-    /// Returns the identity name (e.g. "Developer ID Application: Name (TEAM)")
-    /// or nil if the app is unsigned.
-    static func signingAuthority(of appURL: URL) async -> String? {
-        // codesign -d writes to stderr; exits non-zero for unsigned apps
-        guard let result = try? await ProcessRunner.run(
-            Executable.codesign,
-            arguments: ["-d", "--verbose=1", appURL.path]
-        ) else { return nil }
+    /// Lists the common names of keychain identities capable of code signing —
+    /// the set `security find-identity -v -p codesigning` reports.
+    static func listSigningIdentities() -> [String] {
+        signingIdentities().map(\.name)
+    }
 
-        let stderr = String(data: result.stderr, encoding: .utf8) ?? ""
-        for line in stderr.components(separatedBy: .newlines) {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.hasPrefix("Authority=") {
-                return String(trimmed.dropFirst("Authority=".count))
-            }
-        }
-        return nil
+    /// Extracts the signing authority from a signed app bundle.
+    ///
+    /// Returns the leaf certificate's common name
+    /// (e.g. "Developer ID Application: Name (TEAM)") or nil if the app is unsigned
+    /// or its signature cannot be read.
+    static func signingAuthority(of appURL: URL) -> String? {
+        var staticCode: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(appURL as CFURL, [], &staticCode) == errSecSuccess,
+              let code = staticCode
+        else { return nil }
+
+        var infoRef: CFDictionary?
+        guard SecCodeCopySigningInformation(
+            code, SecCSFlags(rawValue: kSecCSSigningInformation), &infoRef
+        ) == errSecSuccess,
+            let info = infoRef as? [String: Any],
+            let certificates = info[kSecCodeInfoCertificates as String] as? [SecCertificate],
+            let leaf = certificates.first
+        else { return nil }
+
+        return commonName(of: leaf)
     }
 
     /// Finds the keychain identity name matching a signing authority.
-    /// The authority must appear in the keychain's codesigning identities.
-    static func findMatchingKeychainIdentity(authority: String) async -> String? {
-        guard let output = try? await ProcessRunner.runString(
-            Executable.security,
-            arguments: ["find-identity", "-v", "-p", "codesigning"]
-        ) else { return nil }
-
-        for line in output.components(separatedBy: .newlines) {
-            // Lines look like: 1) ABC123... "Developer ID Application: Name (TEAM)"
-            guard line.contains(authority),
-                  let firstQuote = line.firstIndex(of: "\"") else { continue }
-            let afterQuote = line.index(after: firstQuote)
-            guard afterQuote < line.endIndex,
-                  let lastQuote = line[afterQuote...].firstIndex(of: "\"") else { continue }
-            return String(line[afterQuote ..< lastQuote])
-        }
-        return nil
+    /// The authority must appear among the keychain's codesigning identities.
+    static func findMatchingKeychainIdentity(authority: String) -> String? {
+        let names = listSigningIdentities()
+        return names.first { $0 == authority } ?? names.first { $0.contains(authority) }
     }
 
-    /// Searches the keychain for a suitable signing identity.
-    static func resolveSigningIdentity() async throws -> String {
-        let output = try await ProcessRunner.runString(
-            Executable.security,
-            arguments: [
-                "find-identity", "-v", "-p", "codesigning",
-            ]
-        )
-
+    /// Searches the keychain for a suitable signing identity, preferring
+    /// distribution certificates over development ones.
+    static func resolveSigningIdentity() throws -> String {
+        let names = listSigningIdentities()
         let preferredPrefixes = [
             "Developer ID Application",
-            "Mac Developer",
+            "Apple Distribution",
             "Apple Development",
+            "Mac Developer",
         ]
 
         for prefix in preferredPrefixes {
-            for line in output.components(separatedBy: .newlines) {
-                if line.contains(prefix),
-                   let hashRange = line.range(of: "[A-F0-9]{40}", options: .regularExpression) {
-                    return String(line[hashRange])
-                }
+            if let match = names.first(where: { $0.hasPrefix(prefix) }) {
+                return match
             }
         }
 
+        if let first = names.first { return first }
         throw DMGError.noSigningIdentity
+    }
+
+    // MARK: - Identity Discovery
+
+    /// A keychain identity capable of code signing, paired with its display name.
+    private struct SigningIdentity {
+        let name: String
+        let identity: SecIdentity
+    }
+
+    /// Queries the keychain for identities whose leaf certificate is valid for code
+    /// signing (carries the id-kp-codeSigning EKU), reproducing the filter applied by
+    /// `security find-identity -v -p codesigning`.
+    private static func signingIdentities() -> [SigningIdentity] {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassIdentity,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+            kSecReturnRef as String: true,
+        ]
+
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let identities = result as? [SecIdentity]
+        else { return [] }
+
+        return identities.compactMap { identity in
+            var certificate: SecCertificate?
+            guard SecIdentityCopyCertificate(identity, &certificate) == errSecSuccess,
+                  let certificate,
+                  canSignCode(certificate),
+                  let name = commonName(of: certificate)
+            else { return nil }
+            return SigningIdentity(name: name, identity: identity)
+        }
+    }
+
+    /// Whether a certificate's extended key usage includes id-kp-codeSigning.
+    private static func canSignCode(_ certificate: SecCertificate) -> Bool {
+        var error: Unmanaged<CFError>?
+        guard let values = SecCertificateCopyValues(
+            certificate, [kSecOIDExtendedKeyUsage] as CFArray, &error
+        ) as? [String: Any],
+            let eku = values[kSecOIDExtendedKeyUsage as String] as? [String: Any],
+            let usages = eku[kSecPropertyKeyValue as String] as? [Data]
+        else { return false }
+
+        return usages.contains(codeSigningEKUBytes)
+    }
+
+    /// The certificate's common name, or nil if it has none.
+    private static func commonName(of certificate: SecCertificate) -> String? {
+        var name: CFString?
+        guard SecCertificateCopyCommonName(certificate, &name) == errSecSuccess else { return nil }
+        return name as String?
     }
 }

@@ -224,11 +224,11 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     /// identity exists in the user's keychain. Enables code signing with that
     /// identity if found, otherwise leaves it disabled.
     func configureCodeSigning(forAppAt appPath: String, undoManager: UndoManager?) async {
-        guard let authority = await DMGBuilder.signingAuthority(
+        guard let authority = DMGBuilder.signingAuthority(
             of: URL(fileURLWithPath: appPath)
         ) else { return }
 
-        guard let identity = await DMGBuilder.findMatchingKeychainIdentity(
+        guard let identity = DMGBuilder.findMatchingKeychainIdentity(
             authority: authority
         ) else { return }
 

@@ -3,23 +3,111 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 
 nonisolated enum CompositeRenderer {
-    private static let ciContext = CIContext()
+    /// Fixed sRGB color space used for every offscreen bitmap and CoreImage pass, so
+    /// output does not depend on the display or working-space defaults.
+    private static let sRGB = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+
+    /// Software CoreImage renderer with fixed sRGB working/output spaces. The software
+    /// path guarantees byte-identical filter output (blur, bloom, gradients, masks)
+    /// across machines and GPUs, which the baked-background determinism guarantee needs.
+    private static let ciContext = CIContext(options: [
+        .useSoftwareRenderer: true,
+        .workingColorSpace: sRGB,
+        .outputColorSpace: sRGB,
+    ])
+
+    /// Creates a premultiplied-RGBA8 bitmap context of an explicit pixel size in the fixed
+    /// sRGB color space — the deterministic replacement for `NSImage.lockFocus`, whose
+    /// backing scale otherwise follows the build machine's display.
+    private static func makeBitmapContext(pixelsWide: Int, pixelsHigh: Int) -> CGContext? {
+        CGContext(
+            data: nil,
+            width: max(pixelsWide, 1),
+            height: max(pixelsHigh, 1),
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: sRGB,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )
+    }
 
     // MARK: - Composite Background
 
+    /// Renders the composite background as a multi-representation TIFF holding a 1x and a
+    /// 2x bitmap, both produced by deterministic `CGContext` rendering so the bytes are
+    /// identical regardless of the build machine's display. The 2x representation carries
+    /// the 1x point size so Finder treats it as `@2x`, giving crisp Retina backgrounds
+    /// and correctly sized non-Retina ones from one file.
+    static func renderBackgroundTIFF(
+        configuration: DMGConfiguration,
+        assetsDirectory: URL
+    ) -> Data? {
+        let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
+        guard pointSize.width > 0, pointSize.height > 0,
+              let rep1 = renderRep(configuration: configuration, assetsDirectory: assetsDirectory, pointSize: pointSize, scale: 1),
+              let rep2 = renderRep(configuration: configuration, assetsDirectory: assetsDirectory, pointSize: pointSize, scale: 2)
+        else { return nil }
+
+        return NSBitmapImageRep.representationOfImageReps(in: [rep1, rep2], using: .tiff, properties: [:])
+    }
+
+    /// Multi-representation (1x + 2x) `NSImage` for on-screen reuse such as thumbnails.
+    /// The baked DMG background is produced by `renderBackgroundTIFF` directly.
     static func renderBackground(
         configuration: DMGConfiguration,
         assetsDirectory: URL
     ) -> NSImage? {
+        let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
+        guard pointSize.width > 0, pointSize.height > 0,
+              let rep1 = renderRep(configuration: configuration, assetsDirectory: assetsDirectory, pointSize: pointSize, scale: 1),
+              let rep2 = renderRep(configuration: configuration, assetsDirectory: assetsDirectory, pointSize: pointSize, scale: 2)
+        else { return nil }
+
+        let image = NSImage(size: pointSize)
+        image.addRepresentation(rep1)
+        image.addRepresentation(rep2)
+        return image
+    }
+
+    /// Renders the full composite at one scale into a fresh bitmap and wraps it as a
+    /// representation whose reported point size is always the 1x size.
+    private static func renderRep(
+        configuration: DMGConfiguration,
+        assetsDirectory: URL,
+        pointSize: CGSize,
+        scale: CGFloat
+    ) -> NSBitmapImageRep? {
+        let pixelsWide = Int((pointSize.width * scale).rounded())
+        let pixelsHigh = Int((pointSize.height * scale).rounded())
+        guard let context = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh) else { return nil }
+
+        context.scaleBy(x: scale, y: scale)
+        renderComposite(into: context, configuration: configuration, assetsDirectory: assetsDirectory, scale: scale)
+
+        guard let cgImage = context.makeImage() else { return nil }
+        let rep = NSBitmapImageRep(cgImage: cgImage)
+        rep.size = pointSize
+        return rep
+    }
+
+    /// Draws every layer of the composite into `context`, which is expected to be
+    /// pre-scaled by `scale` so all geometry can be expressed in points. Readback-based
+    /// effects (item-panel blur) receive `scale` to map point rects onto the pixel backing.
+    private static func renderComposite(
+        into context: CGContext,
+        configuration: DMGConfiguration,
+        assetsDirectory: URL,
+        scale: CGFloat
+    ) {
         let width = configuration.window.width
         let height = configuration.window.height
 
-        let image = NSImage(size: NSSize(width: width, height: height))
-        image.lockFocus()
-
-        defer { image.unlockFocus() }
-
-        guard let context = NSGraphicsContext.current?.cgContext else { return nil }
+        // Bridge AppKit drawing (NSImage / NSAttributedString / NSBezierPath) onto this
+        // CGContext. `flipped: false` keeps the y-up geometry the layer math assumes.
+        let nsContext = NSGraphicsContext(cgContext: context, flipped: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = nsContext
+        defer { NSGraphicsContext.restoreGraphicsState() }
 
         let fullRect = CGRect(x: 0, y: 0, width: width, height: height)
 
@@ -41,10 +129,9 @@ nonisolated enum CompositeRenderer {
             items: configuration.items,
             iconSize: configuration.iconSize,
             in: context,
-            canvasHeight: height
+            canvasHeight: height,
+            scale: scale
         )
-
-        return image
     }
 
     // MARK: - Base Background
@@ -160,41 +247,42 @@ nonisolated enum CompositeRenderer {
 
     private static func renderSFSymbolLayers(
         _ symbolLayers: [SFSymbolLayerConfiguration],
-        in _: CGContext,
+        in context: CGContext,
         canvasHeight: CGFloat
     ) {
         for symbolLayer in symbolLayers {
             let config = NSImage.SymbolConfiguration(
                 pointSize: symbolLayer.pointSize,
-                weight: symbolLayer.weight.nsFontWeight
+                weight: symbolLayer.weight.nsFontWeight,
+                scale: .medium
             )
             guard let symbolImage = NSImage(
                 systemSymbolName: symbolLayer.symbolName,
                 accessibilityDescription: nil
             )?.withSymbolConfiguration(config) else { continue }
 
-            let tintedImage = NSImage(size: symbolImage.size, flipped: false) { rect in
-                symbolImage.draw(in: rect)
-                NSColor(
-                    srgbRed: symbolLayer.color.red,
-                    green: symbolLayer.color.green,
-                    blue: symbolLayer.color.blue,
-                    alpha: 1
-                ).set()
-                rect.fill(using: .sourceAtop)
-                return true
-            }
-
-            let symbolSize = tintedImage.size
+            let symbolSize = symbolImage.size
             let originX = symbolLayer.position.x - symbolSize.width / 2
             let originY = canvasHeight - symbolLayer.position.y - symbolSize.height / 2
+            let rect = NSRect(x: originX, y: originY, width: symbolSize.width, height: symbolSize.height)
 
-            tintedImage.draw(
-                in: NSRect(x: originX, y: originY, width: symbolSize.width, height: symbolSize.height),
-                from: .zero,
-                operation: .sourceOver,
-                fraction: 1.0
+            let color = NSColor(
+                srgbRed: symbolLayer.color.red,
+                green: symbolLayer.color.green,
+                blue: symbolLayer.color.blue,
+                alpha: 1
             )
+
+            // Draw the template glyph then tint it in place inside a transparency layer,
+            // so rasterization follows this context's scale (deterministic) rather than an
+            // intermediate NSImage whose backing scale tracks the display.
+            context.saveGState()
+            context.beginTransparencyLayer(auxiliaryInfo: nil)
+            symbolImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1.0)
+            color.set()
+            rect.fill(using: .sourceAtop)
+            context.endTransparencyLayer()
+            context.restoreGState()
         }
     }
 
@@ -205,7 +293,8 @@ nonisolated enum CompositeRenderer {
         items: [CanvasItem],
         iconSize: CGFloat,
         in context: CGContext,
-        canvasHeight: CGFloat
+        canvasHeight: CGFloat,
+        scale: CGFloat
     ) {
         let iconCellPadding: CGFloat = 10
         let textGap: CGFloat = 4
@@ -223,7 +312,7 @@ nonisolated enum CompositeRenderer {
             let bgRect = CGRect(x: originX, y: originY, width: bgSide, height: bgSide)
 
             renderItemShadow(bg: bg, rect: bgRect, in: context)
-            renderItemPanel(bg: bg, rect: bgRect, in: context)
+            renderItemPanel(bg: bg, rect: bgRect, in: context, scale: scale)
 
             if let bevel = bg.bevel, bevel.enabled {
                 renderBevel(context: context, rect: bgRect, cornerRadius: bg.cornerRadius, bevel: bevel)
@@ -277,7 +366,8 @@ nonisolated enum CompositeRenderer {
     private static func renderItemPanel(
         bg: ItemBackground,
         rect: CGRect,
-        in context: CGContext
+        in context: CGContext,
+        scale: CGFloat
     ) {
         guard bg.enabled else { return }
 
@@ -287,12 +377,12 @@ nonisolated enum CompositeRenderer {
             if bg.blurFeather > 0 {
                 renderFeatheredBlurRegion(
                     context: context, rect: rect, cornerRadius: cornerRadius,
-                    blurRadius: bg.blurRadius, feather: bg.blurFeather
+                    blurRadius: bg.blurRadius, feather: bg.blurFeather, scale: scale
                 )
             } else {
                 renderBlurredRegion(
                     context: context, rect: rect, cornerRadius: cornerRadius,
-                    blurRadius: bg.blurRadius
+                    blurRadius: bg.blurRadius, scale: scale
                 )
             }
         }
@@ -304,7 +394,7 @@ nonisolated enum CompositeRenderer {
 
         if bg.blurFeather > 0 {
             guard let maskImage = generateContourMask(
-                size: rect.size, cornerRadius: cornerRadius, feather: bg.blurFeather
+                size: rect.size, cornerRadius: cornerRadius, feather: bg.blurFeather, scale: scale
             ) else { return }
 
             context.saveGState()
@@ -423,17 +513,16 @@ nonisolated enum CompositeRenderer {
     }
 
     static func resizeImage(_ image: NSImage, to size: CGSize) -> NSImage {
-        let newImage = NSImage(size: size)
-        newImage.lockFocus()
-        NSGraphicsContext.current?.imageInterpolation = .high
-        image.draw(
-            in: NSRect(origin: .zero, size: size),
-            from: .zero,
-            operation: .copy,
-            fraction: 1.0
-        )
-        newImage.unlockFocus()
-        return newImage
+        let pixelsWide = Int(size.width.rounded())
+        let pixelsHigh = Int(size.height.rounded())
+        guard let context = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh),
+              let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        else { return image }
+
+        context.interpolationQuality = .high
+        context.draw(cgImage, in: CGRect(origin: .zero, size: size))
+        guard let resized = context.makeImage() else { return image }
+        return NSImage(cgImage: resized, size: size)
     }
 
     static func applyVariableBlur(to image: CIImage, config: VariableBlurConfiguration) -> CIImage {
@@ -561,21 +650,22 @@ nonisolated enum CompositeRenderer {
     ) -> NSImage? {
         guard size.width > 0, size.height > 0 else { return nil }
 
-        // 1. Create white rounded rect mask on black background
-        let maskImage = NSImage(size: size)
-        maskImage.lockFocus()
-        NSColor.black.setFill()
-        NSRect(origin: .zero, size: size).fill()
-        NSColor.white.setFill()
-        NSBezierPath(
-            roundedRect: NSRect(origin: .zero, size: size),
-            xRadius: cornerRadius,
-            yRadius: cornerRadius
-        ).fill()
-        maskImage.unlockFocus()
+        // 1. Create white rounded rect mask on black background (deterministic bitmap).
+        let bounds = CGRect(origin: .zero, size: size)
+        guard let maskContext = makeBitmapContext(
+            pixelsWide: Int(size.width.rounded()),
+            pixelsHigh: Int(size.height.rounded())
+        ) else { return nil }
+        maskContext.setFillColor(CGColor(gray: 0, alpha: 1))
+        maskContext.fill(bounds)
+        maskContext.setFillColor(CGColor(gray: 1, alpha: 1))
+        maskContext.addPath(CGPath(
+            roundedRect: bounds, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil
+        ))
+        maskContext.fillPath()
 
-        guard let maskTiff = maskImage.tiffRepresentation,
-              let ciMask = CIImage(data: maskTiff) else { return nil }
+        guard let maskCG = maskContext.makeImage() else { return nil }
+        let ciMask = CIImage(cgImage: maskCG)
 
         // 2. CIHeightFieldFromMask
         let heightField = CIFilter.heightFieldFromMask()
@@ -673,24 +763,26 @@ nonisolated enum CompositeRenderer {
         context: CGContext,
         rect: CGRect,
         cornerRadius: CGFloat,
-        blurRadius: CGFloat
+        blurRadius: CGFloat,
+        scale: CGFloat
     ) {
+        // `context.makeImage()` returns the full backing at pixel resolution, so the
+        // point-space panel rect and blur radius are mapped into pixels before cropping
+        // and blurring, then the result is drawn back in points under the scaled CTM.
         guard let currentBitmap = context.makeImage() else { return }
         let ciImage = CIImage(cgImage: currentBitmap)
 
-        // Expand capture area to include blur kernel padding
-        let padding = blurRadius * 3
-        let expandedRect = rect.insetBy(dx: -padding, dy: -padding)
-        let cropped = ciImage.cropped(to: expandedRect)
+        let rectPx = rect.applying(CGAffineTransform(scaleX: scale, y: scale))
+        let paddingPx = blurRadius * scale * 3
+        let expandedPx = rectPx.insetBy(dx: -paddingPx, dy: -paddingPx)
+        let cropped = ciImage.cropped(to: expandedPx)
 
         let filter = CIFilter.gaussianBlur()
         filter.inputImage = cropped
-        filter.radius = Float(blurRadius)
+        filter.radius = Float(blurRadius * scale)
 
-        guard let blurred = filter.outputImage?.cropped(to: rect) else { return }
-
-        let ciContext = Self.ciContext
-        guard let cgBlurred = ciContext.createCGImage(blurred, from: rect) else { return }
+        guard let blurred = filter.outputImage?.cropped(to: rectPx),
+              let cgBlurred = ciContext.createCGImage(blurred, from: rectPx) else { return }
 
         let path = CGPath(
             roundedRect: rect,
@@ -710,36 +802,38 @@ nonisolated enum CompositeRenderer {
         rect: CGRect,
         cornerRadius: CGFloat,
         blurRadius: CGFloat,
-        feather: CGFloat
+        feather: CGFloat,
+        scale: CGFloat
     ) {
         guard let currentBitmap = context.makeImage() else { return }
         let ciImage = CIImage(cgImage: currentBitmap)
 
-        let padding = blurRadius * 3
-        let expandedRect = rect.insetBy(dx: -padding, dy: -padding)
-        let cropped = ciImage.cropped(to: expandedRect)
+        let rectPx = rect.applying(CGAffineTransform(scaleX: scale, y: scale))
+        let paddingPx = blurRadius * scale * 3
+        let expandedPx = rectPx.insetBy(dx: -paddingPx, dy: -paddingPx)
+        let cropped = ciImage.cropped(to: expandedPx)
 
-        // Generate contour-following mask for variable blur
+        // Contour-following mask at pixel resolution so it aligns with the pixel-space blur.
         guard let maskImage = generateContourMask(
             size: rect.size,
             cornerRadius: cornerRadius,
-            feather: feather
+            feather: feather,
+            scale: scale
         ) else { return }
 
         let ciMask = CIImage(cgImage: maskImage)
-            .transformed(by: CGAffineTransform(translationX: rect.origin.x, y: rect.origin.y))
+            .transformed(by: CGAffineTransform(translationX: rectPx.origin.x, y: rectPx.origin.y))
 
         let filter = CIFilter.maskedVariableBlur()
         filter.inputImage = cropped
-        filter.mask = ciMask.cropped(to: expandedRect)
-        filter.radius = Float(blurRadius)
+        filter.mask = ciMask.cropped(to: expandedPx)
+        filter.radius = Float(blurRadius * scale)
 
-        guard let blurred = filter.outputImage?.cropped(to: rect) else { return }
+        guard let blurred = filter.outputImage?.cropped(to: rectPx),
+              let cgBlurred = ciContext.createCGImage(blurred, from: rectPx) else { return }
 
-        let ciContext = Self.ciContext
-        guard let cgBlurred = ciContext.createCGImage(blurred, from: rect) else { return }
-
-        // Draw with the same contour mask for proper edge fade
+        // Draw with the same contour mask for the edge fade. `clip(to:mask:)` stretches the
+        // mask image over `rect`, so the pixel-resolution mask maps correctly in point space.
         context.saveGState()
         context.clip(to: rect, mask: maskImage)
         context.draw(cgBlurred, in: rect)
@@ -751,30 +845,34 @@ nonisolated enum CompositeRenderer {
     static func generateContourMask(
         size: CGSize,
         cornerRadius: CGFloat,
-        feather: CGFloat
+        feather: CGFloat,
+        scale: CGFloat = 1
     ) -> CGImage? {
+        let pixelsWide = Int((size.width * scale).rounded())
+        let pixelsHigh = Int((size.height * scale).rounded())
+        guard let ctx = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh) else { return nil }
+        ctx.scaleBy(x: scale, y: scale)
+
+        let bounds = CGRect(origin: .zero, size: size)
         let featherPx = min(size.width, size.height) * feather * 0.5
-        let insetRect = CGRect(origin: .zero, size: size).insetBy(dx: featherPx, dy: featherPx)
+        let insetRect = bounds.insetBy(dx: featherPx, dy: featherPx)
         let insetCR = max(cornerRadius - featherPx, 0)
 
-        // Draw white rounded rect on black background, then blur to create feathered edge
-        let maskNS = NSImage(size: size)
-        maskNS.lockFocus()
-        NSColor.black.setFill()
-        NSRect(origin: .zero, size: size).fill()
-        NSColor.white.setFill()
-        NSBezierPath(roundedRect: insetRect, xRadius: insetCR, yRadius: insetCR).fill()
-        maskNS.unlockFocus()
+        // Draw white rounded rect on black background, then blur to create the feathered edge.
+        ctx.setFillColor(CGColor(gray: 0, alpha: 1))
+        ctx.fill(bounds)
+        ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+        ctx.addPath(CGPath(roundedRect: insetRect, cornerWidth: insetCR, cornerHeight: insetCR, transform: nil))
+        ctx.fillPath()
 
-        guard let tiff = maskNS.tiffRepresentation,
-              let ciMask = CIImage(data: tiff) else { return nil }
+        guard let base = ctx.makeImage() else { return nil }
 
+        let extentPx = CGRect(x: 0, y: 0, width: pixelsWide, height: pixelsHigh)
         let blur = CIFilter.gaussianBlur()
-        blur.inputImage = ciMask
-        blur.radius = Float(featherPx)
-        guard let blurred = blur.outputImage?.cropped(to: CGRect(origin: .zero, size: size)) else { return nil }
+        blur.inputImage = CIImage(cgImage: base)
+        blur.radius = Float(featherPx * scale)
+        guard let blurred = blur.outputImage?.cropped(to: extentPx) else { return nil }
 
-        let ctx = ciContext
-        return ctx.createCGImage(blurred, from: CGRect(origin: .zero, size: size))
+        return ciContext.createCGImage(blurred, from: extentPx)
     }
 }
