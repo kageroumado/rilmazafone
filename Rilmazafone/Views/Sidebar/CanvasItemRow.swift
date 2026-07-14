@@ -12,13 +12,22 @@ struct CanvasItemRow: View {
             HStack(spacing: 4) {
                 Text(item.label)
                     .lineLimit(1)
+                    .foregroundStyle(item.isPlaceholder ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
 
+                // Missing source wins over the advisory legibility warning,
+                // matching the canvas badge rule.
                 if isSourceMissing {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 10))
                         .symbolRenderingMode(.multicolor)
                         .help("Source file is missing. Right-click and choose Locate\u{2026} to relink.")
                         .accessibilityLabel("Source file missing")
+                } else if !legibilityModes.isEmpty {
+                    Image(systemName: "textformat.abc")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.orange)
+                        .help(legibilityHelpText)
+                        .accessibilityLabel(legibilityHelpText)
                 }
             }
         } icon: {
@@ -46,6 +55,7 @@ struct CanvasItemRow: View {
         }
         .task(id: item.iconCacheKey(isSourceMissing: isSourceMissing)) {
             cachedIcon = CanvasItem.resolveIcon(for: item, documentURL: document.fileURL)
+                ?? document.importedItemIcons[item.id]
         }
         .accessibilityLabel("\(item.label), \(item.kind.displayName)")
     }
@@ -58,6 +68,16 @@ struct CanvasItemRow: View {
         document.missingSourceIDs.contains(item.id)
     }
 
+    private var legibilityModes: [LabelAppearanceMode] {
+        document.legibilityModes(for: item.id)
+    }
+
+    private var legibilityHelpText: String {
+        let modes = legibilityModes.map(\.displayName).joined(separator: " and ")
+        return "Label may be hard to read in \(modes). "
+            + "Add a panel behind it, move it, or adjust the background."
+    }
+
     private var fallbackIconName: String {
         switch item.kind {
         case .app: "app.dashed"
@@ -68,10 +88,11 @@ struct CanvasItemRow: View {
     }
 
     private var fallbackIconColor: Color {
+        if item.isPlaceholder { return .secondary }
         switch item.kind {
-        case .app: .accentColor
-        case .applicationsSymlink, .file: .secondary
-        case .folder: .blue
+        case .app: return .accentColor
+        case .applicationsSymlink, .file: return .secondary
+        case .folder: return .blue
         }
     }
 }

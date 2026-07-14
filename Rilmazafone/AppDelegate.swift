@@ -1,7 +1,8 @@
 import AppKit
 
-/// Provides the Dock icon's context menu: New Document plus the shared
-/// recent-documents list from `NSDocumentController`.
+/// Provides the Dock icon's context menu: New Document, the registry-driven
+/// "New from Template" submenu, and the shared recent-documents list from
+/// `NSDocumentController`.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private enum Constants {
         /// Maximum number of recent documents shown in the Dock menu.
@@ -21,8 +22,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newDocument.target = NSDocumentController.shared
         menu.addItem(newDocument)
 
-        // "New from Template…" is added here in Phase 3, driven by the same
-        // template registry as the chooser and the File menu.
+        if let templates = newFromTemplateItem() {
+            menu.addItem(templates)
+        }
 
         let recents = NSDocumentController.shared.recentDocumentURLs
             .prefix(Constants.maximumRecentDocuments)
@@ -36,6 +38,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         return menu
     }
+
+    // MARK: - Templates
+
+    /// "New from Template" submenu listing bundled then user templates from
+    /// the shared registry, matching the File menu and chooser. Returns `nil`
+    /// when no templates exist. The Dock menu is rebuilt on every open, so it
+    /// always reflects the registry's current state.
+    private func newFromTemplateItem() -> NSMenuItem? {
+        let registry = TemplateRegistry.shared
+        guard !(registry.bundled.isEmpty && registry.user.isEmpty) else { return nil }
+
+        let submenu = NSMenu(title: "New from Template")
+        for entry in registry.bundled {
+            submenu.addItem(templateItem(for: entry))
+        }
+        if !registry.user.isEmpty {
+            if !registry.bundled.isEmpty {
+                submenu.addItem(.separator())
+            }
+            for entry in registry.user {
+                submenu.addItem(templateItem(for: entry))
+            }
+        }
+
+        let item = NSMenuItem(title: "New from Template", action: nil, keyEquivalent: "")
+        item.submenu = submenu
+        return item
+    }
+
+    /// `NSMenuItem.target` is weak, so the items target the app delegate
+    /// itself, which the application retains for its whole lifetime.
+    private func templateItem(for entry: TemplateEntry) -> NSMenuItem {
+        let item = NSMenuItem(
+            title: entry.name,
+            action: #selector(newDocumentFromTemplate(_:)),
+            keyEquivalent: ""
+        )
+        item.target = self
+        item.representedObject = entry
+        return item
+    }
+
+    @objc func newDocumentFromTemplate(_ sender: NSMenuItem) {
+        guard let entry = sender.representedObject as? TemplateEntry else { return }
+        TemplateChooserController.shared.createDocument(from: entry)
+    }
+
+    // MARK: - Recents
 
     private func recentDocumentItem(for url: URL) -> NSMenuItem {
         let item = NSMenuItem(

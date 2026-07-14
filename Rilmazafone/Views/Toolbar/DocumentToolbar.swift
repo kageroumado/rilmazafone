@@ -11,6 +11,10 @@ struct CanvasToolbar: ToolbarContent {
 
     var body: some ToolbarContent {
         ToolbarItem {
+            LegibilityWarningChip()
+        }
+
+        ToolbarItem {
             Picker("Appearance", selection: $prefersDarkAppearance) {
                 Image(systemName: "sun.max.fill").tag(false)
                 Image(systemName: "moon.fill").tag(true)

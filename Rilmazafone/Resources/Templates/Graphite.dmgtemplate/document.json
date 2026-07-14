@@ -1,0 +1,169 @@
+{
+  "background" : {
+    "color" : {
+      "blue" : 0.92,
+      "green" : 0.92,
+      "red" : 0.92
+    },
+    "gradient" : {
+      "angle" : 180,
+      "centerX" : 0.5,
+      "centerY" : 0.42,
+      "endRadius" : 0.92,
+      "startRadius" : 0,
+      "stops" : [
+        {
+          "color" : {
+            "blue" : 0.243,
+            "green" : 0.216,
+            "red" : 0.216
+          },
+          "id" : "C037836B-8D81-4A46-A2F7-3199D1BF9122",
+          "location" : 0
+        },
+        {
+          "color" : {
+            "blue" : 0.157,
+            "green" : 0.137,
+            "red" : 0.137
+          },
+          "id" : "4659CFDD-318D-486D-ACFA-214FB26196DB",
+          "location" : 0.55
+        },
+        {
+          "color" : {
+            "blue" : 0.071,
+            "green" : 0.055,
+            "red" : 0.055
+          },
+          "id" : "508EF0A4-14F8-4EC4-92F3-D3DCBDFF057C",
+          "location" : 1
+        }
+      ],
+      "type" : "radial"
+    },
+    "layers" : [
+
+    ],
+    "type" : "gradient"
+  },
+  "codeSign" : {
+    "enabled" : false
+  },
+  "dmgFormat" : "ULFO",
+  "filesystem" : "APFS",
+  "gridSpacing" : 100,
+  "hideExtensions" : true,
+  "iconSize" : 128,
+  "isGridSpacingAuto" : true,
+  "items" : [
+    {
+      "background" : {
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 22,
+        "color" : {
+          "blue" : 0.03,
+          "green" : 0.02,
+          "red" : 0.02
+        },
+        "cornerRadius" : 24,
+        "enabled" : true,
+        "opacity" : 0.35,
+        "padding" : 10,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.45,
+          "radius" : 18
+        }
+      },
+      "id" : "46B42EBD-EA7F-43B9-B134-FD5F3EAD55B5",
+      "isPlaceholder" : true,
+      "kind" : "app",
+      "label" : "Your App",
+      "linkType" : "copy",
+      "position" : [
+        200,
+        195
+      ]
+    },
+    {
+      "background" : {
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 22,
+        "color" : {
+          "blue" : 0.03,
+          "green" : 0.02,
+          "red" : 0.02
+        },
+        "cornerRadius" : 24,
+        "enabled" : true,
+        "opacity" : 0.35,
+        "padding" : 10,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.45,
+          "radius" : 18
+        }
+      },
+      "id" : "2B3018EF-593D-4EEB-B116-C03BE1CFB95D",
+      "isPlaceholder" : false,
+      "kind" : "applicationsSymlink",
+      "label" : "Applications",
+      "linkType" : "copy",
+      "position" : [
+        460,
+        195
+      ]
+    }
+  ],
+  "sfSymbolLayers" : [
+    {
+      "color" : {
+        "blue" : 0.82,
+        "green" : 0.78,
+        "red" : 0.78
+      },
+      "id" : "8BC3C060-0B42-4274-8E8F-6B19FC6CC1CD",
+      "pointSize" : 36,
+      "position" : [
+        330,
+        183
+      ],
+      "symbolName" : "arrow.right",
+      "weight" : "light"
+    }
+  ],
+  "textLayers" : [
+
+  ],
+  "textSize" : 13,
+  "version" : 1,
+  "volumeIcon" : {
+    "type" : "composed"
+  },
+  "volumeName" : "Install",
+  "window" : {
+    "height" : 400,
+    "width" : 660
+  },
+  "windowPosition" : {
+    "x" : 200,
+    "y" : 120
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "background" : {
+    "color" : {
+      "blue" : 0.92,
+      "green" : 0.92,
+      "red" : 0.92
+    },
+    "gradient" : {
+      "angle" : 270,
+      "centerX" : 0.5,
+      "centerY" : 0.5,
+      "endRadius" : 0.5,
+      "startRadius" : 0,
+      "stops" : [
+        {
+          "color" : {
+            "blue" : 0.235,
+            "green" : 0.086,
+            "red" : 0.075
+          },
+          "id" : "0DBCCD79-DC6A-4451-88CB-29B72476B282",
+          "location" : 0
+        },
+        {
+          "color" : {
+            "blue" : 0.541,
+            "green" : 0.278,
+            "red" : 0.157
+          },
+          "id" : "8ED60DDA-B1F8-4408-B46D-5E4E032B5CF2",
+          "location" : 0.55
+        },
+        {
+          "color" : {
+            "blue" : 0.784,
+            "green" : 0.624,
+            "red" : 0.376
+          },
+          "id" : "EBE97AD3-2393-4916-99FD-FFD68F735BCD",
+          "location" : 1
+        }
+      ],
+      "type" : "linear"
+    },
+    "layers" : [
+
+    ],
+    "type" : "gradient"
+  },
+  "codeSign" : {
+    "enabled" : false
+  },
+  "dmgFormat" : "ULFO",
+  "filesystem" : "APFS",
+  "gridSpacing" : 100,
+  "hideExtensions" : true,
+  "iconSize" : 128,
+  "isGridSpacingAuto" : true,
+  "items" : [
+    {
+      "background" : {
+        "bevel" : {
+          "depth" : 4,
+          "enabled" : true,
+          "intensity" : 0.35,
+          "lightAngle" : 120
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 38,
+        "color" : {
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "cornerRadius" : 26,
+        "enabled" : true,
+        "opacity" : 0.16,
+        "padding" : 14,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.3,
+          "radius" : 16
+        }
+      },
+      "id" : "C9AE0426-DC02-4BD0-B6E5-4A39C71FCEC9",
+      "isPlaceholder" : true,
+      "kind" : "app",
+      "label" : "Your App",
+      "linkType" : "copy",
+      "position" : [
+        195,
+        225
+      ]
+    },
+    {
+      "background" : {
+        "bevel" : {
+          "depth" : 4,
+          "enabled" : true,
+          "intensity" : 0.35,
+          "lightAngle" : 120
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 38,
+        "color" : {
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "cornerRadius" : 26,
+        "enabled" : true,
+        "opacity" : 0.16,
+        "padding" : 14,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.3,
+          "radius" : 16
+        }
+      },
+      "id" : "F66096F6-BC25-48CD-9083-D0AFE0704FBC",
+      "isPlaceholder" : false,
+      "kind" : "applicationsSymlink",
+      "label" : "Applications",
+      "linkType" : "copy",
+      "position" : [
+        505,
+        225
+      ]
+    }
+  ],
+  "sfSymbolLayers" : [
+    {
+      "color" : {
+        "blue" : 0.898,
+        "green" : 0.78,
+        "red" : 0.553
+      },
+      "id" : "974BA4C5-4934-4CFE-88F4-2D3F65AA7643",
+      "pointSize" : 70,
+      "position" : [
+        150,
+        160
+      ],
+      "symbolName" : "circle.fill",
+      "weight" : "regular"
+    },
+    {
+      "color" : {
+        "blue" : 0.92,
+        "green" : 0.68,
+        "red" : 0.62
+      },
+      "id" : "9FBB7542-CA6B-4C83-ADBE-D97879A6A1CE",
+      "pointSize" : 48,
+      "position" : [
+        270,
+        208
+      ],
+      "symbolName" : "circle.fill",
+      "weight" : "regular"
+    },
+    {
+      "color" : {
+        "blue" : 0.878,
+        "green" : 0.702,
+        "red" : 0.478
+      },
+      "id" : "FA125579-5A94-4CC8-9B8A-3B53BEE8A3F6",
+      "pointSize" : 80,
+      "position" : [
+        445,
+        176
+      ],
+      "symbolName" : "circle.fill",
+      "weight" : "regular"
+    },
+    {
+      "color" : {
+        "blue" : 0.88,
+        "green" : 0.62,
+        "red" : 0.75
+      },
+      "id" : "35921DC1-B7FB-419D-AA0A-52AB959A5C96",
+      "pointSize" : 56,
+      "position" : [
+        540,
+        190
+      ],
+      "symbolName" : "circle.fill",
+      "weight" : "regular"
+    },
+    {
+      "color" : {
+        "blue" : 0.88,
+        "green" : 0.62,
+        "red" : 0.75
+      },
+      "id" : "A8F227FE-E431-4D18-A29D-085BFAC381DF",
+      "pointSize" : 44,
+      "position" : [
+        350,
+        118
+      ],
+      "symbolName" : "circle.fill",
+      "weight" : "regular"
+    },
+    {
+      "color" : {
+        "blue" : 0.92,
+        "green" : 0.68,
+        "red" : 0.62
+      },
+      "id" : "B941FDE1-3375-491F-A5C6-79BAAEDA4FB2",
+      "pointSize" : 26,
+      "position" : [
+        350,
+        322
+      ],
+      "symbolName" : "circle.fill",
+      "weight" : "regular"
+    },
+    {
+      "color" : {
+        "blue" : 0.898,
+        "green" : 0.78,
+        "red" : 0.553
+      },
+      "id" : "548DEABA-A20F-4908-BC98-638489272D3D",
+      "pointSize" : 34,
+      "position" : [
+        636,
+        76
+      ],
+      "symbolName" : "circle.fill",
+      "weight" : "regular"
+    },
+    {
+      "color" : {
+        "blue" : 0.878,
+        "green" : 0.702,
+        "red" : 0.478
+      },
+      "id" : "D09CB7D7-5284-436A-BC03-7287D7EE4357",
+      "pointSize" : 40,
+      "position" : [
+        66,
+        372
+      ],
+      "symbolName" : "circle.fill",
+      "weight" : "regular"
+    }
+  ],
+  "textLayers" : [
+
+  ],
+  "textSize" : 13,
+  "version" : 1,
+  "volumeIcon" : {
+    "type" : "composed"
+  },
+  "volumeName" : "Install",
+  "window" : {
+    "height" : 440,
+    "width" : 700
+  },
+  "windowPosition" : {
+    "x" : 200,
+    "y" : 120
+  }
+}

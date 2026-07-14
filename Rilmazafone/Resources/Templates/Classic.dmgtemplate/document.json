@@ -1,0 +1,108 @@
+{
+  "background" : {
+    "color" : {
+      "blue" : 0.92,
+      "green" : 0.92,
+      "red" : 0.92
+    },
+    "gradient" : {
+      "angle" : 90,
+      "centerX" : 0.5,
+      "centerY" : 0.5,
+      "endRadius" : 0.5,
+      "startRadius" : 0,
+      "stops" : [
+        {
+          "color" : {
+            "blue" : 0.988,
+            "green" : 0.98,
+            "red" : 0.98
+          },
+          "id" : "EA4F8D44-31C0-41B0-93C4-8D5EF195D809",
+          "location" : 0
+        },
+        {
+          "color" : {
+            "blue" : 0.929,
+            "green" : 0.906,
+            "red" : 0.906
+          },
+          "id" : "64D77925-E67B-44BA-886B-C3465B7AFA1A",
+          "location" : 1
+        }
+      ],
+      "type" : "linear"
+    },
+    "layers" : [
+
+    ],
+    "type" : "gradient"
+  },
+  "codeSign" : {
+    "enabled" : false
+  },
+  "dmgFormat" : "ULFO",
+  "filesystem" : "APFS",
+  "gridSpacing" : 100,
+  "hideExtensions" : true,
+  "iconSize" : 128,
+  "isGridSpacingAuto" : true,
+  "items" : [
+    {
+      "id" : "E057FC37-AFB2-418C-9493-332893B3729A",
+      "isPlaceholder" : true,
+      "kind" : "app",
+      "label" : "Your App",
+      "linkType" : "copy",
+      "position" : [
+        200,
+        195
+      ]
+    },
+    {
+      "id" : "2C552695-ED35-44B9-81AE-09E3457BDB0E",
+      "isPlaceholder" : false,
+      "kind" : "applicationsSymlink",
+      "label" : "Applications",
+      "linkType" : "copy",
+      "position" : [
+        460,
+        195
+      ]
+    }
+  ],
+  "sfSymbolLayers" : [
+    {
+      "color" : {
+        "blue" : 0.58,
+        "green" : 0.52,
+        "red" : 0.52
+      },
+      "id" : "EB148D3B-599D-41C7-996C-415B7DC79358",
+      "pointSize" : 40,
+      "position" : [
+        330,
+        183
+      ],
+      "symbolName" : "arrow.right",
+      "weight" : "regular"
+    }
+  ],
+  "textLayers" : [
+
+  ],
+  "textSize" : 13,
+  "version" : 1,
+  "volumeIcon" : {
+    "type" : "composed"
+  },
+  "volumeName" : "Install",
+  "window" : {
+    "height" : 400,
+    "width" : 660
+  },
+  "windowPosition" : {
+    "x" : 200,
+    "y" : 120
+  }
+}

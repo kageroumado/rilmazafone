@@ -69,10 +69,14 @@ struct DMGImporterTests {
         #expect(imported.effectiveGridSpacing == config.effectiveGridSpacing)
 
         #expect(imported.items.count == 2)
+        // Config equality up to placeholder substitution: the app bundle lives
+        // inside the DMG and imports as an unfilled placeholder with its name and
+        // position preserved but no source.
         let app = try #require(imported.items.first { $0.kind == .app })
         #expect(app.label == "Tiny.app")
         #expect(app.position == CGPoint(x: 150, y: 210))
         #expect(app.sourcePath == nil)
+        #expect(app.isPlaceholder == true)
 
         let symlink = try #require(imported.items.first { $0.kind == .applicationsSymlink })
         #expect(symlink.position == CGPoint(x: 450, y: 210))

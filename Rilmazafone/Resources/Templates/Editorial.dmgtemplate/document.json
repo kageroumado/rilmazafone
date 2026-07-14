@@ -1,0 +1,99 @@
+{
+  "background" : {
+    "color" : {
+      "blue" : 0.925,
+      "green" : 0.953,
+      "red" : 0.965
+    },
+    "layers" : [
+
+    ],
+    "type" : "color"
+  },
+  "codeSign" : {
+    "enabled" : false
+  },
+  "dmgFormat" : "ULFO",
+  "filesystem" : "APFS",
+  "gridSpacing" : 100,
+  "hideExtensions" : true,
+  "iconSize" : 96,
+  "isGridSpacingAuto" : true,
+  "items" : [
+    {
+      "id" : "38B4B924-0BEF-4D9E-BF61-923EFBBE0A1E",
+      "isPlaceholder" : true,
+      "kind" : "app",
+      "label" : "Your App",
+      "linkType" : "copy",
+      "position" : [
+        185,
+        305
+      ]
+    },
+    {
+      "id" : "4216D79E-8D08-4A60-ABFB-2D77FEFD6C1D",
+      "isPlaceholder" : false,
+      "kind" : "applicationsSymlink",
+      "label" : "Applications",
+      "linkType" : "copy",
+      "position" : [
+        455,
+        305
+      ]
+    }
+  ],
+  "sfSymbolLayers" : [
+
+  ],
+  "textLayers" : [
+    {
+      "color" : {
+        "blue" : 0.09,
+        "green" : 0.102,
+        "red" : 0.11
+      },
+      "fontFamily" : "Helvetica Neue",
+      "fontSize" : 56,
+      "id" : "48C17739-526C-4C50-9162-612791CDAF9F",
+      "isBold" : true,
+      "isItalic" : false,
+      "position" : [
+        320,
+        108
+      ],
+      "text" : "Your App"
+    },
+    {
+      "color" : {
+        "blue" : 0.36,
+        "green" : 0.4,
+        "red" : 0.42
+      },
+      "fontFamily" : "Helvetica Neue",
+      "fontSize" : 15,
+      "id" : "06073B50-63C0-490D-B3D2-C7F32B454961",
+      "isBold" : false,
+      "isItalic" : false,
+      "position" : [
+        320,
+        164
+      ],
+      "text" : "Drag it into Applications to install."
+    }
+  ],
+  "textSize" : 13,
+  "version" : 1,
+  "volumeIcon" : {
+    "type" : "composed"
+  },
+  "volumeName" : "Install",
+  "window" : {
+    "height" : 440,
+    "width" : 640
+  },
+  "windowPosition" : {
+    "x" : 200,
+    "y" : 120
+  }
+}

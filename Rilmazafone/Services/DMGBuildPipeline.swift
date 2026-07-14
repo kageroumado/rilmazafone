@@ -286,11 +286,16 @@ nonisolated enum DMGBuildPipeline {
 
     // MARK: - Validation
 
-    /// Validates that every item that copies a source into the DMG has a currently
-    /// reachable source, throwing `ValidationError.missingSources` listing the
-    /// offending item labels. Run before the build starts so a missing source
-    /// surfaces as one clear error instead of a mid-build failure.
+    /// Validates that the configuration is buildable: no unfilled app placeholder
+    /// remains, and every item that copies a source into the DMG has a currently
+    /// reachable source. Placeholders are checked first and reported distinctly
+    /// (`ValidationError.unfilledPlaceholder`) since they carry no source and would
+    /// otherwise read as a generic missing-source error. Run before the build starts
+    /// so either condition surfaces as one clear error instead of a mid-build failure.
     static func validateSources(configuration: DMGConfiguration, documentURL: URL?) throws {
+        guard !configuration.items.contains(where: { $0.isPlaceholder }) else {
+            throw ValidationError.unfilledPlaceholder
+        }
         let missing = configuration.items
             .filter { !SourceAccess.isSourceAvailable(item: $0, documentURL: documentURL) }
             .map(\.label)

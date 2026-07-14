@@ -414,8 +414,14 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
     var position: CGPoint
     var linkType: ItemLinkType = .copy
     var background: ItemBackground?
+    /// Whether this app-kind item is an unfilled placeholder slot awaiting a
+    /// dropped app. Placeholders render as a dashed "Your App" tile, carry no
+    /// source, and block builds until filled. Templates and DMG import seed
+    /// items in this state; ``RilmazafoneDocument/fillPlaceholder(_:from:undoManager:)``
+    /// clears it in place.
+    var isPlaceholder: Bool = false
 
-    init(id: UUID = UUID(), kind: CanvasItemKind, label: String, sourcePath: String? = nil, sourceBookmark: Data? = nil, position: CGPoint, linkType: ItemLinkType = .copy, background: ItemBackground? = nil) {
+    init(id: UUID = UUID(), kind: CanvasItemKind, label: String, sourcePath: String? = nil, sourceBookmark: Data? = nil, position: CGPoint, linkType: ItemLinkType = .copy, background: ItemBackground? = nil, isPlaceholder: Bool = false) {
         self.id = id
         self.kind = kind
         self.label = label
@@ -424,6 +430,7 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
         self.position = position
         self.linkType = linkType
         self.background = background
+        self.isPlaceholder = isPlaceholder
     }
 
     init(from decoder: any Decoder) throws {
@@ -436,13 +443,27 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
         self.position = try container.decode(CGPoint.self, forKey: .position)
         self.linkType = try container.decodeIfPresent(ItemLinkType.self, forKey: .linkType) ?? .copy
         self.background = try container.decodeIfPresent(ItemBackground.self, forKey: .background)
+        self.isPlaceholder = try container.decodeIfPresent(Bool.self, forKey: .isPlaceholder) ?? false
+    }
+
+    /// Default label for a fresh placeholder slot.
+    static let placeholderLabel = "Your App"
+
+    /// Creates an unfilled app placeholder slot at the given position.
+    static func appPlaceholder(
+        label: String = placeholderLabel,
+        position: CGPoint
+    ) -> CanvasItem {
+        CanvasItem(kind: .app, label: label, position: position, isPlaceholder: true)
     }
 
     /// Whether this item copies a filesystem source into the DMG and therefore
     /// needs a reachable source. The Applications symlink and symlink-type items
-    /// only store a target path string.
+    /// only store a target path string; an unfilled placeholder has no source
+    /// yet and is validated separately, so it is excluded here — keeping it out
+    /// of the missing-source machinery (badge, relink, `missingSources`).
     var requiresSource: Bool {
-        kind != .applicationsSymlink && linkType == .copy
+        kind != .applicationsSymlink && linkType == .copy && !isPlaceholder
     }
 }
 

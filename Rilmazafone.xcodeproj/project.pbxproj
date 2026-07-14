@@ -46,6 +46,11 @@
 				0B5F29642F452BD100682874 /* Exceptions for "Rilmazafone" folder in "Rilmazafone" target */,
 				0BA5F00100000000000000AA /* Exceptions for "Rilmazafone" folder in "Rilmazafone AS" target */,
 			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+				Resources/Templates,
+			);
 			path = Rilmazafone;
 			sourceTree = "<group>";
 		};

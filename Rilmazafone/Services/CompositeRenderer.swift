@@ -178,6 +178,45 @@ nonisolated enum CompositeRenderer {
         return context.makeImage()
     }
 
+    // MARK: - Analysis Composite
+
+    /// Renders the complete composite — everything `renderBeneathPanels` draws plus
+    /// the baked item panels — from in-memory layer images at `scale`× pixel density.
+    ///
+    /// This is the exact content the built DMG's background shows behind Finder's
+    /// labels, which is what the label legibility analyzer samples: enabled item
+    /// panels are the primary remediation for an unreadable label, so they must
+    /// count toward the label's backdrop.
+    static func renderAnalysisComposite(
+        configuration: DMGConfiguration,
+        layerImages: [UUID: NSImage],
+        scale: CGFloat
+    ) -> CGImage? {
+        let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
+        guard pointSize.width > 0, pointSize.height > 0 else { return nil }
+
+        let pixelsWide = Int((pointSize.width * scale).rounded())
+        let pixelsHigh = Int((pointSize.height * scale).rounded())
+        guard let context = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh) else { return nil }
+        context.scaleBy(x: scale, y: scale)
+
+        let nsContext = NSGraphicsContext(cgContext: context, flipped: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = nsContext
+        defer { NSGraphicsContext.restoreGraphicsState() }
+
+        renderBeneathPanels(into: context, configuration: configuration) { layerImages[$0.id] }
+        renderItemBackgrounds(
+            items: configuration.items,
+            iconSize: configuration.iconSize,
+            in: context,
+            canvasHeight: configuration.window.height,
+            scale: scale
+        )
+
+        return context.makeImage()
+    }
+
     // MARK: - Base Background
 
     private static func renderBaseBackground(

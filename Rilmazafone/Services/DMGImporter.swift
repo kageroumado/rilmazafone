@@ -10,8 +10,10 @@ import Foundation
 /// volume before detaching — the volume is always detached, on success,
 /// failure, and cancellation.
 ///
-/// The result is layout only: items whose payload lived inside the DMG import
-/// with `sourcePath: nil` and surface the missing-source badge until relinked.
+/// The result is layout only: payloads live inside the DMG and are unreachable
+/// after detach. App bundles import as unfilled placeholder slots (filled by
+/// dropping the app back in); other copy items import with `sourcePath: nil` and
+/// surface the missing-source badge until relinked.
 ///
 /// Coordinate mapping inverts ``DSStoreWriter`` exactly: `Iloc` y-values gain
 /// ``DSStoreWriter/finderContentInset`` back, and the `bwsp` window frame
@@ -298,7 +300,11 @@ nonisolated enum DMGImporter {
             if values?.isSymbolicLink == true {
                 items.append(symlinkItem(at: entry, name: name))
             } else if values?.isDirectory == true, entry.pathExtension.lowercased() == "app" {
-                items.append(CanvasItem(kind: .app, label: name, position: .zero))
+                // The bundle lives inside the DMG and is unreachable after detach,
+                // so it imports as an unfilled placeholder (name preserved). Its real
+                // icon is still harvested (see `harvestAppIcons`) and shown on the
+                // placeholder tile; dropping the app back in fills the slot.
+                items.append(CanvasItem.appPlaceholder(label: name, position: .zero))
             } else {
                 items.append(CanvasItem(
                     kind: values?.isDirectory == true ? .folder : .file,

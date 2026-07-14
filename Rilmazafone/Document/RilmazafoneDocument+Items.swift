@@ -376,14 +376,93 @@ extension RilmazafoneDocument {
         addItem(item, undoManager: undoManager)
     }
 
+    /// The first unfilled app placeholder, if any — the slot a dropped app fills.
+    var firstPlaceholderID: UUID? {
+        configuration.items.first { $0.isPlaceholder }?.id
+    }
+
+    /// Fills an app placeholder in place from a dropped app: swaps in the app's
+    /// name, source path, security bookmark, and detected signing identity, and
+    /// clears the placeholder flag — preserving the slot's position and identity.
+    /// The whole substitution is a single undoable action, so one undo restores
+    /// the placeholder (and the prior signing configuration).
+    func fillPlaceholder(_ id: UUID, from url: URL, undoManager: UndoManager?) async {
+        guard let index = configuration.items.firstIndex(where: { $0.id == id }),
+              configuration.items[index].isPlaceholder else { return }
+
+        let oldItem = configuration.items[index]
+        let oldCodeSign = configuration.codeSign
+
+        var filledItem = oldItem
+        filledItem.label = url.lastPathComponent
+        filledItem.sourcePath = url.path
+        filledItem.sourceBookmark = SourceAccess.makeBookmark(for: url, documentURL: fileURL)
+        filledItem.isPlaceholder = false
+
+        var newCodeSign = oldCodeSign
+        if let identity = await detectedSigningIdentity(for: filledItem) {
+            newCodeSign.enabled = true
+            newCodeSign.identity = identity
+        }
+
+        swapPlaceholderState(
+            id,
+            toItem: filledItem, toCodeSign: newCodeSign,
+            fromItem: oldItem, fromCodeSign: oldCodeSign,
+            undoManager: undoManager
+        )
+    }
+
+    /// Atomically swaps an item and the document's signing configuration to a
+    /// target state, registering the inverse swap for undo. Both the fill and
+    /// its undo/redo run through here so the placeholder round-trips exactly.
+    private func swapPlaceholderState(
+        _ id: UUID,
+        toItem: CanvasItem,
+        toCodeSign: CodeSignConfiguration,
+        fromItem: CanvasItem,
+        fromCodeSign: CodeSignConfiguration,
+        undoManager: UndoManager?
+    ) {
+        guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
+        configuration.items[index] = toItem
+        configuration.codeSign = toCodeSign
+        refreshSourceStates()
+        objectWillChange.send()
+        withUndo(undoManager, "Fill App Placeholder") { doc, um in
+            doc.swapPlaceholderState(
+                id,
+                toItem: fromItem, toCodeSign: fromCodeSign,
+                fromItem: toItem, fromCodeSign: toCodeSign,
+                undoManager: um
+            )
+        }
+    }
+
+    /// Detects the keychain signing identity matching an app source's signature,
+    /// reading under security scope so it works for bookmark-backed sources in
+    /// the sandboxed build. Returns `nil` when the app is unsigned or no matching
+    /// identity is installed.
+    private func detectedSigningIdentity(for item: CanvasItem) async -> String? {
+        let authority = SourceAccess.withScope(item: item, documentURL: fileURL) { url in
+            url.flatMap { DMGBuilder.signingAuthority(of: $0) }
+        }
+        guard let authority else { return nil }
+        return DMGBuilder.findMatchingKeychainIdentity(authority: authority)
+    }
+
     func handleDrop(urls: [URL], defaultPosition: CGPoint, undoManager: UndoManager?) async {
         for url in urls {
             let ext = url.pathExtension.lowercased()
             if ext == "app" {
-                let width = configuration.window.width
-                let appX = round((2 * width - configuration.iconSize) / 6)
-                let centerY = round(configuration.window.height / 2)
-                await addApp(from: url, at: CGPoint(x: appX, y: centerY), undoManager: undoManager)
+                if let placeholderID = firstPlaceholderID {
+                    await fillPlaceholder(placeholderID, from: url, undoManager: undoManager)
+                } else {
+                    let width = configuration.window.width
+                    let appX = round((2 * width - configuration.iconSize) / 6)
+                    let centerY = round(configuration.window.height / 2)
+                    await addApp(from: url, at: CGPoint(x: appX, y: centerY), undoManager: undoManager)
+                }
             } else if ["png", "jpg", "jpeg", "tiff"].contains(ext) {
                 try? importBackgroundImage(from: url, undoManager: undoManager)
             } else if ext == "dmg" {

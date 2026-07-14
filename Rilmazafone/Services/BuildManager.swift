@@ -7,6 +7,7 @@ import Observation
 nonisolated enum ValidationError: Error, LocalizedError {
     case missingSourceFile(String)
     case missingSources([String])
+    case unfilledPlaceholder
     case volumeNameEmpty
     case volumeNameTooLong(Int)
     case duplicateLabels([String])
@@ -18,6 +19,9 @@ nonisolated enum ValidationError: Error, LocalizedError {
         case let .missingSources(labels):
             "Missing source files for: \(labels.joined(separator: ", ")). "
                 + "Use Locate\u{2026} in an item's context menu to relink."
+        case .unfilledPlaceholder:
+            "Fill the app placeholder before building. "
+                + "Drop your app onto the dashed \u{201C}Your App\u{201D} slot."
         case .volumeNameEmpty:
             "Volume name cannot be empty."
         case let .volumeNameTooLong(count):

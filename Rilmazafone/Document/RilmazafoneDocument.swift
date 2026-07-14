@@ -31,6 +31,12 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     /// relinking.
     var importedItemIcons: [UUID: NSImage] = [:]
 
+    /// Label legibility warnings from the debounced background contrast analysis.
+    /// Runtime state, never persisted; written by `DocumentContentView`'s analysis
+    /// task and read by the canvas badges, sidebar rows, toolbar chip, and build
+    /// sheet notice.
+    var legibilityWarnings: Set<LegibilityWarning> = []
+
     /// The document's on-disk URL, fed in by the hosting view.
     ///
     /// `ReferenceFileDocument` exposes no URL in its read or write configurations,
@@ -439,6 +445,34 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     /// Check if a UUID belongs to an SF symbol layer
     func sfSymbolLayer(for id: UUID) -> SFSymbolLayerConfiguration? {
         configuration.sfSymbolLayers.first { $0.id == id }
+    }
+
+    // MARK: - Legibility
+
+    /// The appearance modes an item's label is flagged for, in display order.
+    func legibilityModes(for id: UUID) -> [LabelAppearanceMode] {
+        LabelAppearanceMode.allCases.filter { mode in
+            legibilityWarnings.contains(LegibilityWarning(itemID: id, mode: mode))
+        }
+    }
+
+    /// One-line aggregate of the current legibility warnings with correct
+    /// pluralization, or `nil` when there are none. Shared by the toolbar chip
+    /// and the build sheet notice.
+    var legibilitySummary: String? {
+        let flaggedCount = Set(legibilityWarnings.map(\.itemID)).count
+        guard flaggedCount > 0 else { return nil }
+
+        let noun = flaggedCount == 1 ? "label" : "labels"
+        let modes = Set(legibilityWarnings.map(\.mode))
+        let suffix: String = if modes == [.dark] {
+            "in Dark Mode"
+        } else if modes == [.light] {
+            "in Light Mode"
+        } else {
+            "in Light and Dark Mode"
+        }
+        return "\(flaggedCount) \(noun) may be unreadable \(suffix)"
     }
 
     // MARK: - Private

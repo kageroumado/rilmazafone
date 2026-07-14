@@ -25,6 +25,7 @@ struct CanvasItemView: View, Equatable {
 
     @Environment(RilmazafoneDocument.self) private var document
     @Environment(\.undoManager) private var undoManager
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging = false
@@ -39,6 +40,17 @@ struct CanvasItemView: View, Equatable {
     private var isSourceMissing: Bool {
         document.missingSourceIDs.contains(item.id)
     }
+    private var legibilityModes: [LabelAppearanceMode] {
+        document.legibilityModes(for: item.id)
+    }
+
+    /// Finder's label color for the previewed appearance: black in the light
+    /// preview, white in the dark preview. Driven by the canvas appearance toggle
+    /// (which injects `\.colorScheme` into the window preview), not the system,
+    /// so toggling shows exactly what a legibility warning describes.
+    private var labelColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
 
     /// Finder draws icon in a cell with 10px padding, then text 4px below.
     /// The iloc position is the center of the combined icon cell + text area.
@@ -52,14 +64,20 @@ struct CanvasItemView: View, Equatable {
             iconImage
                 .frame(width: displayIconSize, height: displayIconSize)
                 .overlay(alignment: .bottomTrailing) {
+                    // Missing source wins the badge slot: it blocks the build, while
+                    // a legibility warning is advisory — and relinking may change the
+                    // label anyway, so legibility is re-judged after the fix.
                     if isSourceMissing {
                         missingSourceBadge
+                    } else if !legibilityModes.isEmpty {
+                        legibilityBadge
                     }
                 }
                 .padding(Self.iconCellPadding * zoom)
 
             Text(displayLabel)
                 .font(.system(size: textSize * zoom))
+                .foregroundStyle(labelColor)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: maxLabelWidth)
@@ -114,6 +132,34 @@ struct CanvasItemView: View, Equatable {
             .accessibilityLabel("Source file missing")
     }
 
+    // MARK: - Label Legibility
+
+    private static let legibilityBadgeTextSize: CGFloat = 11
+    private static let legibilityBadgeMinimumTextSize: CGFloat = 8
+    private static let legibilityBadgePadding: CGFloat = 4
+
+    /// Advisory badge for a label the contrast analysis flagged, visually distinct
+    /// from the missing-source triangle (orange capsule, text glyph).
+    private var legibilityBadge: some View {
+        Image(systemName: "textformat.abc")
+            .font(.system(
+                size: max(Self.legibilityBadgeTextSize * zoom, Self.legibilityBadgeMinimumTextSize),
+                weight: .bold
+            ))
+            .foregroundStyle(.white)
+            .padding(max(Self.legibilityBadgePadding * zoom, 2))
+            .background(Capsule().fill(.orange))
+            .shadow(color: .black.opacity(0.35), radius: 1, y: 1)
+            .help(legibilityHelpText)
+            .accessibilityLabel(legibilityHelpText)
+    }
+
+    private var legibilityHelpText: String {
+        let modes = legibilityModes.map(\.displayName).joined(separator: " and ")
+        return "Label may be hard to read in \(modes). "
+            + "Add a panel behind it, move it, or adjust the background."
+    }
+
     private func relinkSource() {
         guard let url = SourceLocatePanel.present(for: item) else { return }
         Task {
@@ -139,9 +185,32 @@ struct CanvasItemView: View, Equatable {
             Image(nsImage: nsImage)
                 .resizable()
                 .scaledToFit()
+        } else if item.isPlaceholder {
+            placeholderTile
         } else {
             genericIcon
         }
+    }
+
+    /// Dashed-outline tile shown for an unfilled placeholder slot that has no
+    /// harvested icon: signals "drop your app here" without a warning badge.
+    private var placeholderTile: some View {
+        RoundedRectangle(cornerRadius: displayIconSize * 0.2, style: .continuous)
+            .strokeBorder(
+                Color.secondary.opacity(0.6),
+                style: StrokeStyle(
+                    lineWidth: max(2 * zoom, 1),
+                    dash: [6 * zoom, 4 * zoom]
+                )
+            )
+            .overlay {
+                Image(systemName: "app.dashed")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(displayIconSize * 0.26)
+                    .foregroundStyle(.tertiary)
+            }
+            .accessibilityLabel("App placeholder, drop an app to fill")
     }
 
     @ViewBuilder

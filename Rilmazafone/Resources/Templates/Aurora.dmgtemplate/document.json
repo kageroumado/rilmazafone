@@ -1,0 +1,137 @@
+{
+  "background" : {
+    "color" : {
+      "blue" : 0.92,
+      "green" : 0.92,
+      "red" : 0.92
+    },
+    "gradient" : {
+      "angle" : 270,
+      "centerX" : 0.5,
+      "centerY" : 0.5,
+      "endRadius" : 0.5,
+      "startRadius" : 0,
+      "stops" : [
+        {
+          "color" : {
+            "blue" : 0.157,
+            "green" : 0.106,
+            "red" : 0.043
+          },
+          "id" : "E5CD857D-D371-48BB-A8F8-1C3DC251D86C",
+          "location" : 0
+        },
+        {
+          "color" : {
+            "blue" : 0.302,
+            "green" : 0.239,
+            "red" : 0.055
+          },
+          "id" : "E45A7772-6BF2-42C2-96D3-B5DD45A44E17",
+          "location" : 0.3
+        },
+        {
+          "color" : {
+            "blue" : 0.541,
+            "green" : 0.235,
+            "red" : 0.29
+          },
+          "id" : "BE8D0DC9-ED8A-4CB8-89D5-C937D94D0AC7",
+          "location" : 0.62
+        },
+        {
+          "color" : {
+            "blue" : 0.663,
+            "green" : 0.353,
+            "red" : 0.641
+          },
+          "id" : "3FABBB69-EF1A-411C-A4E0-9E1447742169",
+          "location" : 0.84
+        },
+        {
+          "color" : {
+            "blue" : 0.702,
+            "green" : 0.612,
+            "red" : 0.949
+          },
+          "id" : "CB26F191-D81C-4706-8B3E-249494E42809",
+          "location" : 1
+        }
+      ],
+      "type" : "linear"
+    },
+    "layers" : [
+
+    ],
+    "type" : "gradient"
+  },
+  "codeSign" : {
+    "enabled" : false
+  },
+  "dmgFormat" : "ULFO",
+  "filesystem" : "APFS",
+  "gridSpacing" : 100,
+  "hideExtensions" : true,
+  "iconSize" : 128,
+  "isGridSpacingAuto" : true,
+  "items" : [
+    {
+      "id" : "3E283770-5060-4D3C-9B21-6FF5603CB828",
+      "isPlaceholder" : true,
+      "kind" : "app",
+      "label" : "Your App",
+      "linkType" : "copy",
+      "position" : [
+        200,
+        250
+      ]
+    },
+    {
+      "id" : "31CCE24A-C612-4E95-8548-236A8259FE30",
+      "isPlaceholder" : false,
+      "kind" : "applicationsSymlink",
+      "label" : "Applications",
+      "linkType" : "copy",
+      "position" : [
+        460,
+        250
+      ]
+    }
+  ],
+  "sfSymbolLayers" : [
+
+  ],
+  "textLayers" : [
+    {
+      "color" : {
+        "blue" : 0.204,
+        "green" : 0.063,
+        "red" : 0.102
+      },
+      "fontFamily" : "Helvetica Neue",
+      "fontSize" : 24,
+      "id" : "C3556788-EE95-46AC-82B2-BCE6E8624EBB",
+      "isBold" : true,
+      "isItalic" : false,
+      "position" : [
+        330,
+        56
+      ],
+      "text" : "Drag to Install"
+    }
+  ],
+  "textSize" : 13,
+  "version" : 1,
+  "volumeIcon" : {
+    "type" : "composed"
+  },
+  "volumeName" : "Install",
+  "window" : {
+    "height" : 400,
+    "width" : 660
+  },
+  "windowPosition" : {
+    "x" : 200,
+    "y" : 120
+  }
+}

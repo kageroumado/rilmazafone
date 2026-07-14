@@ -206,11 +206,22 @@ struct CanvasView: View {
         .environment(\.colorScheme, previewColorScheme)
     }
 
+    /// Window-chrome preview colors per appearance, so the mock Finder window's
+    /// title bar follows the canvas appearance toggle rather than the system.
+    private enum ChromeColors {
+        static let lightTitleBar = Color(white: 0.96)
+        static let darkTitleBar = Color(white: 0.17)
+        static let lightTitleText = Color.black.opacity(0.85)
+        static let darkTitleText = Color.white.opacity(0.9)
+        /// Finder's default (background-less) window content fill.
+        static let lightWindowContent = Color.white
+        static let darkWindowContent = Color(white: 0.12)
+    }
+
     private var titleBar: some View {
         ZStack {
-            // Title bar follows the system appearance, not the preview toggle.
             Rectangle()
-                .fill(Color(nsColor: .windowBackgroundColor))
+                .fill(prefersDarkAppearance ? ChromeColors.darkTitleBar : ChromeColors.lightTitleBar)
 
             HStack(spacing: 0) {
                 // Traffic lights
@@ -232,7 +243,9 @@ struct CanvasView: View {
 
                 Text(document.configuration.volumeName)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Color(nsColor: .windowFrameTextColor))
+                    .foregroundStyle(
+                        prefersDarkAppearance ? ChromeColors.darkTitleText : ChromeColors.lightTitleText
+                    )
                     .lineLimit(1)
 
                 Spacer()
@@ -557,7 +570,13 @@ struct CanvasView: View {
 
     private var windowBackgroundFill: Color {
         switch document.configuration.background.type {
-        case .none, .image, .gradient:
+        case .none:
+            // No baked background: Finder shows its default window fill, which
+            // does follow the system appearance — preview it per the toggle.
+            return prefersDarkAppearance
+                ? ChromeColors.darkWindowContent
+                : ChromeColors.lightWindowContent
+        case .image, .gradient:
             return Color.white
         case .color:
             let c = document.configuration.background.color

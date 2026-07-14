@@ -39,6 +39,7 @@ struct BuildSheet: View {
 private struct BuildingContent: View {
     let progress: BuildManager.BuildProgress
     @Environment(BuildManager.self) private var buildManager
+    @Environment(RilmazafoneDocument.self) private var document
 
     var body: some View {
         VStack(spacing: 20) {
@@ -78,6 +79,15 @@ private struct BuildingContent: View {
                 buildManager.reset()
             }
             .controlSize(.small)
+
+            // Passive, non-blocking legibility notice — the build proceeds either
+            // way; this just repeats the toolbar chip's warning at commit time.
+            if let summary = document.legibilitySummary {
+                Label(summary, systemImage: "textformat.abc")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel(summary)
+            }
         }
         .frame(maxWidth: .infinity)
     }
