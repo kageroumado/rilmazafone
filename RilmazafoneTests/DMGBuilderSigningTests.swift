@@ -35,4 +35,28 @@ struct DMGBuilderSigningTests {
     func matchUnknownAuthority() {
         #expect(DMGBuilder.findMatchingKeychainIdentity(authority: "No Such Authority \(UUID())") == nil)
     }
+
+    @Test("listSigningIdentities matches security find-identity -v")
+    func parityWithFindIdentity() async throws {
+        // The Security.framework port must reproduce the reference tool's
+        // *valid* identity set — same EKU filter, same validity evaluation.
+        // In particular an expired or untrusted certificate in the keychain
+        // must be absent from both lists.
+        let result = try await ProcessRunner.run(
+            "/usr/bin/security",
+            arguments: ["find-identity", "-v", "-p", "codesigning"]
+        )
+        let output = String(decoding: result.stdout, as: UTF8.self)
+        // Lines look like: `  1) <40-hex-SHA1> "Common Name"`.
+        let referenceNames = output
+            .split(separator: "\n")
+            .compactMap { line -> String? in
+                guard let start = line.firstIndex(of: "\""),
+                      let end = line.lastIndex(of: "\""),
+                      start < end
+                else { return nil }
+                return String(line[line.index(after: start) ..< end])
+            }
+        #expect(DMGBuilder.listSigningIdentities().sorted() == referenceNames.sorted())
+    }
 }

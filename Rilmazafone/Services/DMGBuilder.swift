@@ -317,6 +317,12 @@ nonisolated enum DMGBuilder {
 
     /// Searches the keychain for a suitable signing identity, preferring
     /// distribution certificates over development ones.
+    ///
+    /// Fail-closed: when no identity matches a known Apple prefix this throws
+    /// rather than falling back to an arbitrary code-signing certificate —
+    /// silently signing with a random (e.g. self-signed) identity would produce
+    /// a "successful" build that Gatekeeper rejects on other Macs. A non-Apple
+    /// identity can still be used by selecting it explicitly.
     static func resolveSigningIdentity() throws -> String {
         let names = listSigningIdentities()
         let preferredPrefixes = [
@@ -332,7 +338,6 @@ nonisolated enum DMGBuilder {
             }
         }
 
-        if let first = names.first { return first }
         throw DMGError.noSigningIdentity
     }
 
@@ -345,12 +350,16 @@ nonisolated enum DMGBuilder {
     }
 
     /// Queries the keychain for identities whose leaf certificate is valid for code
-    /// signing (carries the id-kp-codeSigning EKU), reproducing the filter applied by
-    /// `security find-identity -v -p codesigning`.
+    /// signing, reproducing the filter applied by
+    /// `security find-identity -v -p codesigning`: the id-kp-codeSigning EKU
+    /// plus the `-v` validity evaluation, so expired, revoked, and untrusted
+    /// identities are never listed, matched, or auto-selected.
     private static func signingIdentities() -> [SigningIdentity] {
         let query: [String: Any] = [
             kSecClass as String: kSecClassIdentity,
             kSecMatchLimit as String: kSecMatchLimitAll,
+            // kCFNull means "valid now" — drops expired certificates at the query.
+            kSecMatchValidOnDate as String: kCFNull as Any,
             kSecReturnRef as String: true,
         ]
 
@@ -364,10 +373,26 @@ nonisolated enum DMGBuilder {
             guard SecIdentityCopyCertificate(identity, &certificate) == errSecSuccess,
                   let certificate,
                   canSignCode(certificate),
+                  isTrustedForCodeSigning(certificate),
                   let name = commonName(of: certificate)
             else { return nil }
             return SigningIdentity(name: name, identity: identity)
         }
+    }
+
+    /// Whether the certificate evaluates as trusted under the Apple code-signing
+    /// policy right now — the chain/revocation/trust half of `find-identity -v`
+    /// that date matching alone does not cover. Honors user trust settings, so a
+    /// deliberately trusted self-signed signing certificate still qualifies.
+    private static func isTrustedForCodeSigning(_ certificate: SecCertificate) -> Bool {
+        guard let policy = SecPolicyCreateWithProperties(kSecPolicyAppleCodeSigning, nil) else {
+            return false
+        }
+        var trust: SecTrust?
+        guard SecTrustCreateWithCertificates(certificate, policy, &trust) == errSecSuccess,
+              let trust
+        else { return false }
+        return SecTrustEvaluateWithError(trust, nil)
     }
 
     /// Whether a certificate's extended key usage includes id-kp-codeSigning.
