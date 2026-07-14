@@ -19,3 +19,9 @@ DerivedData/
 
 # macOS
 .DS_Store
+
+# Local design notes / backlog
+Specs/
+
+# App Store metadata and screenshots (kept local; repo is public)
+Store/

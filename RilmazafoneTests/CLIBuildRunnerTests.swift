@@ -404,7 +404,19 @@ struct CLIBuildRunnerTests {
             backgroundBookmark: nil
         )
 
-        #expect(dsStoreData == dsStoreData2)
+        if dsStoreData != dsStoreData2 {
+            let firstDiff = zip(dsStoreData, dsStoreData2).enumerated()
+                .first { $1.0 != $1.1 }?.offset
+            Issue.record(
+                """
+                DSStoreWriter output differed between two same-process writes \
+                (counts \(dsStoreData.count) vs \(dsStoreData2.count), first \
+                differing offset \(firstDiff.map(String.init) ?? "n/a — length only")). \
+                This flake has only ever appeared under parallel suite load; \
+                capture these numbers when it recurs.
+                """
+            )
+        }
         #expect(dsStoreData.count > 0)
     }
 

@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Rilmazafone
 
-@Suite("DMGImporter")
+@Suite("DMGImporter", .serialized)
 struct DMGImporterTests {
     // MARK: - Round Trip
 
@@ -90,7 +90,7 @@ struct DMGImporterTests {
         let bakedImage = try Data(contentsOf: assetsDir.appending(path: "background.tiff"))
         #expect(importedImage == bakedImage)
 
-        try assertNoImportMounts()
+        try assertNotMounted(image: outputDMG)
     }
 
     // MARK: - Third-Party DMG
@@ -140,7 +140,7 @@ struct DMGImporterTests {
             #expect(result.assets[layer.imageName]?.isEmpty == false)
         }
 
-        try assertNoImportMounts()
+        try assertNotMounted(image: dmg)
     }
 
     // MARK: - Defaults Without .DS_Store
@@ -167,7 +167,7 @@ struct DMGImporterTests {
         #expect(item.sourcePath == nil)
         #expect(item.position == CGPoint(x: 330, y: 200))
 
-        try assertNoImportMounts()
+        try assertNotMounted(image: dmg)
     }
 
     // MARK: - Error Paths
@@ -182,7 +182,7 @@ struct DMGImporterTests {
             _ = try await DMGImporter.importLayout(of: bogus)
         }
 
-        try assertNoImportMounts()
+        try assertNotMounted(image: bogus)
     }
 
     // MARK: - Fixtures
@@ -232,8 +232,12 @@ struct DMGImporterTests {
 
     // MARK: - Helpers
 
-    /// Asserts no import mount points are left attached.
-    private func assertNoImportMounts() throws {
+    /// Asserts the given disk image is no longer attached.
+    ///
+    /// Deliberately scoped to this test's own image rather than to every
+    /// `rilmazafone-import` mount: other suites legitimately run imports in
+    /// parallel, so a global assertion races against their transient mounts.
+    private func assertNotMounted(image: URL) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
         process.arguments = ["info"]
@@ -244,7 +248,7 @@ struct DMGImporterTests {
         process.waitUntilExit()
 
         let info = String(data: data, encoding: .utf8) ?? ""
-        #expect(!info.contains("rilmazafone-import"))
+        #expect(!info.contains(image.path))
     }
 
     private func tempDir(_ name: String) -> URL {
