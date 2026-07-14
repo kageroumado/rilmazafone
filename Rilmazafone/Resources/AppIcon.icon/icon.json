@@ -1,24 +1,148 @@
 {
+  "color-space-for-untagged-svg-colors" : "display-p3",
   "fill" : {
     "automatic-gradient" : "display-p3:0.97400,0.11300,0.47200,1.00000"
   },
   "groups" : [
     {
-      "blur-material" : null,
+      "blur-material" : 0.5,
       "layers" : [
         {
           "blend-mode" : "normal",
-          "fill" : "none",
+          "fill-specializations" : [
+            {
+              "value" : "none"
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "automatic-gradient" : "display-p3:0.97656,0.11530,0.47363,1.00000"
+              }
+            }
+          ],
           "glass" : true,
-          "image-name" : "tropicalstorm.circle.fill.svg",
-          "name" : "tropicalstorm.circle.fill"
+          "hidden" : false,
+          "image-name" : "arrow.svg",
+          "name" : "arrow",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              51.94921875
+            ]
+          }
         }
       ],
+      "lighting" : "individual",
+      "name" : "Arrow",
       "shadow" : {
         "kind" : "layer-color",
         "opacity" : 0.77
       },
       "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.63
+      }
+    },
+    {
+      "blur-material" : 0.44,
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "display-p3:1.00000,0.29878,0.66340,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "display-p3:0.43628,0.44092,0.44116,1.00000"
+              }
+            }
+          ],
+          "glass" : true,
+          "image-name" : "dot.svg",
+          "name" : "dot",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -43,
+              -34.05078125
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "name" : "Light",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.77
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.6
+      }
+    },
+    {
+      "blur-material" : 0.5,
+      "hidden" : false,
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "fill" : "none",
+          "glass" : true,
+          "image-name" : "band.svg",
+          "name" : "band",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              -24.94921875
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "name" : "Band",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.77
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.6
+      }
+    },
+    {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "fill" : "none",
+          "glass" : true,
+          "image-name" : "disk.svg",
+          "name" : "disk",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              -24.94921875
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "name" : "Disk",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.77
+      },
+      "specular" : false,
       "translucency" : {
         "enabled" : true,
         "value" : 0.6
