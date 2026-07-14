@@ -206,6 +206,43 @@ struct UserTemplateSavingTests {
         #expect(packageContents == ["Assets", "document.json"])
     }
 
+    @Test("Embedded item payloads round-trip through save and instantiate")
+    func embeddedPayloadRoundTrip() throws {
+        let userDir = try makeUserDirectory()
+        defer { try? FileManager.default.removeItem(at: userDir) }
+        let registry = makeRegistry(userDirectory: userDir)
+
+        // A template whose readme is embedded — no path, no bookmark.
+        var configuration = DMGConfiguration()
+        configuration.volumeName = "Portable"
+        var readme = CanvasItem(
+            kind: .file, label: "Read Me.txt", position: CGPoint(x: 80, y: 120)
+        )
+        let assetName = EmbeddedAssets.assetName(
+            itemID: readme.id, label: readme.label, kind: .file
+        )
+        readme.assetName = assetName
+        configuration.items = [readme]
+        let payload = Data("portable readme".utf8)
+
+        let entry = try registry.saveUserTemplate(
+            named: "Portable",
+            configuration: configuration,
+            assets: [assetName: payload]
+        )
+
+        // Instantiation carries the embedded item and its payload; the item
+        // resolves with no bookmark and no missing-source state.
+        let instantiated = try TemplateInstantiator.instantiate(templateAt: entry.url)
+        let item = try #require(instantiated.configuration.items.first)
+        #expect(item.assetName == assetName)
+        #expect(item.sourcePath == nil)
+        #expect(item.sourceBookmark == nil)
+        #expect(!item.isPlaceholder)
+        #expect(!item.requiresSource)
+        #expect(instantiated.assets[assetName] == payload)
+    }
+
     @Test("Save round-trip: a new document from the saved template reproduces the design")
     func saveRoundTripReproducesDesign() throws {
         let userDir = try makeUserDirectory()

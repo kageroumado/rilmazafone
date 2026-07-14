@@ -192,6 +192,49 @@ struct DMGImporterTests {
         let app: URL
     }
 
+    @Test("Embedded payloads survive a build → import round-trip")
+    func embeddedPayloadRoundTrip() async throws {
+        let assetsDir = tempDir("embed-roundtrip-assets")
+        try FileManager.default.createDirectory(at: assetsDir, withIntermediateDirectories: true)
+        let outputDMG = tempPath("embed-roundtrip", extension: "dmg")
+        defer {
+            cleanup(assetsDir)
+            cleanup(outputDMG)
+        }
+
+        // A document whose readme rides as an embedded payload, no external source.
+        var config = DMGConfiguration()
+        config.volumeName = "EmbedTrip"
+        config.filesystem = .hfsPlus
+        config.volumeIcon = VolumeIconConfiguration(type: .none)
+        var readme = CanvasItem(
+            kind: .file, label: "Read Me.txt", position: CGPoint(x: 120, y: 200)
+        )
+        let assetName = EmbeddedAssets.assetName(
+            itemID: readme.id, label: readme.label, kind: .file
+        )
+        readme.assetName = assetName
+        config.items = [readme]
+        try Data("embedded payload".utf8).write(to: assetsDir.appending(path: assetName))
+
+        try await DMGBuildPipeline.build(
+            configuration: config,
+            assetsDirectory: assetsDir,
+            outputURL: outputDMG,
+            progress: { _ in }
+        )
+
+        // The built volume contains the real file; import embeds it again.
+        let result = try await DMGImporter.importLayout(of: outputDMG)
+        let imported = try #require(
+            result.configuration.items.first { $0.label == "Read Me.txt" }
+        )
+        #expect(imported.kind == .file)
+        #expect(!imported.isPlaceholder)
+        let importedAsset = try #require(imported.assetName)
+        #expect(result.assets[importedAsset] == Data("embedded payload".utf8))
+    }
+
     /// Builds a minimal but valid `.app` bundle for copy-into-DMG tests.
     private func makeTinyApp() throws -> TinyAppFixture {
         let root = tempDir("tiny-app")

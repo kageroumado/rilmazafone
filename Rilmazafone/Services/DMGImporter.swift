@@ -10,10 +10,12 @@ import Foundation
 /// volume before detaching — the volume is always detached, on success,
 /// failure, and cancellation.
 ///
-/// The result is layout only: payloads live inside the DMG and are unreachable
-/// after detach. App bundles import as unfilled placeholder slots (filled by
-/// dropping the app back in); other copy items import with `sourcePath: nil` and
-/// surface the missing-source badge until relinked.
+/// App bundles import as unfilled placeholder slots (filled by dropping the
+/// app back in). Content files and folders at or under the
+/// ``EmbeddedAssets/sizeCap`` are copied out of the volume as embedded
+/// payloads while it is mounted, so they import fully working; over-cap
+/// content imports as typed placeholder slots — its bytes are unreachable
+/// after detach.
 ///
 /// Coordinate mapping inverts ``DSStoreWriter`` exactly: `Iloc` y-values gain
 /// ``DSStoreWriter/finderContentInset`` back, and the `bwsp` window frame
@@ -83,9 +85,12 @@ nonisolated enum DMGImporter {
     ///   mountable disk image; `CancellationError` when the surrounding task
     ///   is cancelled. The volume is detached on every exit path.
     static func importLayout(of dmgURL: URL) async throws -> Result {
+        let stagedDMG = try stage(dmgURL)
+        defer { try? FileManager.default.removeItem(at: stagedDMG) }
+
         let mountPoint: URL
         do {
-            mountPoint = try await DMGBuilder.attachReadOnly(dmgURL)
+            mountPoint = try await DMGBuilder.attachReadOnly(stagedDMG)
         } catch let error as ProcessRunner.ProcessError {
             throw ImportError.attachFailed(
                 error.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -101,6 +106,24 @@ nonisolated enum DMGImporter {
             try? await DMGBuilder.detach(mountPoint)
             throw error
         }
+    }
+
+    /// Copies the image into the app container's temporary directory before
+    /// any subprocess touches it.
+    ///
+    /// `hdiutil` runs as a child process and cannot inherit the in-process
+    /// Powerbox/drag grant on a user-selected URL, so attaching the original
+    /// path is denied under the sandbox. A container-temp copy is readable by
+    /// the child unconditionally; the security scope only needs to be held
+    /// in-process for the duration of the copy. On APFS a same-volume copy is
+    /// a clone, so staging is effectively free in the common case.
+    private static func stage(_ dmgURL: URL) throws -> URL {
+        let staged = FileManager.default.temporaryDirectory
+            .appending(path: "rilmazafone-import-src-\(UUID().uuidString).dmg")
+        let started = dmgURL.startAccessingSecurityScopedResource()
+        defer { if started { dmgURL.stopAccessingSecurityScopedResource() } }
+        try FileManager.default.copyItem(at: dmgURL, to: staged)
+        return staged
     }
 
     // MARK: - Harvest
@@ -122,7 +145,8 @@ nonisolated enum DMGImporter {
 
         var items = try classifyRootItems(
             at: mountPoint,
-            excludingDirectory: background?.rootDirectoryName
+            excludingDirectory: background?.rootDirectoryName,
+            assets: &assets
         )
         assignPositions(to: &items, dsStore: dsStore, window: configuration.window)
         configuration.items = items
@@ -279,9 +303,17 @@ nonisolated enum DMGImporter {
     /// Classifies the volume's root entries into canvas items, skipping
     /// housekeeping entries and the background image's directory. Items are
     /// returned in name order with placeholder positions.
+    ///
+    /// Files and folders at or under ``EmbeddedAssets/sizeCap`` are copied out
+    /// of the volume as embedded payloads while it is still mounted, so a
+    /// readme or license in the imported DMG carries its actual content and
+    /// never needs relinking. Over-cap content imports as a typed placeholder
+    /// slot — its bytes only ever existed inside the volume, which is gone
+    /// after detach.
     private static func classifyRootItems(
         at mountPoint: URL,
-        excludingDirectory backgroundDirectory: String?
+        excludingDirectory backgroundDirectory: String?,
+        assets: inout [String: Data]
     ) throws -> [CanvasItem] {
         let entries = try FileManager.default.contentsOfDirectory(
             at: mountPoint,
@@ -306,14 +338,35 @@ nonisolated enum DMGImporter {
                 // placeholder tile; dropping the app back in fills the slot.
                 items.append(CanvasItem.appPlaceholder(label: name, position: .zero))
             } else {
-                items.append(CanvasItem(
-                    kind: values?.isDirectory == true ? .folder : .file,
-                    label: name,
-                    position: .zero
+                let kind: CanvasItemKind = values?.isDirectory == true ? .folder : .file
+                items.append(contentItem(
+                    at: entry, kind: kind, name: name, assets: &assets
                 ))
             }
         }
         return items
+    }
+
+    /// A canvas item for a content file or folder on the mounted volume:
+    /// embedded when the payload fits the cap, a placeholder slot otherwise.
+    private static func contentItem(
+        at entry: URL,
+        kind: CanvasItemKind,
+        name: String,
+        assets: inout [String: Data]
+    ) -> CanvasItem {
+        var item = CanvasItem(kind: kind, label: name, position: .zero)
+        if let payload = try? EmbeddedAssets.payload(for: entry, kind: kind) {
+            let assetName = EmbeddedAssets.assetName(
+                itemID: item.id, label: name, kind: kind
+            )
+            item.assetName = assetName
+            assets[assetName] = payload
+            return item
+        }
+        return kind == .folder
+            ? CanvasItem.folderPlaceholder(label: name, position: .zero)
+            : CanvasItem.filePlaceholder(label: name, position: .zero)
     }
 
     private static func symlinkItem(at url: URL, name: String) -> CanvasItem {

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - Document Root
 
@@ -411,6 +412,12 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
     /// build to regain access across launches. The GitHub build never creates
     /// one but round-trips the data losslessly.
     var sourceBookmark: Data?
+    /// Name of an embedded payload in the containing package's `Assets`
+    /// directory. When set, the item's content lives inside the document or
+    /// template itself (files verbatim, folders as Apple Archives — see
+    /// ``EmbeddedAssets``) and `sourcePath`/`sourceBookmark` are nil: the item
+    /// is fully portable and never needs relinking.
+    var assetName: String?
     var position: CGPoint
     var linkType: ItemLinkType = .copy
     var background: ItemBackground?
@@ -421,12 +428,13 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
     /// ``RilmazafoneDocument/fillPlaceholder(_:from:undoManager:)`` clears it in place.
     var isPlaceholder: Bool = false
 
-    init(id: UUID = UUID(), kind: CanvasItemKind, label: String, sourcePath: String? = nil, sourceBookmark: Data? = nil, position: CGPoint, linkType: ItemLinkType = .copy, background: ItemBackground? = nil, isPlaceholder: Bool = false) {
+    init(id: UUID = UUID(), kind: CanvasItemKind, label: String, sourcePath: String? = nil, sourceBookmark: Data? = nil, assetName: String? = nil, position: CGPoint, linkType: ItemLinkType = .copy, background: ItemBackground? = nil, isPlaceholder: Bool = false) {
         self.id = id
         self.kind = kind
         self.label = label
         self.sourcePath = sourcePath
         self.sourceBookmark = sourceBookmark
+        self.assetName = assetName
         self.position = position
         self.linkType = linkType
         self.background = background
@@ -440,6 +448,7 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
         self.label = try container.decode(String.self, forKey: .label)
         self.sourcePath = try container.decodeIfPresent(String.self, forKey: .sourcePath)
         self.sourceBookmark = try container.decodeIfPresent(Data.self, forKey: .sourceBookmark)
+        self.assetName = try container.decodeIfPresent(String.self, forKey: .assetName)
         self.position = try container.decode(CGPoint.self, forKey: .position)
         self.linkType = try container.decodeIfPresent(ItemLinkType.self, forKey: .linkType) ?? .copy
         self.background = try container.decodeIfPresent(ItemBackground.self, forKey: .background)
@@ -492,13 +501,19 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// Whether this item carries its content inside the containing package
+    /// rather than referencing an external source.
+    var isEmbedded: Bool { assetName != nil }
+
     /// Whether this item copies a filesystem source into the DMG and therefore
     /// needs a reachable source. The Applications symlink and symlink-type items
     /// only store a target path string; an unfilled placeholder has no source
-    /// yet and is validated separately, so it is excluded here — keeping it out
-    /// of the missing-source machinery (badge, relink, `missingSources`).
+    /// yet and is validated separately; an embedded item's content lives inside
+    /// the package and is materialized at build time — all excluded here,
+    /// keeping them out of the missing-source machinery (badge, relink,
+    /// `missingSources`).
     var requiresSource: Bool {
-        kind != .applicationsSymlink && linkType == .copy && !isPlaceholder
+        kind != .applicationsSymlink && linkType == .copy && !isPlaceholder && !isEmbedded
     }
 }
 
@@ -652,13 +667,18 @@ extension CanvasItem {
 
     /// Resolves the filesystem icon for a canvas item.
     /// For apps/files/folders, returns the icon from the source path, holding
-    /// security-scoped access to the source in the sandboxed build.
+    /// security-scoped access to the source in the sandboxed build. Embedded
+    /// items have no filesystem presence until build time, so their icon comes
+    /// from the item's kind and the label's extension.
     /// For the Applications symlink, returns the cached symlink icon.
     static func resolveIcon(for item: CanvasItem, documentURL: URL? = nil) -> NSImage? {
         switch item.kind {
         case .applicationsSymlink:
             return applicationsSymlinkIcon
         case .app, .file, .folder:
+            if item.isEmbedded {
+                return embeddedTypeIcon(for: item)
+            }
             return SourceAccess.withScope(item: item, documentURL: documentURL) { url in
                 guard let url,
                       FileManager.default.fileExists(atPath: url.path) else { return nil }
@@ -667,11 +687,22 @@ extension CanvasItem {
         }
     }
 
+    /// Kind- and extension-derived icon for an embedded item.
+    private static func embeddedTypeIcon(for item: CanvasItem) -> NSImage {
+        if item.kind == .folder {
+            return NSWorkspace.shared.icon(for: .folder)
+        }
+        let fileExtension = (item.label as NSString).pathExtension
+        let type = UTType(filenameExtension: fileExtension) ?? .data
+        return NSWorkspace.shared.icon(for: type)
+    }
+
     /// Equatable key views use with `.task(id:)` to reload a cached source icon
     /// when the item's source reference or its availability changes.
     struct IconCacheKey: Equatable {
         let sourcePath: String?
         let sourceBookmark: Data?
+        let assetName: String?
         let isSourceMissing: Bool
     }
 
@@ -680,6 +711,7 @@ extension CanvasItem {
         IconCacheKey(
             sourcePath: sourcePath,
             sourceBookmark: sourceBookmark,
+            assetName: assetName,
             isSourceMissing: isSourceMissing
         )
     }

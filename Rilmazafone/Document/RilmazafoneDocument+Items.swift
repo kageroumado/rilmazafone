@@ -10,25 +10,38 @@ extension RilmazafoneDocument {
         setItemSource(id, path: newPath, bookmark: nil, actionName: "Change Source Path", undoManager: undoManager)
     }
 
-    /// Sets an item's source path and security bookmark together, refreshing
-    /// availability state. All source mutations funnel through here so undo
-    /// restores both halves atomically.
+    /// Sets an item's source path, security bookmark, and embedded-payload
+    /// reference together, refreshing availability state. All source mutations
+    /// funnel through here so undo restores every half atomically. Setting an
+    /// external source clears `assetName` by default — pointing an embedded
+    /// item at the filesystem replaces its embedded content (the payload stays
+    /// in the document's assets, so undo restores a working embedded item).
     func setItemSource(
         _ id: UUID,
         path: String?,
         bookmark: Data?,
+        assetName: String? = nil,
         actionName: String = "Change Source",
         undoManager: UndoManager?
     ) {
         guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
         let oldPath = configuration.items[index].sourcePath
         let oldBookmark = configuration.items[index].sourceBookmark
+        let oldAssetName = configuration.items[index].assetName
         configuration.items[index].sourcePath = path
         configuration.items[index].sourceBookmark = bookmark
+        configuration.items[index].assetName = assetName
         refreshSourceStates()
         objectWillChange.send()
         withUndo(undoManager, actionName) { doc, um in
-            doc.setItemSource(id, path: oldPath, bookmark: oldBookmark, actionName: actionName, undoManager: um)
+            doc.setItemSource(
+                id,
+                path: oldPath,
+                bookmark: oldBookmark,
+                assetName: oldAssetName,
+                actionName: actionName,
+                undoManager: um
+            )
         }
     }
 
@@ -399,6 +412,7 @@ extension RilmazafoneDocument {
         filledItem.label = url.lastPathComponent
         filledItem.sourcePath = url.path
         filledItem.sourceBookmark = SourceAccess.makeBookmark(for: url, documentURL: fileURL)
+        filledItem.assetName = nil
         filledItem.isPlaceholder = false
 
         // Signing detection only applies to apps; a filled folder/file slot

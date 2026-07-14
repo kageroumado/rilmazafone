@@ -69,6 +69,18 @@ nonisolated enum DMGBuildPipeline {
         let total = Constants.totalSteps
         let fileManager = FileManager.default
 
+        // Materialize embedded payloads into ordinary staged sources first, so
+        // validation, size estimation, and copy below never see a payload.
+        var configuration = configuration
+        let embeddedStaging = fileManager.temporaryDirectory
+            .appending(path: "rilmazafone-embedded-\(UUID().uuidString)")
+        defer { try? fileManager.removeItem(at: embeddedStaging) }
+        configuration.items = try EmbeddedAssets.materialize(
+            items: configuration.items,
+            assetsDirectory: assetsDirectory,
+            stagingDirectory: embeddedStaging
+        )
+
         try validateSources(configuration: configuration, documentURL: documentURL)
 
         // Step 1: Estimate disk image size

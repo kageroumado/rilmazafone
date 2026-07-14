@@ -31,26 +31,87 @@ nonisolated enum TemplateSnapshot {
     }
 
     /// The asset filenames `configuration` references: every background image
-    /// layer plus the custom volume icon, when present. Used to copy exactly
-    /// the assets a template needs, leaving stale document assets behind.
+    /// layer, the custom volume icon, and every embedded item payload, when
+    /// present. Used to copy exactly the assets a template needs, leaving
+    /// stale document assets behind.
     static func referencedAssetNames(in configuration: DMGConfiguration) -> Set<String> {
         var names = Set(configuration.background.layers.map(\.imageName))
         if let iconName = configuration.volumeIcon.sourceIconName {
             names.insert(iconName)
         }
+        for item in configuration.items {
+            if let assetName = item.assetName {
+                names.insert(assetName)
+            }
+        }
         return names
+    }
+
+    // MARK: - Embedding
+
+    /// Converts externally-referenced non-app copy items into portable form:
+    /// sources at or under ``EmbeddedAssets/sizeCap`` are embedded as payloads
+    /// (path and bookmark stripped — a document-scoped bookmark is dead weight
+    /// in any other document, and a raw path is machine-specific); larger or
+    /// unreachable sources become typed placeholder slots that keep the item's
+    /// label, position, and panel. Already-embedded items, symlink-type items,
+    /// placeholders, and the Applications symlink pass through unchanged.
+    ///
+    /// Returns the rewritten items plus the new payloads keyed by asset name.
+    static func embedItems(
+        _ items: [CanvasItem],
+        documentURL: URL?
+    ) -> (items: [CanvasItem], payloads: [String: Data]) {
+        var payloads: [String: Data] = [:]
+        let embedded = items.map { item -> CanvasItem in
+            guard item.kind == .file || item.kind == .folder,
+                  item.linkType == .copy,
+                  !item.isPlaceholder,
+                  !item.isEmbedded
+            else { return item }
+
+            let payload = SourceAccess.withScope(item: item, documentURL: documentURL) { url -> Data? in
+                guard let url, FileManager.default.fileExists(atPath: url.path) else { return nil }
+                return try? EmbeddedAssets.payload(for: url, kind: item.kind)
+            }
+
+            if let payload {
+                var portable = item
+                let assetName = EmbeddedAssets.assetName(
+                    itemID: item.id, label: item.label, kind: item.kind
+                )
+                portable.assetName = assetName
+                portable.sourcePath = nil
+                portable.sourceBookmark = nil
+                payloads[assetName] = payload
+                return portable
+            }
+
+            var slot = item.kind == .folder
+                ? CanvasItem.folderPlaceholder(label: item.label, position: item.position)
+                : CanvasItem.filePlaceholder(label: item.label, position: item.position)
+            slot.background = item.background
+            return slot
+        }
+        return (embedded, payloads)
     }
 }
 
 extension RilmazafoneDocument {
     /// Snapshot of the current design in template form: the converted
-    /// configuration plus the asset payloads it references, ready for
+    /// configuration plus the asset payloads it references — background
+    /// images, volume icon, item payloads embedded by this snapshot, and
+    /// item payloads the document already carried — ready for
     /// ``TemplateRegistry/saveUserTemplate(named:configuration:assets:)``.
     func templateSnapshot() -> (configuration: DMGConfiguration, assets: [String: Data]) {
-        let template = TemplateSnapshot.templateConfiguration(from: configuration)
-        var assets: [String: Data] = [:]
+        var template = TemplateSnapshot.templateConfiguration(from: configuration)
+        let embedding = TemplateSnapshot.embedItems(template.items, documentURL: fileURL)
+        template.items = embedding.items
+
+        var assets = embedding.payloads
         if let wrappers = assetsWrapper?.fileWrappers {
-            for name in TemplateSnapshot.referencedAssetNames(in: template) {
+            for name in TemplateSnapshot.referencedAssetNames(in: template)
+                where assets[name] == nil {
                 if let data = wrappers[name]?.regularFileContents {
                     assets[name] = data
                 }

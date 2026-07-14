@@ -85,6 +85,19 @@ struct ItemInspector: View {
                             }
                         }
                     }
+                } else if item.isEmbedded {
+                    LabeledContent("Source") {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Label("Embedded in document", systemImage: "doc.zipper")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Button("Replace\u{2026}") {
+                                relinkSource()
+                            }
+                            .controlSize(.small)
+                        }
+                    }
                 } else {
                     LabeledContent("Source") {
                         VStack(alignment: .trailing, spacing: 4) {
