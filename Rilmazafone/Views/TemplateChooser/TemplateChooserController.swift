@@ -75,7 +75,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
     )
 
     private enum Layout {
-        static let windowSize = NSSize(width: 700, height: 480)
+        static let windowSize = NSSize(width: 700, height: 560)
     }
 
     private var window: NSWindow?
@@ -120,7 +120,10 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
 
         let hostingController = NSHostingController(rootView: rootView)
         let window = NSWindow(contentViewController: hostingController)
-        window.styleMask = [.titled, .closable]
+        window.styleMask = [.titled, .closable, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
         window.title = "Choose a Template"
         window.isExcludedFromWindowsMenu = true
         window.isReleasedWhenClosed = false

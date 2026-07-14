@@ -1,0 +1,154 @@
+{
+  "background" : {
+    "color" : {
+      "blue" : 0.9,
+      "green" : 0.88,
+      "red" : 0.86
+    },
+    "layers" : [
+      {
+        "blurRadius" : 0,
+        "id" : "2831D693-F6DE-4D36-9180-1491DE75EA99",
+        "imageName" : "snow-leopard.jpg",
+        "label" : "Snow leopard",
+        "position" : [
+          330,
+          215
+        ],
+        "scale" : 1
+      }
+    ],
+    "type" : "image"
+  },
+  "codeSign" : {
+    "enabled" : false
+  },
+  "dmgFormat" : "ULFO",
+  "filesystem" : "APFS",
+  "gridSpacing" : 100,
+  "hideExtensions" : true,
+  "iconSize" : 128,
+  "isGridSpacingAuto" : true,
+  "items" : [
+    {
+      "background" : {
+        "bevel" : {
+          "depth" : 4,
+          "enabled" : true,
+          "intensity" : 0.35,
+          "lightAngle" : 125
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 30,
+        "color" : {
+          "blue" : 0.13,
+          "green" : 0.11,
+          "red" : 0.1
+        },
+        "cornerRadius" : 22,
+        "enabled" : true,
+        "opacity" : 0.52,
+        "padding" : 18,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 7,
+          "opacity" : 0.42,
+          "radius" : 12
+        }
+      },
+      "id" : "78FEDFA7-D779-4A75-9C77-A913AF47B658",
+      "isPlaceholder" : true,
+      "kind" : "app",
+      "label" : "Your App",
+      "linkType" : "copy",
+      "position" : [
+        195,
+        312
+      ]
+    },
+    {
+      "background" : {
+        "bevel" : {
+          "depth" : 4,
+          "enabled" : true,
+          "intensity" : 0.35,
+          "lightAngle" : 125
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 30,
+        "color" : {
+          "blue" : 0.13,
+          "green" : 0.11,
+          "red" : 0.1
+        },
+        "cornerRadius" : 22,
+        "enabled" : true,
+        "opacity" : 0.52,
+        "padding" : 18,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 7,
+          "opacity" : 0.42,
+          "radius" : 12
+        }
+      },
+      "id" : "F3D7704F-8342-4A1F-976E-D7AE894D875D",
+      "isPlaceholder" : false,
+      "kind" : "applicationsSymlink",
+      "label" : "Applications",
+      "linkType" : "copy",
+      "position" : [
+        465,
+        312
+      ]
+    }
+  ],
+  "sfSymbolLayers" : [
+    {
+      "color" : {
+        "blue" : 0.98,
+        "green" : 0.96,
+        "red" : 0.95
+      },
+      "id" : "1D0B1B35-94D7-4F47-AA81-40402617F683",
+      "pointSize" : 34,
+      "position" : [
+        330,
+        304
+      ],
+      "symbolName" : "arrow.right",
+      "weight" : "semibold"
+    }
+  ],
+  "textLayers" : [
+
+  ],
+  "textSize" : 13,
+  "version" : 1,
+  "volumeIcon" : {
+    "type" : "composed"
+  },
+  "volumeName" : "Snow Leopard",
+  "window" : {
+    "height" : 430,
+    "width" : 660
+  },
+  "windowPosition" : {
+    "x" : 200,
+    "y" : 120
+  }
+}

@@ -9,8 +9,11 @@ import Testing
 /// Tests are parameterized over this enumeration so future templates are covered
 /// automatically.
 enum BundledTemplates {
-    /// Names the initial template set must contain (3.3). More may be added later.
-    static let requiredNames = ["Aurora", "Classic", "Compact", "Editorial", "Glass", "Graphite"]
+    /// Names the bundled template set must contain. More may be added later.
+    static let requiredNames = [
+        "Aurora", "Classic", "Compact", "Cosmos", "Editorial", "Glass",
+        "Graphite", "Snow Leopard", "Toolbox",
+    ]
 
     static let templatesDirectory = Bundle.main.resourceURL!.appending(path: "Templates")
 
@@ -122,19 +125,44 @@ struct BundledTemplateTests {
     func loadsThroughReadPath(url: URL) throws {
         let config = try BundledTemplates.load(url)
 
+        // Every template ships at least one placeholder slot (always an app slot),
+        // and every placeholder is data-only — no baked-in source path or bookmark.
         let placeholders = config.items.filter(\.isPlaceholder)
-        #expect(placeholders.count == 1, "expected exactly one placeholder app slot")
-        #expect(placeholders.first?.kind == .app)
-        #expect(placeholders.first?.sourcePath == nil, "templates must be data-only")
-        #expect(placeholders.first?.sourceBookmark == nil)
+        #expect(!placeholders.isEmpty, "expected at least one placeholder slot")
+        #expect(placeholders.contains { $0.kind == .app }, "expected an app placeholder slot")
+        for placeholder in placeholders {
+            #expect(placeholder.sourcePath == nil, "placeholder slots must be data-only")
+            #expect(placeholder.sourceBookmark == nil)
+        }
 
+        // Exactly one Applications symlink, and no filled item carries a source
+        // (templates never bundle a real filesystem reference).
         let symlinks = config.items.filter { $0.kind == .applicationsSymlink }
         #expect(symlinks.count == 1, "expected exactly one Applications symlink")
+        for item in config.items where !item.isPlaceholder {
+            #expect(item.sourcePath == nil, "\(item.label) must not bundle a source path")
+            #expect(item.sourceBookmark == nil)
+        }
 
-        #expect(config.items.count == 2)
+        #expect(config.items.count >= 2)
         #expect(!config.volumeName.isEmpty)
         #expect(config.window.width > 0 && config.window.height > 0)
-        #expect(config.background.layers.isEmpty, "templates must not reference image assets")
+
+        // Image-backed templates reference assets that must exist on disk; every
+        // other template stays layer-free.
+        if config.background.type == .image {
+            #expect(!config.background.layers.isEmpty, "an image template must have layers")
+            let assets = url.appending(path: "Assets")
+            for layer in config.background.layers {
+                let asset = assets.appending(path: layer.imageName)
+                #expect(
+                    FileManager.default.fileExists(atPath: asset.path),
+                    "missing asset \(layer.imageName) for \(url.lastPathComponent)"
+                )
+            }
+        } else {
+            #expect(config.background.layers.isEmpty, "non-image templates must not reference assets")
+        }
     }
 
     // MARK: - 2. Open budget
@@ -200,26 +228,53 @@ struct BundledTemplateTests {
 struct BundledTemplateBuildTests {
     private static let fillerApp = "/System/Applications/Calculator.app"
 
-    @Test("builds a mountable DMG after filling the placeholder",
+    @Test("builds a mountable DMG after filling every placeholder",
           .timeLimit(.minutes(2)),
           arguments: BundledTemplates.urls)
     func buildsValidDMG(url: URL) async throws {
         var config = try BundledTemplates.load(url)
 
-        // Fill the placeholder slot programmatically, as fillPlaceholder would.
-        let placeholderIndex = config.items.firstIndex { $0.isPlaceholder }
-        let index = try #require(placeholderIndex)
-        config.items[index].label = "Calculator.app"
-        config.items[index].sourcePath = Self.fillerApp
-        config.items[index].isPlaceholder = false
+        let fm = FileManager.default
+
+        // Temp sources for the folder/file slots that multi-element templates carry.
+        let sourceDir = try BundledTemplates.makeTempDirectory("fill-sources")
+        defer { try? fm.removeItem(at: sourceDir) }
+        let docsFolder = sourceDir.appending(path: "Documentation")
+        try fm.createDirectory(at: docsFolder, withIntermediateDirectories: true)
+        try "guide".write(to: docsFolder.appending(path: "Guide.txt"), atomically: true, encoding: .utf8)
+        let readmeFile = sourceDir.appending(path: "Read Me.txt")
+        try "read me".write(to: readmeFile, atomically: true, encoding: .utf8)
+
+        // Fill every placeholder by kind, as fillPlaceholder would. Track the
+        // resulting item labels so the mount can verify each landed on the volume.
+        var expectedNames: [String] = ["Applications"]
+        for index in config.items.indices where config.items[index].isPlaceholder {
+            let source: URL = switch config.items[index].kind {
+            case .app: URL(fileURLWithPath: Self.fillerApp)
+            case .folder: docsFolder
+            default: readmeFile
+            }
+            config.items[index].label = source.lastPathComponent
+            config.items[index].sourcePath = source.path
+            config.items[index].isPlaceholder = false
+            expectedNames.append(source.lastPathComponent)
+        }
+        #expect(!config.items.contains { $0.isPlaceholder }, "all slots must be filled")
 
         // One representative format per template for suite speed (templates ship
         // ULFO/APFS; leave them as authored).
         #expect(config.dmgFormat == .ulfo)
         #expect(config.filesystem == .apfs)
 
-        let fm = FileManager.default
         let assets = try BundledTemplates.makeTempDirectory("build-assets")
+        // Image-backed templates bake their layer assets into the background, so
+        // the build needs them staged in the assets directory it reads from.
+        let templateAssets = url.appending(path: "Assets")
+        if fm.fileExists(atPath: templateAssets.path) {
+            for asset in try fm.contentsOfDirectory(at: templateAssets, includingPropertiesForKeys: nil) {
+                try fm.copyItem(at: asset, to: assets.appending(path: asset.lastPathComponent))
+            }
+        }
         let outputDir = try BundledTemplates.makeTempDirectory("build-out")
         let output = outputDir.appending(path: "\(url.deletingPathExtension().lastPathComponent).dmg")
         defer {
@@ -259,8 +314,14 @@ struct BundledTemplateBuildTests {
             #expect(detach?.terminationStatus == 0, "volume failed to detach cleanly")
         }
 
-        #expect(fm.fileExists(atPath: mountPoint.appending(path: "Calculator.app").path))
-        #expect(fm.fileExists(atPath: mountPoint.appending(path: "Applications").path))
+        // Every filled item (app, Applications symlink, plus any folder/file
+        // slots on the multi-element templates) must land on the volume.
+        for name in expectedNames {
+            #expect(
+                fm.fileExists(atPath: mountPoint.appending(path: name).path),
+                "\(url.lastPathComponent): expected \(name) on the volume"
+            )
+        }
         #expect(fm.fileExists(atPath: mountPoint.appending(path: ".DS_Store").path))
         // Every bundled template has a composite background (gradient, text, symbols,
         // or panels), so the baked background must be on the volume.

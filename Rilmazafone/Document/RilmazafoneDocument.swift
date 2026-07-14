@@ -55,7 +55,9 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
 
     // MARK: - Init
 
-    init() {
+    /// Nonisolated because AppKit instantiates the document shell on a
+    /// background queue when opening an existing file.
+    nonisolated init() {
         self.configuration = DMGConfiguration()
     }
 

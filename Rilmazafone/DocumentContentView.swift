@@ -158,8 +158,11 @@ struct DocumentContentView: View {
     private func startBuild() {
         document.refreshSourceStates()
 
-        guard !document.configuration.items.contains(where: { $0.isPlaceholder }) else {
-            buildManager.reportError(ValidationError.unfilledPlaceholder.localizedDescription)
+        let unfilledSlots = document.configuration.items.filter(\.isPlaceholder).map(\.label)
+        guard unfilledSlots.isEmpty else {
+            buildManager.reportError(
+                ValidationError.unfilledPlaceholder(unfilledSlots).localizedDescription
+            )
             return
         }
 

@@ -293,8 +293,9 @@ nonisolated enum DMGBuildPipeline {
     /// otherwise read as a generic missing-source error. Run before the build starts
     /// so either condition surfaces as one clear error instead of a mid-build failure.
     static func validateSources(configuration: DMGConfiguration, documentURL: URL?) throws {
-        guard !configuration.items.contains(where: { $0.isPlaceholder }) else {
-            throw ValidationError.unfilledPlaceholder
+        let unfilled = configuration.items.filter(\.isPlaceholder).map(\.label)
+        guard unfilled.isEmpty else {
+            throw ValidationError.unfilledPlaceholder(unfilled)
         }
         let missing = configuration.items
             .filter { !SourceAccess.isSourceAvailable(item: $0, documentURL: documentURL) }

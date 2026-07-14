@@ -376,16 +376,18 @@ extension RilmazafoneDocument {
         addItem(item, undoManager: undoManager)
     }
 
-    /// The first unfilled app placeholder, if any — the slot a dropped app fills.
-    var firstPlaceholderID: UUID? {
-        configuration.items.first { $0.isPlaceholder }?.id
+    /// The first unfilled placeholder of the given kind, if any — the slot a
+    /// dropped source of that kind fills.
+    func firstPlaceholderID(ofKind kind: CanvasItemKind) -> UUID? {
+        configuration.items.first { $0.isPlaceholder && $0.kind == kind }?.id
     }
 
-    /// Fills an app placeholder in place from a dropped app: swaps in the app's
-    /// name, source path, security bookmark, and detected signing identity, and
-    /// clears the placeholder flag — preserving the slot's position and identity.
-    /// The whole substitution is a single undoable action, so one undo restores
-    /// the placeholder (and the prior signing configuration).
+    /// Fills a placeholder in place from a dropped source of its own kind (app,
+    /// folder, or file): swaps in the source's name, path, security bookmark, and
+    /// — for app slots — the detected signing identity, then clears the
+    /// placeholder flag, preserving the slot's position and identity. The whole
+    /// substitution is a single undoable action, so one undo restores the
+    /// placeholder (and any prior signing configuration).
     func fillPlaceholder(_ id: UUID, from url: URL, undoManager: UndoManager?) async {
         guard let index = configuration.items.firstIndex(where: { $0.id == id }),
               configuration.items[index].isPlaceholder else { return }
@@ -399,8 +401,10 @@ extension RilmazafoneDocument {
         filledItem.sourceBookmark = SourceAccess.makeBookmark(for: url, documentURL: fileURL)
         filledItem.isPlaceholder = false
 
+        // Signing detection only applies to apps; a filled folder/file slot
+        // never touches the document's code-signing configuration.
         var newCodeSign = oldCodeSign
-        if let identity = await detectedSigningIdentity(for: filledItem) {
+        if oldItem.kind == .app, let identity = await detectedSigningIdentity(for: filledItem) {
             newCodeSign.enabled = true
             newCodeSign.identity = identity
         }
@@ -409,8 +413,18 @@ extension RilmazafoneDocument {
             id,
             toItem: filledItem, toCodeSign: newCodeSign,
             fromItem: oldItem, fromCodeSign: oldCodeSign,
+            actionName: Self.fillActionName(for: oldItem.kind),
             undoManager: undoManager
         )
+    }
+
+    /// Undo/redo action name for filling a placeholder of the given kind.
+    private static func fillActionName(for kind: CanvasItemKind) -> String {
+        switch kind {
+        case .folder: "Fill Folder Slot"
+        case .file: "Fill File Slot"
+        default: "Fill App Placeholder"
+        }
     }
 
     /// Atomically swaps an item and the document's signing configuration to a
@@ -422,6 +436,7 @@ extension RilmazafoneDocument {
         toCodeSign: CodeSignConfiguration,
         fromItem: CanvasItem,
         fromCodeSign: CodeSignConfiguration,
+        actionName: String,
         undoManager: UndoManager?
     ) {
         guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
@@ -429,11 +444,12 @@ extension RilmazafoneDocument {
         configuration.codeSign = toCodeSign
         refreshSourceStates()
         objectWillChange.send()
-        withUndo(undoManager, "Fill App Placeholder") { doc, um in
+        withUndo(undoManager, actionName) { doc, um in
             doc.swapPlaceholderState(
                 id,
                 toItem: fromItem, toCodeSign: fromCodeSign,
                 fromItem: toItem, fromCodeSign: toCodeSign,
+                actionName: actionName,
                 undoManager: um
             )
         }
@@ -455,7 +471,7 @@ extension RilmazafoneDocument {
         for url in urls {
             let ext = url.pathExtension.lowercased()
             if ext == "app" {
-                if let placeholderID = firstPlaceholderID {
+                if let placeholderID = firstPlaceholderID(ofKind: .app) {
                     await fillPlaceholder(placeholderID, from: url, undoManager: undoManager)
                 } else {
                     let width = configuration.window.width
@@ -468,7 +484,14 @@ extension RilmazafoneDocument {
             } else if ext == "dmg" {
                 await importDroppedDMG(from: url)
             } else {
-                addFileItem(from: url, at: defaultPosition, undoManager: undoManager)
+                // Folders fill a folder slot, other files fill a file slot; each
+                // falls back to a normal add when no matching-kind slot is open.
+                let kind: CanvasItemKind = url.hasDirectoryPath ? .folder : .file
+                if let placeholderID = firstPlaceholderID(ofKind: kind) {
+                    await fillPlaceholder(placeholderID, from: url, undoManager: undoManager)
+                } else {
+                    addFileItem(from: url, at: defaultPosition, undoManager: undoManager)
+                }
             }
         }
     }

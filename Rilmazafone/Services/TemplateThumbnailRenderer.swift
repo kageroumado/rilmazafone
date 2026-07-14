@@ -20,6 +20,9 @@ nonisolated enum TemplateThumbnailRenderer {
         static let placeholderStrokeAlpha: CGFloat = 0.6
         static let placeholderSymbolGray: CGFloat = 0.45
         static let placeholderSymbolAlpha: CGFloat = 0.4
+        static let pillVerticalPadding: CGFloat = 5
+        static let pillCharacterWidthFactor: CGFloat = 0.62
+        static let pillMinimumWidth: CGFloat = 28
     }
 
     private static let sRGB = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
@@ -73,11 +76,42 @@ nonisolated enum TemplateThumbnailRenderer {
             if let icon = itemIcons[item.id] {
                 context.draw(icon, in: rect)
             } else if item.isPlaceholder {
-                drawPlaceholderTile(in: rect, context: context)
+                drawPlaceholderTile(in: rect, glyphName: item.placeholderGlyphName, context: context)
             }
         }
 
         return context.makeImage()
+    }
+
+    /// Where `item`'s label line sits, in top-down content-space points — the
+    /// gallery draws a redacted pill there. Width tracks the label's character
+    /// count so pills read like text of different lengths.
+    static func labelPill(
+        for item: CanvasItem,
+        iconSize: CGFloat,
+        textSize: CGFloat
+    ) -> TemplateEntry.LabelPill {
+        let contentHeight = iconSize
+            + Metrics.iconCellPadding * 2
+            + Metrics.textGap
+            + Metrics.estimatedTextHeight
+        let labelTop = item.position.y
+            - contentHeight / 2
+            + iconSize
+            + Metrics.iconCellPadding * 2
+            + Metrics.textGap
+        let height = textSize + Metrics.pillVerticalPadding
+        let width = min(
+            max(CGFloat(item.label.count) * textSize * Metrics.pillCharacterWidthFactor,
+                Metrics.pillMinimumWidth),
+            iconSize + Metrics.iconCellPadding * 4
+        )
+        return TemplateEntry.LabelPill(
+            x: item.position.x,
+            y: labelTop + height / 2,
+            width: width,
+            height: height
+        )
     }
 
     /// The icon's rect in y-up canvas coordinates. The item position is the
@@ -104,9 +138,9 @@ nonisolated enum TemplateThumbnailRenderer {
         )
     }
 
-    /// Dashed rounded-rect outline with a tinted `app.dashed` glyph — the same
-    /// visual language as the canvas placeholder tile.
-    private static func drawPlaceholderTile(in rect: CGRect, context: CGContext) {
+    /// Dashed rounded-rect outline with a tinted, kind-appropriate glyph — the
+    /// same visual language as the canvas placeholder tile.
+    private static func drawPlaceholderTile(in rect: CGRect, glyphName: String, context: CGContext) {
         let cornerRadius = rect.width * Metrics.placeholderCornerRadiusRatio
         let strokeRect = rect.insetBy(
             dx: Metrics.placeholderLineWidth / 2,
@@ -130,7 +164,7 @@ nonisolated enum TemplateThumbnailRenderer {
         context.restoreGState()
 
         guard let symbol = NSImage(
-            systemSymbolName: "app.dashed",
+            systemSymbolName: glyphName,
             accessibilityDescription: nil
         ) else { return }
 

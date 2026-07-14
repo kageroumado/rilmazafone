@@ -1,0 +1,204 @@
+{
+  "background" : {
+    "color" : {
+      "blue" : 0.05,
+      "green" : 0.02,
+      "red" : 0.02
+    },
+    "layers" : [
+      {
+        "blurRadius" : 0,
+        "colorAdjustments" : {
+          "brightness" : -0.06,
+          "contrast" : 1.02,
+          "exposure" : 0,
+          "hueRotation" : 0,
+          "saturation" : 1.05
+        },
+        "id" : "0ADEDEB0-A7D6-43F6-910A-4F0EC114C057",
+        "imageName" : "aurora.jpg",
+        "label" : "Aurora from orbit",
+        "position" : [
+          370,
+          245
+        ],
+        "scale" : 1
+      }
+    ],
+    "type" : "image"
+  },
+  "codeSign" : {
+    "enabled" : false
+  },
+  "dmgFormat" : "ULFO",
+  "filesystem" : "APFS",
+  "gridSpacing" : 100,
+  "hideExtensions" : true,
+  "iconSize" : 112,
+  "isGridSpacingAuto" : true,
+  "items" : [
+    {
+      "background" : {
+        "bevel" : {
+          "depth" : 4,
+          "enabled" : true,
+          "intensity" : 0.3,
+          "lightAngle" : 120
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 34,
+        "color" : {
+          "blue" : 0.51,
+          "green" : 0.43,
+          "red" : 0.4
+        },
+        "cornerRadius" : 20,
+        "enabled" : true,
+        "opacity" : 0.76,
+        "padding" : 16,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.5,
+          "radius" : 16
+        }
+      },
+      "id" : "444814B7-E1EB-49F4-BBD0-BFD11C489B31",
+      "isPlaceholder" : true,
+      "kind" : "app",
+      "label" : "Your App",
+      "linkType" : "copy",
+      "position" : [
+        210,
+        170
+      ]
+    },
+    {
+      "background" : {
+        "bevel" : {
+          "depth" : 4,
+          "enabled" : true,
+          "intensity" : 0.3,
+          "lightAngle" : 120
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 34,
+        "color" : {
+          "blue" : 0.51,
+          "green" : 0.43,
+          "red" : 0.4
+        },
+        "cornerRadius" : 20,
+        "enabled" : true,
+        "opacity" : 0.76,
+        "padding" : 16,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.5,
+          "radius" : 16
+        }
+      },
+      "id" : "A6F2DFD0-21A5-450A-8B81-233EBAE40B2C",
+      "isPlaceholder" : false,
+      "kind" : "applicationsSymlink",
+      "label" : "Applications",
+      "linkType" : "copy",
+      "position" : [
+        530,
+        170
+      ]
+    },
+    {
+      "background" : {
+        "bevel" : {
+          "depth" : 4,
+          "enabled" : true,
+          "intensity" : 0.3,
+          "lightAngle" : 120
+        },
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 34,
+        "color" : {
+          "blue" : 0.51,
+          "green" : 0.43,
+          "red" : 0.4
+        },
+        "cornerRadius" : 20,
+        "enabled" : true,
+        "opacity" : 0.76,
+        "padding" : 16,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.5,
+          "radius" : 16
+        }
+      },
+      "id" : "13059A6E-A1F7-42EF-8E44-56A31F3523A4",
+      "isPlaceholder" : true,
+      "kind" : "file",
+      "label" : "Read Me",
+      "linkType" : "copy",
+      "position" : [
+        370,
+        372
+      ]
+    }
+  ],
+  "sfSymbolLayers" : [
+    {
+      "color" : {
+        "blue" : 0.88,
+        "green" : 0.92,
+        "red" : 0.85
+      },
+      "id" : "AD8E889C-7115-4F81-ABD7-21F053E4FC15",
+      "pointSize" : 34,
+      "position" : [
+        370,
+        160
+      ],
+      "symbolName" : "arrow.right",
+      "weight" : "semibold"
+    }
+  ],
+  "textLayers" : [
+
+  ],
+  "textSize" : 13,
+  "version" : 1,
+  "volumeIcon" : {
+    "type" : "composed"
+  },
+  "volumeName" : "Cosmos",
+  "window" : {
+    "height" : 490,
+    "width" : 740
+  },
+  "windowPosition" : {
+    "x" : 200,
+    "y" : 120
+  }
+}

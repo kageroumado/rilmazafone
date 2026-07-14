@@ -193,7 +193,8 @@ struct CanvasItemView: View, Equatable {
     }
 
     /// Dashed-outline tile shown for an unfilled placeholder slot that has no
-    /// harvested icon: signals "drop your app here" without a warning badge.
+    /// harvested icon: signals "drop your item here" with a kind-appropriate
+    /// glyph (app, folder, or file) and no warning badge.
     private var placeholderTile: some View {
         RoundedRectangle(cornerRadius: displayIconSize * 0.2, style: .continuous)
             .strokeBorder(
@@ -204,13 +205,21 @@ struct CanvasItemView: View, Equatable {
                 )
             )
             .overlay {
-                Image(systemName: "app.dashed")
+                Image(systemName: item.placeholderGlyphName)
                     .resizable()
                     .scaledToFit()
                     .padding(displayIconSize * 0.26)
                     .foregroundStyle(.tertiary)
             }
-            .accessibilityLabel("App placeholder, drop an app to fill")
+            .accessibilityLabel(placeholderAccessibilityLabel)
+    }
+
+    private var placeholderAccessibilityLabel: String {
+        switch item.kind {
+        case .folder: "Folder placeholder, drop a folder to fill"
+        case .file: "File placeholder, drop a file to fill"
+        default: "App placeholder, drop an app to fill"
+        }
     }
 
     @ViewBuilder

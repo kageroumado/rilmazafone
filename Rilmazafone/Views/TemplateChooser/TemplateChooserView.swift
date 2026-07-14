@@ -42,19 +42,24 @@ struct TemplateChooserView: View {
 
     private enum Layout {
         static let windowWidth: CGFloat = 700
-        static let windowHeight: CGFloat = 480
-        static let gridSpacing: CGFloat = 20
+        static let windowHeight: CGFloat = 560
+        static let gridSpacing: CGFloat = 24
         static let gridPadding: CGFloat = 24
-        static let tileWidth: CGFloat = 148
+        static let tileWidth: CGFloat = 196
         static let customFieldWidth: CGFloat = 52
+        /// Clears the traffic lights overlaying the full-size content view.
+        static let headerTopPadding: CGFloat = 40
+        static let headerBottomPadding: CGFloat = 8
     }
 
     var body: some View {
         VStack(spacing: 0) {
+            header
             gallery
             Divider()
             footer
         }
+        .background(Color(nsColor: .textBackgroundColor))
         .frame(width: Layout.windowWidth, height: Layout.windowHeight)
         .onChange(of: state.selection) {
             sizeChoice = .templateDefault
@@ -66,6 +71,19 @@ struct TemplateChooserView: View {
                 customHeight = Double(seed.height)
             }
         }
+    }
+
+    // MARK: Header
+
+    /// Pages-style large title drawn in the content area — the window's own
+    /// title bar is transparent with a hidden title.
+    private var header: some View {
+        Text("Choose a Template")
+            .font(.system(size: 26, weight: .bold))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, Layout.gridPadding)
+            .padding(.top, Layout.headerTopPadding)
+            .padding(.bottom, Layout.headerBottomPadding)
     }
 
     // MARK: Gallery
@@ -297,11 +315,11 @@ private struct TemplateTile: View {
     @State private var thumbnail: NSImage?
 
     private enum Layout {
-        static let thumbnailWidth: CGFloat = 148
-        static let thumbnailHeight: CGFloat = 96
-        static let cornerRadius: CGFloat = 6
+        static let thumbnailWidth: CGFloat = 196
+        static let thumbnailHeight: CGFloat = 132
+        static let selectionCornerRadius: CGFloat = 10
         static let selectionRingWidth: CGFloat = 3
-        static let selectionRingPadding: CGFloat = 3
+        static let selectionRingPadding: CGFloat = 5
         static let titleSpacing: CGFloat = 8
     }
 
@@ -312,7 +330,7 @@ private struct TemplateTile: View {
                 .padding(Layout.selectionRingPadding + Layout.selectionRingWidth)
                 .overlay {
                     if isSelected {
-                        RoundedRectangle(cornerRadius: Layout.cornerRadius + Layout.selectionRingPadding)
+                        RoundedRectangle(cornerRadius: Layout.selectionCornerRadius)
                             .strokeBorder(Color.accentColor, lineWidth: Layout.selectionRingWidth)
                     }
                 }
@@ -339,20 +357,119 @@ private struct TemplateTile: View {
     }
 
     private var thumbnailCard: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Layout.cornerRadius)
-                .fill(Color(nsColor: .textBackgroundColor))
-                .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+        MiniFinderWindow(
+            image: thumbnail,
+            windowSize: entry?.windowSize ?? TemplateRegistry.blankWindowSize,
+            labelPills: entry?.labelPills ?? []
+        )
+    }
+}
 
-            if let thumbnail {
-                Image(nsImage: thumbnail)
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius))
+// MARK: - Mini Finder Window
+
+/// Renders a template thumbnail inside miniature Finder window chrome so the
+/// gallery shows the design exactly as a mounted DMG presents it — title bar
+/// included, keeping the vertical composition honest. Chrome metrics and
+/// colors mirror `CanvasView`'s mock window (32 pt title bar, 18 pt corner
+/// radius, 14 pt traffic lights), scaled to the tile.
+private struct MiniFinderWindow: View {
+    /// The baked content-area composite; `nil` renders Finder's default
+    /// window fill (the Blank tile, or a thumbnail still loading).
+    let image: NSImage?
+    /// The template's content-area size in document points.
+    let windowSize: CGSize
+    /// Redacted stand-ins for item labels, in content-space points.
+    let labelPills: [TemplateEntry.LabelPill]
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private enum Chrome {
+        static let titleBarHeight: CGFloat = 32
+        static let cornerRadius: CGFloat = 18
+        static let lightDiameter: CGFloat = 14
+        static let lightSpacing: CGFloat = 8
+        static let leadingPadding: CGFloat = 9
+        static let lightTitleBar = Color(white: 0.96)
+        static let darkTitleBar = Color(white: 0.17)
+        static let lightWindowContent = Color.white
+        static let darkWindowContent = Color(white: 0.12)
+        static let trafficLights: [Color] = [
+            Color(red: 1, green: 0.38, blue: 0.34),
+            Color(red: 1, green: 0.74, blue: 0.21),
+            Color(red: 0.15, green: 0.78, blue: 0.26),
+        ]
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let scale = min(
+                geometry.size.width / windowSize.width,
+                geometry.size.height / (windowSize.height + Chrome.titleBarHeight)
+            )
+
+            VStack(spacing: 0) {
+                titleBar(scale: scale)
+                content(scale: scale)
             }
+            .clipShape(RoundedRectangle(cornerRadius: Chrome.cornerRadius * scale))
+            .overlay {
+                RoundedRectangle(cornerRadius: Chrome.cornerRadius * scale)
+                    .strokeBorder(.quaternary, lineWidth: 0.5)
+            }
+            .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
 
-            RoundedRectangle(cornerRadius: Layout.cornerRadius)
-                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+    private func titleBar(scale: CGFloat) -> some View {
+        ZStack(alignment: .leading) {
+            Rectangle()
+                .fill(colorScheme == .dark ? Chrome.darkTitleBar : Chrome.lightTitleBar)
+
+            HStack(spacing: Chrome.lightSpacing * scale) {
+                ForEach(Array(Chrome.trafficLights.enumerated()), id: \.offset) { _, color in
+                    Circle()
+                        .fill(color)
+                        .frame(
+                            width: Chrome.lightDiameter * scale,
+                            height: Chrome.lightDiameter * scale
+                        )
+                }
+            }
+            .padding(.leading, Chrome.leadingPadding * scale)
+        }
+        .frame(
+            width: windowSize.width * scale,
+            height: Chrome.titleBarHeight * scale
+        )
+    }
+
+    @ViewBuilder
+    private func content(scale: CGFloat) -> some View {
+        let size = CGSize(
+            width: windowSize.width * scale,
+            height: windowSize.height * scale
+        )
+        Group {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+            } else {
+                Rectangle()
+                    .fill(colorScheme == .dark ? Chrome.darkWindowContent : Chrome.lightWindowContent)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .overlay(alignment: .topLeading) {
+            ForEach(Array(labelPills.enumerated()), id: \.offset) { _, pill in
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .frame(width: pill.width * scale, height: pill.height * scale)
+                    .offset(
+                        x: (pill.x - pill.width / 2) * scale,
+                        y: (pill.y - pill.height / 2) * scale
+                    )
+            }
         }
     }
 }

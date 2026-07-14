@@ -5,6 +5,16 @@ import Observation
 
 /// A single `.dmgtemplate` package known to the registry.
 nonisolated struct TemplateEntry: Identifiable, Hashable, Sendable {
+    /// Where an item's filename label sits, in top-down content-space points —
+    /// the gallery draws a redacted material pill there in place of the label
+    /// text, which would be illegible at tile scale.
+    struct LabelPill: Hashable, Sendable {
+        let x: CGFloat
+        let y: CGFloat
+        let width: CGFloat
+        let height: CGFloat
+    }
+
     /// Location of the `.dmgtemplate` directory package.
     let url: URL
 
@@ -17,6 +27,9 @@ nonisolated struct TemplateEntry: Identifiable, Hashable, Sendable {
 
     /// The Finder window size the template's configuration declares.
     let windowSize: CGSize
+
+    /// One pill per canvas item, in item order.
+    let labelPills: [LabelPill]
 
     var id: URL { url }
 }
@@ -141,7 +154,14 @@ final class TemplateRegistry {
                     windowSize: CGSize(
                         width: configuration.window.width,
                         height: configuration.window.height
-                    )
+                    ),
+                    labelPills: configuration.items.map { item in
+                        TemplateThumbnailRenderer.labelPill(
+                            for: item,
+                            iconSize: configuration.iconSize,
+                            textSize: configuration.textSize
+                        )
+                    }
                 )
             }
             .sorted {

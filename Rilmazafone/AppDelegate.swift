@@ -1,6 +1,7 @@
 import AppKit
 
-/// Provides the Dock icon's context menu: New Document, the registry-driven
+/// Routes app activation with no windows into the template chooser and
+/// provides the Dock icon's context menu: New Document, the registry-driven
 /// "New from Template" submenu, and the shared recent-documents list from
 /// `NSDocumentController`.
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -9,17 +10,63 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         static let maximumRecentDocuments = 10
         /// Standard menu item icon size.
         static let menuIconSize = NSSize(width: 16, height: 16)
+        /// How long after launch to wait before concluding nothing is opening.
+        static let launchSettleDelay: TimeInterval = 0.2
     }
+
+    // MARK: - Launch & Reopen
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Modern document apps otherwise present the app-centric open panel at
+        // launch, which would bypass `applicationShouldOpenUntitledFile` and
+        // the template chooser entirely.
+        UserDefaults.standard.register(defaults: [
+            "NSShowAppCentricOpenPanelInsteadOfUntitledFile": false,
+        ])
+    }
+
+    /// Launching (and Dock-clicking) with no open documents follows the same
+    /// policy as ⌘N: the template chooser, or a blank document when the user
+    /// has opted out of the chooser.
+    func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
+        TemplateChooserController.shared.newDocument()
+        return false
+    }
+
+    /// The DocumentGroup scene's automatic untitled window is suppressed
+    /// (`defaultLaunchBehavior(.suppressed)`), and a suppressed SwiftUI scene
+    /// also swallows AppKit's untitled-file launch path — so present the
+    /// chooser here unless this launch is opening or restoring something. The
+    /// delay lets documents double-clicked in Finder create their windows
+    /// first.
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.launchSettleDelay) {
+            let hasContent = NSApp.windows.contains(where: \.isVisible)
+                || !NSDocumentController.shared.documents.isEmpty
+            guard !hasContent else { return }
+            TemplateChooserController.shared.newDocument()
+        }
+    }
+
+    func applicationShouldHandleReopen(
+        _ sender: NSApplication, hasVisibleWindows: Bool
+    ) -> Bool {
+        guard !hasVisibleWindows else { return true }
+        TemplateChooserController.shared.newDocument()
+        return false
+    }
+
+    // MARK: - Dock Menu
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         let menu = NSMenu()
 
         let newDocument = NSMenuItem(
             title: "New Document",
-            action: #selector(NSDocumentController.newDocument(_:)),
+            action: #selector(newDocumentFollowingPolicy(_:)),
             keyEquivalent: ""
         )
-        newDocument.target = NSDocumentController.shared
+        newDocument.target = self
         menu.addItem(newDocument)
 
         if let templates = newFromTemplateItem() {
@@ -83,6 +130,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func newDocumentFromTemplate(_ sender: NSMenuItem) {
         guard let entry = sender.representedObject as? TemplateEntry else { return }
         TemplateChooserController.shared.createDocument(from: entry)
+    }
+
+    /// Dock menu "New Document": same chooser-or-blank policy as ⌘N.
+    @objc func newDocumentFollowingPolicy(_ sender: NSMenuItem) {
+        TemplateChooserController.shared.newDocument()
     }
 
     // MARK: - Recents

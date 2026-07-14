@@ -9,19 +9,29 @@ struct RilmazafoneApp: App {
 
     var body: some Scene {
         DocumentGroup(newDocument: {
-            // Document creation always happens on the main thread; the closure
-            // is merely typed @Sendable.
-            MainActor.assumeIsolated {
-                if let imported = DMGImportCoordinator.shared.takePendingResult() {
-                    return RilmazafoneDocument(imported: imported)
+            // AppKit instantiates the document shell on a background queue when
+            // opening an existing file (Finder double-click, launch-by-document);
+            // staged import/template results are only ever consumed on the
+            // interactive main-thread new-document path.
+            if Thread.isMainThread {
+                MainActor.assumeIsolated {
+                    if let imported = DMGImportCoordinator.shared.takePendingResult() {
+                        RilmazafoneDocument(imported: imported)
+                    } else {
+                        RilmazafoneDocument()
+                    }
                 }
-                return RilmazafoneDocument()
+            } else {
+                RilmazafoneDocument()
             }
         }) { file in
             DocumentContentView()
                 .environment(file.document)
         }
         .defaultSize(width: 1_280, height: 720)
+        // Launching with no document goes through the template chooser
+        // (AppDelegate) instead of DocumentGroup's automatic untitled window.
+        .defaultLaunchBehavior(.suppressed)
         .commands {
             SidebarCommands()
             InspectorCommands()

@@ -5,14 +5,15 @@ import Testing
 @MainActor
 @Suite("AppDelegate Dock menu")
 struct AppDelegateTests {
-    @Test("First item is New Document targeting the shared document controller")
+    @Test("First item is New Document following the chooser policy")
     func newDocumentItem() throws {
-        let menu = try dockMenu()
+        let delegate = AppDelegate()
+        let menu = try #require(delegate.applicationDockMenu(NSApp))
         let first = try #require(menu.items.first)
 
         #expect(first.title == "New Document")
-        #expect(first.action == #selector(NSDocumentController.newDocument(_:)))
-        #expect(first.target === NSDocumentController.shared)
+        #expect(first.action == #selector(AppDelegate.newDocumentFollowingPolicy(_:)))
+        #expect(first.target === delegate)
     }
 
     @Test("Seeded recent document appears with display name and represented URL")
