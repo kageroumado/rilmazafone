@@ -1,5 +1,5 @@
-import CoreGraphics
 import AppKit
+import CoreGraphics
 import Foundation
 import Testing
 @testable import Rilmazafone
@@ -19,7 +19,7 @@ struct CanvasBackdropRendererTests {
             bitsPerComponent: 8,
             bytesPerRow: 0,
             space: sRGB,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
         )!
     }
 
@@ -34,13 +34,13 @@ struct CanvasBackdropRendererTests {
                 CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 1),
                 CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
             ] as CFArray,
-            locations: [0, 1]
+            locations: [0, 1],
         )!
         ctx.drawLinearGradient(
             gradient,
             start: .zero,
             end: CGPoint(x: width, y: 0),
-            options: []
+            options: [],
         )
         return ctx.makeImage()!
     }
@@ -86,7 +86,7 @@ struct CanvasBackdropRendererTests {
                 bitsPerComponent: 8,
                 bytesPerRow: width * 4,
                 space: sRGB,
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
             )!
             ctx.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
         }
@@ -95,8 +95,8 @@ struct CanvasBackdropRendererTests {
 
     // MARK: - Geometry
 
-    @Test("Blurred crop has the panel rect's pixel dimensions")
-    func cropDimensions() throws {
+    @Test
+    func `Blurred crop has the panel rect's pixel dimensions`() throws {
         let pointSize = CGSize(width: 400, height: 300)
         let backdrop = Self.gradientImage(pointSize: pointSize)
 
@@ -104,15 +104,15 @@ struct CanvasBackdropRendererTests {
             from: backdrop,
             backdropPointSize: pointSize,
             rect: CGRect(x: 60, y: 40, width: 120, height: 90),
-            blurRadius: 10
+            blurRadius: 10,
         ))
 
         #expect(output.width == 240)
         #expect(output.height == 180)
     }
 
-    @Test("Degenerate inputs return nil")
-    func degenerateInputs() {
+    @Test
+    func `Degenerate inputs return nil`() {
         let pointSize = CGSize(width: 100, height: 100)
         let backdrop = Self.solidImage(pointSize: pointSize, gray: 0.5)
 
@@ -120,21 +120,21 @@ struct CanvasBackdropRendererTests {
             from: backdrop,
             backdropPointSize: pointSize,
             rect: CGRect(x: 10, y: 10, width: 0, height: 40),
-            blurRadius: 10
+            blurRadius: 10,
         ) == nil)
 
         #expect(CanvasBackdropRenderer.blurredCrop(
             from: backdrop,
             backdropPointSize: .zero,
             rect: CGRect(x: 10, y: 10, width: 40, height: 40),
-            blurRadius: 10
+            blurRadius: 10,
         ) == nil)
     }
 
     // MARK: - Blur
 
-    @Test("Blur output differs from the unblurred source crop")
-    func blurChangesPixels() throws {
+    @Test
+    func `Blur output differs from the unblurred source crop`() throws {
         let pointSize = CGSize(width: 200, height: 150)
         let backdrop = Self.checkerboardImage(pointSize: pointSize)
         let rect = CGRect(x: 50, y: 40, width: 80, height: 60)
@@ -143,7 +143,7 @@ struct CanvasBackdropRendererTests {
             from: backdrop,
             backdropPointSize: pointSize,
             rect: rect,
-            blurRadius: 8
+            blurRadius: 8,
         ))
 
         // The same crop taken directly from the source. CGImage cropping uses a
@@ -154,7 +154,7 @@ struct CanvasBackdropRendererTests {
             x: rect.minX * scale,
             y: rect.minY * scale,
             width: rect.width * scale,
-            height: rect.height * scale
+            height: rect.height * scale,
         )))
 
         #expect(blurred.width == sourceCrop.width)
@@ -162,8 +162,8 @@ struct CanvasBackdropRendererTests {
         #expect(Self.rgbaBytes(of: blurred) != Self.rgbaBytes(of: sourceCrop))
     }
 
-    @Test("Edge-clamped blur does not darken borders of a solid backdrop")
-    func clampedEdgesDoNotDarken() throws {
+    @Test
+    func `Edge-clamped blur does not darken borders of a solid backdrop`() throws {
         let pointSize = CGSize(width: 100, height: 80)
         let gray: CGFloat = 0.5
         let backdrop = Self.solidImage(pointSize: pointSize, gray: gray)
@@ -175,7 +175,7 @@ struct CanvasBackdropRendererTests {
             from: backdrop,
             backdropPointSize: pointSize,
             rect: CGRect(x: 0, y: 0, width: 50, height: 40),
-            blurRadius: 20
+            blurRadius: 20,
         ))
 
         let bytes = Self.rgbaBytes(of: blurred)
@@ -187,7 +187,7 @@ struct CanvasBackdropRendererTests {
                 let value = Int(bytes[pixelStart + channel])
                 #expect(
                     abs(value - Int(expected)) <= tolerance,
-                    "channel \(channel) at byte \(pixelStart) is \(value), expected ~\(expected)"
+                    "channel \(channel) at byte \(pixelStart) is \(value), expected ~\(expected)",
                 )
             }
             #expect(bytes[pixelStart + 3] >= UInt8(255 - tolerance))
@@ -196,8 +196,8 @@ struct CanvasBackdropRendererTests {
 
     // MARK: - Backdrop Composite Parity
 
-    @Test("renderPanelBackdrop matches the built background beneath panels")
-    func backdropMatchesBuiltBackground() throws {
+    @Test
+    func `renderPanelBackdrop matches the built background beneath panels`() throws {
         var config = DMGConfiguration()
         config.window = WindowConfiguration(width: 200, height: 150)
         config.background.type = .gradient
@@ -207,14 +207,14 @@ struct CanvasBackdropRendererTests {
                 text: "Backdrop",
                 position: CGPoint(x: 100, y: 60),
                 fontSize: 20,
-                color: RGBColor(red: 1, green: 1, blue: 1)
+                color: RGBColor(red: 1, green: 1, blue: 1),
             ),
         ]
 
         let backdrop = try #require(CompositeRenderer.renderPanelBackdrop(
             configuration: config,
             layerImages: [:],
-            scale: 2
+            scale: 2,
         ))
         #expect(backdrop.width == 400)
         #expect(backdrop.height == 300)
@@ -223,12 +223,12 @@ struct CanvasBackdropRendererTests {
         // content, so the 2x representation must be pixel-identical to the backdrop.
         let full = try #require(CompositeRenderer.renderBackground(
             configuration: config,
-            assetsDirectory: FileManager.default.temporaryDirectory
+            assetsDirectory: FileManager.default.temporaryDirectory,
         ))
         let rep2 = try #require(
             full.representations
                 .compactMap { $0 as? NSBitmapImageRep }
-                .first { $0.pixelsWide == 400 }
+                .first { $0.pixelsWide == 400 },
         )
         let builtImage = try #require(rep2.cgImage)
 

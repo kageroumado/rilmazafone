@@ -19,8 +19,8 @@ extension RilmazafoneDocument {
             label: url.lastPathComponent,
             position: CGPoint(
                 x: window.width / 2,
-                y: window.height / 2
-            )
+                y: window.height / 2,
+            ),
         )
         background.layers.append(layer)
 
@@ -154,8 +154,8 @@ extension RilmazafoneDocument {
         let layer = TextLayerConfiguration(
             position: CGPoint(
                 x: round(window.width / 2),
-                y: round(window.height / 2)
-            )
+                y: round(window.height / 2),
+            ),
         )
         textLayers.append(layer)
         objectWillChange.send()
@@ -201,7 +201,7 @@ extension RilmazafoneDocument {
     func updateTextLayerStyle(
         _ id: UUID,
         with transform: (inout TextLayerConfiguration) -> Void,
-        undoManager: UndoManager?
+        undoManager: UndoManager?,
     ) {
         guard let index = textLayers.firstIndex(where: { $0.id == id }) else { return }
         let old = textLayers[index]
@@ -221,9 +221,9 @@ extension RilmazafoneDocument {
         addSFSymbolLayer(
             at: CGPoint(
                 x: round(window.width / 2),
-                y: round(window.height / 2)
+                y: round(window.height / 2),
             ),
-            undoManager: undoManager
+            undoManager: undoManager,
         )
     }
 
@@ -263,7 +263,7 @@ extension RilmazafoneDocument {
     func updateSFSymbolLayerStyle(
         _ id: UUID,
         with transform: (inout SFSymbolLayerConfiguration) -> Void,
-        undoManager: UndoManager?
+        undoManager: UndoManager?,
     ) {
         guard let index = sfSymbolLayers.firstIndex(where: { $0.id == id }) else { return }
         let old = sfSymbolLayers[index]

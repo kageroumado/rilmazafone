@@ -44,7 +44,7 @@ nonisolated enum DMGBuilder {
     static func createWritableImage(
         volumeName: String,
         size: String,
-        filesystem: DMGFilesystem = .hfsPlus
+        filesystem: DMGFilesystem = .hfsPlus,
     ) async throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
         let tempPath = tempDir.appending(path: "rilmazafone-writable-\(UUID().uuidString).dmg")
@@ -58,7 +58,7 @@ nonisolated enum DMGBuilder {
                 "-volname", volumeName,
                 "-fs", filesystem.rawValue,
                 tempPath.path,
-            ]
+            ],
         )
 
         return tempPath
@@ -81,7 +81,7 @@ nonisolated enum DMGBuilder {
                 "-nobrowse",
                 "-noverify",
                 "-mountpoint", tempMount.path,
-            ]
+            ],
         )
 
         return tempMount
@@ -108,7 +108,7 @@ nonisolated enum DMGBuilder {
                     "-nobrowse",
                     "-noverify",
                     "-mountpoint", tempMount.path,
-                ]
+                ],
             )
         } catch {
             try? FileManager.default.removeItem(at: tempMount)
@@ -124,7 +124,7 @@ nonisolated enum DMGBuilder {
             do {
                 try await ProcessRunner.run(
                     Executable.hdiutil,
-                    arguments: ["detach", mountPoint.path, "-force"]
+                    arguments: ["detach", mountPoint.path, "-force"],
                 )
                 return
             } catch let error as ProcessRunner.ProcessError where error.exitCode == 16 {
@@ -145,7 +145,7 @@ nonisolated enum DMGBuilder {
     static func convert(
         source: URL,
         destination: URL,
-        format: DMGImageFormat
+        format: DMGImageFormat,
     ) async throws {
         // Remove destination if it exists (hdiutil won't overwrite without -ov)
         try? FileManager.default.removeItem(at: destination)
@@ -173,7 +173,7 @@ nonisolated enum DMGBuilder {
     static func copyItems(
         _ items: [CanvasItem],
         to mountPoint: URL,
-        documentURL: URL? = nil
+        documentURL: URL? = nil,
     ) throws {
         let fileManager = FileManager.default
         for item in items {
@@ -184,7 +184,7 @@ nonisolated enum DMGBuilder {
                 // would resolve/rewrite the destination.
                 try fileManager.createSymbolicLink(
                     atPath: destination.path,
-                    withDestinationPath: "/Applications"
+                    withDestinationPath: "/Applications",
                 )
 
             case .app, .file, .folder:
@@ -192,7 +192,7 @@ nonisolated enum DMGBuilder {
                     guard let target = item.sourcePath, !target.isEmpty else { continue }
                     try fileManager.createSymbolicLink(
                         atPath: destination.path,
-                        withDestinationPath: target
+                        withDestinationPath: target,
                     )
                 } else {
                     // The scope must span the entire copy of the item, not just
@@ -213,7 +213,7 @@ nonisolated enum DMGBuilder {
     static func copyBackground(
         named imageName: String,
         from assetsDirectory: URL,
-        to mountPoint: URL
+        to mountPoint: URL,
     ) throws {
         let bgDir = mountPoint.appending(path: ".background")
 
@@ -231,7 +231,7 @@ nonisolated enum DMGBuilder {
     /// Sets the volume icon on the mounted DMG.
     static func setVolumeIcon(
         icnsData: Data,
-        mountPoint: URL
+        mountPoint: URL,
     ) async throws {
         let iconPath = mountPoint.appending(path: ".VolumeIcon.icns")
         try icnsData.write(to: iconPath)
@@ -266,7 +266,7 @@ nonisolated enum DMGBuilder {
     /// Code signs the DMG. If identity is nil, auto-detects from keychain.
     static func codeSign(
         dmgPath: URL,
-        identity: String?
+        identity: String?,
     ) async throws {
         let resolvedIdentity = try identity ?? resolveSigningIdentity()
 
@@ -275,7 +275,7 @@ nonisolated enum DMGBuilder {
             arguments: [
                 "--sign", resolvedIdentity,
                 dmgPath.path,
-            ]
+            ],
         )
     }
 
@@ -298,7 +298,7 @@ nonisolated enum DMGBuilder {
 
         var infoRef: CFDictionary?
         guard SecCodeCopySigningInformation(
-            code, SecCSFlags(rawValue: kSecCSSigningInformation), &infoRef
+            code, SecCSFlags(rawValue: kSecCSSigningInformation), &infoRef,
         ) == errSecSuccess,
             let info = infoRef as? [String: Any],
             let certificates = info[kSecCodeInfoCertificates as String] as? [SecCertificate],
@@ -392,7 +392,7 @@ nonisolated enum DMGBuilder {
     private static func canSignCode(_ certificate: SecCertificate) -> Bool {
         var error: Unmanaged<CFError>?
         guard let values = SecCertificateCopyValues(
-            certificate, [kSecOIDExtendedKeyUsage] as CFArray, &error
+            certificate, [kSecOIDExtendedKeyUsage] as CFArray, &error,
         ) as? [String: Any],
             let eku = values[kSecOIDExtendedKeyUsage as String] as? [String: Any],
             let usages = eku[kSecPropertyKeyValue as String] as? [Data]

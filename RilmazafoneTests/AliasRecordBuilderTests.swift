@@ -9,8 +9,8 @@ struct AliasRecordBuilderTests {
     // Since `encode` is private, we test the binary format through known byte patterns
     // in the output. We create a temporary volume structure for createBackgroundAlias.
 
-    @Test("Alias record header has correct magic bytes")
-    func headerStructure() throws {
+    @Test
+    func `Alias record header has correct magic bytes`() throws {
         let data = try createTestAlias()
 
         // Offset 0: user type = 0
@@ -27,8 +27,8 @@ struct AliasRecordBuilderTests {
         #expect(data.readBE16(at: 8) == 0)
     }
 
-    @Test("Volume name is stored as Pascal string at offset 10")
-    func volumeNamePascalString() throws {
+    @Test
+    func `Volume name is stored as Pascal string at offset 10`() throws {
         let data = try createTestAlias(volumeName: "TestVol")
 
         // Offset 10: Pascal string length byte
@@ -44,23 +44,23 @@ struct AliasRecordBuilderTests {
         }
     }
 
-    @Test("Volume signature is H+ at offset 42-43")
-    func volumeSignature() throws {
+    @Test
+    func `Volume signature is H+ at offset 42-43`() throws {
         let data = try createTestAlias()
 
         #expect(data[42] == 0x48) // 'H'
         #expect(data[43] == 0x2B) // '+'
     }
 
-    @Test("Volume type is 5 (ejectable) at offset 44")
-    func volumeType() throws {
+    @Test
+    func `Volume type is 5 (ejectable) at offset 44`() throws {
         let data = try createTestAlias()
 
         #expect(data.readBE16(at: 44) == 5)
     }
 
-    @Test("Filename is stored as Pascal string at offset 50")
-    func filenamePascalString() throws {
+    @Test
+    func `Filename is stored as Pascal string at offset 50`() throws {
         let data = try createTestAlias(imageName: "bg.png")
 
         #expect(data[50] == 6) // "bg.png" = 6 bytes
@@ -69,23 +69,23 @@ struct AliasRecordBuilderTests {
         #expect(nameBytes == Array("bg.png".utf8))
     }
 
-    @Test("nlvlFrom and nlvlTo are -1 at offsets 130-133")
-    func nlvlFields() throws {
+    @Test
+    func `nlvlFrom and nlvlTo are -1 at offsets 130-133`() throws {
         let data = try createTestAlias()
 
         #expect(data.readBE16(at: 130) == 0xFFFF) // -1 as UInt16
         #expect(data.readBE16(at: 132) == 0xFFFF) // -1 as UInt16
     }
 
-    @Test("Volume attributes at offset 134")
-    func volumeAttributes() throws {
+    @Test
+    func `Volume attributes at offset 134`() throws {
         let data = try createTestAlias()
 
         #expect(data.readBE32(at: 134) == 0x0000_0D02)
     }
 
-    @Test("Extra data trailer is type -1 length 0")
-    func trailer() throws {
+    @Test
+    func `Extra data trailer is type -1 length 0`() throws {
         let data = try createTestAlias()
 
         // Last 4 bytes: type(-1) + length(0)
@@ -94,8 +94,8 @@ struct AliasRecordBuilderTests {
         #expect(data.readBE16(at: trailerOffset + 2) == 0)
     }
 
-    @Test("Carbon path uses colon separators (type 2 extra)")
-    func carbonPathFormat() throws {
+    @Test
+    func `Carbon path uses colon separators (type 2 extra)`() throws {
         let data = try createTestAlias(volumeName: "MyVol", imageName: "bg.png")
 
         // Find type 2 extra entry
@@ -108,8 +108,8 @@ struct AliasRecordBuilderTests {
         #expect(path == "MyVol:.background:bg.png")
     }
 
-    @Test("Volume-relative POSIX path (type 18 extra)")
-    func volumeRelativePath() throws {
+    @Test
+    func `Volume-relative POSIX path (type 18 extra)`() throws {
         let data = try createTestAlias(imageName: "background.png")
 
         guard let entry = findExtraEntry(type: 18, in: data) else {
@@ -121,8 +121,8 @@ struct AliasRecordBuilderTests {
         #expect(path == "/.background/background.png")
     }
 
-    @Test("Volume POSIX path (type 19 extra)")
-    func volumePosixPath() throws {
+    @Test
+    func `Volume POSIX path (type 19 extra)`() throws {
         let data = try createTestAlias(volumeName: "TestVol")
 
         guard let entry = findExtraEntry(type: 19, in: data) else {
@@ -134,8 +134,8 @@ struct AliasRecordBuilderTests {
         #expect(path == "/Volumes/TestVol")
     }
 
-    @Test("Odd-length extra data is padded to even alignment")
-    func oddLengthPadding() throws {
+    @Test
+    func `Odd-length extra data is padded to even alignment`() throws {
         // "abc" is 3 bytes (odd) — should be padded to 4
         let data = try createTestAlias(imageName: "abc")
 
@@ -147,8 +147,8 @@ struct AliasRecordBuilderTests {
         #expect(data.readBE16(at: trailerOffset) == 0xFFFF)
     }
 
-    @Test("Volume name exceeding 27 bytes throws error")
-    func volumeNameTooLong() throws {
+    @Test
+    func `Volume name exceeding 27 bytes throws error`() throws {
         let longName = String(repeating: "A", count: 28)
 
         #expect(throws: AliasRecordBuilder.AliasError.self) {
@@ -156,8 +156,8 @@ struct AliasRecordBuilderTests {
         }
     }
 
-    @Test("Volume name exactly 27 bytes succeeds")
-    func volumeNameExact27() throws {
+    @Test
+    func `Volume name exactly 27 bytes succeeds`() throws {
         let name = String(repeating: "A", count: 27)
         let data = try createTestAlias(volumeName: name)
 
@@ -169,7 +169,7 @@ struct AliasRecordBuilderTests {
     /// Creates a test alias by setting up a temporary directory structure that mimics a mounted volume.
     private func createTestAlias(
         volumeName: String = "TestVol",
-        imageName: String = "background.png"
+        imageName: String = "background.png",
     ) throws -> Data {
         let tmpDir = FileManager.default.temporaryDirectory
             .appending(path: "rilmazafone-alias-test-\(UUID().uuidString)")
@@ -186,7 +186,7 @@ struct AliasRecordBuilderTests {
         return try AliasRecordBuilder.createBackgroundAlias(
             imageName: imageName,
             volumeName: volumeName,
-            mountPoint: tmpDir
+            mountPoint: tmpDir,
         )
     }
 

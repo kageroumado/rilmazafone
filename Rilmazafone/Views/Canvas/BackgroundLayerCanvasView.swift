@@ -75,7 +75,7 @@ struct BackgroundLayerCanvasView: View, Equatable {
             }
             .position(
                 x: layer.position.x * zoom + dragOffset.width,
-                y: layer.position.y * zoom + dragOffset.height
+                y: layer.position.y * zoom + dragOffset.height,
             )
             .gesture(dragGesture)
             .onTapGesture {
@@ -89,7 +89,7 @@ struct BackgroundLayerCanvasView: View, Equatable {
                 processedImage = CompositeRenderer.applyLayerEffects(
                     to: image,
                     layer: layer,
-                    displaySize: CGSize(width: logicalWidth, height: logicalHeight)
+                    displaySize: CGSize(width: logicalWidth, height: logicalHeight),
                 )
             }
     }
@@ -106,7 +106,7 @@ struct BackgroundLayerCanvasView: View, Equatable {
                 let snapped = onDragChanged(CGPoint(x: rawX, y: rawY))
                 dragOffset = CGSize(
                     width: (snapped.x - layer.position.x) * zoom,
-                    height: (snapped.y - layer.position.y) * zoom
+                    height: (snapped.y - layer.position.y) * zoom,
                 )
             }
             .onEnded { value in

@@ -8,8 +8,8 @@ import Testing
 
 @Suite("Template Snapshot")
 struct TemplateSnapshotTests {
-    @Test("A filled app item becomes a standard placeholder at the same position")
-    func appItemBecomesPlaceholder() throws {
+    @Test
+    func `A filled app item becomes a standard placeholder at the same position`() throws {
         let panel = ItemBackground(opacity: 0.5, cornerRadius: 12)
         var configuration = DMGConfiguration()
         configuration.items = [
@@ -19,16 +19,16 @@ struct TemplateSnapshotTests {
                 sourcePath: "/Applications/Refrax.app",
                 sourceBookmark: Data([0x01, 0x02, 0x03]),
                 position: CGPoint(x: 150, y: 210),
-                background: panel
+                background: panel,
             ),
             CanvasItem(
                 kind: .applicationsSymlink,
                 label: "Applications",
-                position: CGPoint(x: 450, y: 210)
+                position: CGPoint(x: 450, y: 210),
             ),
         ]
         configuration.codeSign = CodeSignConfiguration(
-            enabled: true, identity: "Developer ID Application: Someone (TEAM123)"
+            enabled: true, identity: "Developer ID Application: Someone (TEAM123)",
         )
 
         let template = TemplateSnapshot.templateConfiguration(from: configuration)
@@ -46,8 +46,8 @@ struct TemplateSnapshotTests {
         #expect(template.items[1] == configuration.items[1])
     }
 
-    @Test("Non-app items, layers, and window settings pass through unchanged")
-    func designPassesThrough() {
+    @Test
+    func `Non-app items, layers, and window settings pass through unchanged`() {
         var configuration = DMGConfiguration()
         configuration.window = WindowConfiguration(width: 720, height: 460)
         configuration.iconSize = 96
@@ -57,7 +57,7 @@ struct TemplateSnapshotTests {
                 id: UUID(),
                 imageName: "bg.png",
                 label: "bg.png",
-                position: CGPoint(x: 360, y: 230)
+                position: CGPoint(x: 360, y: 230),
             ),
         ]
         configuration.textLayers = [
@@ -68,7 +68,7 @@ struct TemplateSnapshotTests {
                 kind: .folder,
                 label: "Extras",
                 sourcePath: "~/Extras",
-                position: CGPoint(x: 200, y: 300)
+                position: CGPoint(x: 200, y: 300),
             ),
         ]
 
@@ -81,15 +81,15 @@ struct TemplateSnapshotTests {
         #expect(template.items == configuration.items)
     }
 
-    @Test("Referenced asset names cover background layers and the volume icon")
-    func referencedAssetNames() {
+    @Test
+    func `Referenced asset names cover background layers and the volume icon`() {
         var configuration = DMGConfiguration()
         configuration.background.layers = [
             BackgroundLayer(id: UUID(), imageName: "bg-a.png", label: "a", position: .zero),
             BackgroundLayer(id: UUID(), imageName: "bg-b.png", label: "b", position: .zero),
         ]
         configuration.volumeIcon = VolumeIconConfiguration(
-            type: .custom, sourceIconName: "volume-icon.icns"
+            type: .custom, sourceIconName: "volume-icon.icns",
         )
 
         let names = TemplateSnapshot.referencedAssetNames(in: configuration)
@@ -97,14 +97,14 @@ struct TemplateSnapshotTests {
     }
 
     @MainActor
-    @Test("A document snapshot converts the app item and copies only referenced assets")
-    func documentSnapshot() throws {
+    @Test
+    func `A document snapshot converts the app item and copies only referenced assets`() throws {
         let document = RilmazafoneDocument()
         let layerID = UUID()
         document.configuration.background.type = .image
         document.configuration.background.layers = [
             BackgroundLayer(
-                id: layerID, imageName: "bg.png", label: "bg.png", position: CGPoint(x: 330, y: 200)
+                id: layerID, imageName: "bg.png", label: "bg.png", position: CGPoint(x: 330, y: 200),
             ),
         ]
         document.configuration.items = [
@@ -112,7 +112,7 @@ struct TemplateSnapshotTests {
                 kind: .app,
                 label: "Tool.app",
                 sourcePath: "/Applications/Tool.app",
-                position: CGPoint(x: 180, y: 190)
+                position: CGPoint(x: 180, y: 190),
             ),
         ]
 
@@ -150,12 +150,12 @@ struct UserTemplateSavingTests {
             bundledDirectory: nil,
             userDirectory: userDirectory,
             watchesUserDirectory: false,
-            prewarmsThumbnails: false
+            prewarmsThumbnails: false,
         )
     }
 
-    @Test("A DMG import result saves as a placeholder template without runtime icons")
-    func fromDMGResultSavesCleanTemplate() throws {
+    @Test
+    func `A DMG import result saves as a placeholder template without runtime icons`() throws {
         let userDir = try makeUserDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
         let registry = makeRegistry(userDirectory: userDir)
@@ -163,34 +163,34 @@ struct UserTemplateSavingTests {
         var configuration = DMGConfiguration()
         configuration.volumeName = "Refrax"
         let appItem = CanvasItem.appPlaceholder(
-            label: "Refrax.app", position: CGPoint(x: 140, y: 200)
+            label: "Refrax.app", position: CGPoint(x: 140, y: 200),
         )
         configuration.items = [
             appItem,
             CanvasItem(
                 kind: .applicationsSymlink,
                 label: "Applications",
-                position: CGPoint(x: 460, y: 200)
+                position: CGPoint(x: 460, y: 200),
             ),
         ]
         configuration.background.type = .image
         configuration.background.layers = [
             BackgroundLayer(
                 id: UUID(), imageName: "bg-import.png", label: "background.png",
-                position: CGPoint(x: 300, y: 200)
+                position: CGPoint(x: 300, y: 200),
             ),
         ]
         let backgroundData = Data([0x89, 0x50, 0x4E, 0x47, 0x0D])
         let result = DMGImporter.Result(
             configuration: configuration,
             assets: ["bg-import.png": backgroundData],
-            itemIcons: [appItem.id: Data([0x69, 0x63, 0x6E, 0x73])]
+            itemIcons: [appItem.id: Data([0x69, 0x63, 0x6E, 0x73])],
         )
 
         let entry = try registry.saveUserTemplate(
             named: "From DMG",
             configuration: TemplateSnapshot.templateConfiguration(from: result.configuration),
-            assets: result.assets
+            assets: result.assets,
         )
 
         let reloaded = try TemplateInstantiator.configuration(ofTemplateAt: entry.url)
@@ -206,8 +206,8 @@ struct UserTemplateSavingTests {
         #expect(packageContents == ["Assets", "document.json"])
     }
 
-    @Test("Embedded item payloads round-trip through save and instantiate")
-    func embeddedPayloadRoundTrip() throws {
+    @Test
+    func `Embedded item payloads round-trip through save and instantiate`() throws {
         let userDir = try makeUserDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
         let registry = makeRegistry(userDirectory: userDir)
@@ -216,10 +216,10 @@ struct UserTemplateSavingTests {
         var configuration = DMGConfiguration()
         configuration.volumeName = "Portable"
         var readme = CanvasItem(
-            kind: .file, label: "Read Me.txt", position: CGPoint(x: 80, y: 120)
+            kind: .file, label: "Read Me.txt", position: CGPoint(x: 80, y: 120),
         )
         let assetName = EmbeddedAssets.assetName(
-            itemID: readme.id, label: readme.label, kind: .file
+            itemID: readme.id, label: readme.label, kind: .file,
         )
         readme.assetName = assetName
         configuration.items = [readme]
@@ -228,7 +228,7 @@ struct UserTemplateSavingTests {
         let entry = try registry.saveUserTemplate(
             named: "Portable",
             configuration: configuration,
-            assets: [assetName: payload]
+            assets: [assetName: payload],
         )
 
         // Instantiation carries the embedded item and its payload; the item
@@ -243,8 +243,8 @@ struct UserTemplateSavingTests {
         #expect(instantiated.assets[assetName] == payload)
     }
 
-    @Test("Save round-trip: a new document from the saved template reproduces the design")
-    func saveRoundTripReproducesDesign() throws {
+    @Test
+    func `Save round-trip: a new document from the saved template reproduces the design`() throws {
         let userDir = try makeUserDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
         let registry = makeRegistry(userDirectory: userDir)
@@ -254,7 +254,7 @@ struct UserTemplateSavingTests {
         configuration.background.type = .image
         configuration.background.layers = [
             BackgroundLayer(
-                id: UUID(), imageName: "bg.png", label: "bg.png", position: CGPoint(x: 350, y: 210)
+                id: UUID(), imageName: "bg.png", label: "bg.png", position: CGPoint(x: 350, y: 210),
             ),
         ]
         configuration.items = [
@@ -262,19 +262,19 @@ struct UserTemplateSavingTests {
                 kind: .app,
                 label: "Filled.app",
                 sourcePath: "/Applications/Filled.app",
-                position: CGPoint(x: 175, y: 220)
+                position: CGPoint(x: 175, y: 220),
             ),
             CanvasItem(
                 kind: .applicationsSymlink,
                 label: "Applications",
-                position: CGPoint(x: 525, y: 220)
+                position: CGPoint(x: 525, y: 220),
             ),
         ]
         let template = TemplateSnapshot.templateConfiguration(from: configuration)
         let assets = ["bg.png": Data([0x01, 0x02, 0x03, 0x04])]
 
         let entry = try registry.saveUserTemplate(
-            named: "Round Trip", configuration: template, assets: assets
+            named: "Round Trip", configuration: template, assets: assets,
         )
         #expect(registry.user.contains(entry))
 
@@ -290,15 +290,15 @@ struct UserTemplateSavingTests {
         #expect(placeholder.position == CGPoint(x: 175, y: 220))
     }
 
-    @Test("Renaming a user template preserves its assets")
-    func renamePreservesAssets() throws {
+    @Test
+    func `Renaming a user template preserves its assets`() throws {
         let userDir = try makeUserDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
         let registry = makeRegistry(userDirectory: userDir)
 
         let assets = ["bg.png": Data([0x0A, 0x0B])]
         let original = try registry.saveUserTemplate(
-            named: "Old Name", configuration: DMGConfiguration(), assets: assets
+            named: "Old Name", configuration: DMGConfiguration(), assets: assets,
         )
 
         let renamed = try registry.renameUserTemplate(original, to: "New Name")
@@ -308,14 +308,14 @@ struct UserTemplateSavingTests {
         #expect(!FileManager.default.fileExists(atPath: original.url.path))
     }
 
-    @Test("Deleting a saved template removes the package without error")
-    func deleteRemovesPackage() throws {
+    @Test
+    func `Deleting a saved template removes the package without error`() throws {
         let userDir = try makeUserDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
         let registry = makeRegistry(userDirectory: userDir)
 
         let entry = try registry.saveUserTemplate(
-            named: "Trashed", configuration: DMGConfiguration(), assets: ["bg.png": Data([0x01])]
+            named: "Trashed", configuration: DMGConfiguration(), assets: ["bg.png": Data([0x01])],
         )
 
         try registry.deleteUserTemplate(entry)
@@ -359,15 +359,14 @@ struct TemplateFromDMGAcceptanceTests {
     }
 
     @Test(
-        "A template from a real styled DMG rebuilds to match the design",
         .enabled(
             if: TemplateFromDMGAcceptanceTests.styledDMG != nil
                 && TemplateFromDMGAcceptanceTests.systemApp != nil,
-            "No styled DMG fixture found in ~/Downloads — skipping"
+            "No styled DMG fixture found in ~/Downloads — skipping",
         ),
-        .timeLimit(.minutes(5))
+        .timeLimit(.minutes(5)),
     )
-    func templateFromRealDMGRebuilds() async throws {
+    func `A template from a real styled DMG rebuilds to match the design`() async throws {
         let dmg = try #require(Self.styledDMG)
         let app = try #require(Self.systemApp)
         let fileManager = FileManager.default
@@ -384,12 +383,12 @@ struct TemplateFromDMGAcceptanceTests {
             bundledDirectory: nil,
             userDirectory: userDir,
             watchesUserDirectory: false,
-            prewarmsThumbnails: false
+            prewarmsThumbnails: false,
         )
         let entry = try registry.saveUserTemplate(
             named: "Acceptance",
             configuration: TemplateSnapshot.templateConfiguration(from: imported.configuration),
-            assets: imported.assets
+            assets: imported.assets,
         )
 
         // The template's assets are byte-identical to the imported originals.
@@ -397,7 +396,7 @@ struct TemplateFromDMGAcceptanceTests {
         if let originalLayer = imported.configuration.background.layers.first {
             #expect(
                 templateAssets[originalLayer.imageName]
-                    == imported.assets[originalLayer.imageName]
+                    == imported.assets[originalLayer.imageName],
             )
         }
 
@@ -405,7 +404,7 @@ struct TemplateFromDMGAcceptanceTests {
         var buildConfiguration = try TemplateInstantiator.instantiate(templateAt: entry.url)
             .configuration
         let placeholderIndex = try #require(
-            buildConfiguration.items.firstIndex(where: { $0.isPlaceholder })
+            buildConfiguration.items.firstIndex(where: { $0.isPlaceholder }),
         )
         let placeholderPosition = buildConfiguration.items[placeholderIndex].position
         buildConfiguration.items[placeholderIndex].label = app.lastPathComponent
@@ -433,7 +432,7 @@ struct TemplateFromDMGAcceptanceTests {
             configuration: buildConfiguration,
             assetsDirectory: assetsDir,
             outputURL: outputDMG,
-            progress: { _ in }
+            progress: { _ in },
         )
 
         // Re-import the fresh build and compare against the template design.
@@ -455,7 +454,7 @@ struct TemplateFromDMGAcceptanceTests {
         #expect(rebuilt.configuration.background.type == .image)
         let rebuiltLayer = try #require(rebuilt.configuration.background.layers.first)
         let bakedBackground = try Data(
-            contentsOf: assetsDir.appending(path: "background.tiff")
+            contentsOf: assetsDir.appending(path: "background.tiff"),
         )
         #expect(rebuilt.assets[rebuiltLayer.imageName] == bakedBackground)
     }

@@ -6,26 +6,26 @@ import SwiftUI
 // The App Store build has no CLI — any argv launches the GUI.
 
 #if !APPSTORE
-if CommandLine.arguments.count >= 2 {
-    let subcommand = CommandLine.arguments[1]
+    if CommandLine.arguments.count >= 2 {
+        let subcommand = CommandLine.arguments[1]
 
-    switch subcommand {
-    case "build":
-        NSApplication.shared.setActivationPolicy(.prohibited)
-        exit(CLIBuildRunner.run(arguments: Array(CommandLine.arguments.dropFirst(2))))
+        switch subcommand {
+        case "build":
+            NSApplication.shared.setActivationPolicy(.prohibited)
+            exit(CLIBuildRunner.run(arguments: Array(CommandLine.arguments.dropFirst(2))))
 
-    case "init":
-        NSApplication.shared.setActivationPolicy(.prohibited)
-        exit(CLIBuildRunner.runInit(arguments: Array(CommandLine.arguments.dropFirst(2))))
+        case "init":
+            NSApplication.shared.setActivationPolicy(.prohibited)
+            exit(CLIBuildRunner.runInit(arguments: Array(CommandLine.arguments.dropFirst(2))))
 
-    case "-h", "--help", "help":
-        CLIBuildRunner.printGlobalHelp()
-        exit(0)
+        case "-h", "--help", "help":
+            CLIBuildRunner.printGlobalHelp()
+            exit(0)
 
-    default:
-        break
+        default:
+            break
+        }
     }
-}
 #endif
 
 RilmazafoneApp.main()

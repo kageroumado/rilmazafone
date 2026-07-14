@@ -101,7 +101,7 @@ nonisolated enum AliasRecordReader {
             let directory = mountRoot.appending(path: directoryName)
             guard let entries = try? fm.contentsOfDirectory(
                 at: directory,
-                includingPropertiesForKeys: [.isRegularFileKey]
+                includingPropertiesForKeys: [.isRegularFileKey],
             ) else { continue }
 
             let match = entries

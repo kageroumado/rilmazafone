@@ -16,7 +16,7 @@ struct LabelContrastAnalyzerTests {
     /// horizontally across a 660×400 window at default icon/text sizes.
     static func solidBackgroundConfiguration(
         color: RGBColor,
-        itemCount: Int
+        itemCount: Int,
     ) -> DMGConfiguration {
         var config = DMGConfiguration()
         config.window = WindowConfiguration(width: 660, height: 400)
@@ -28,8 +28,8 @@ struct LabelContrastAnalyzerTests {
                 label: "Item \(index).app",
                 position: CGPoint(
                     x: CGFloat(index + 1) * 660 / CGFloat(itemCount + 1),
-                    y: 190
-                )
+                    y: 190,
+                ),
             )
         }
         return config
@@ -37,7 +37,7 @@ struct LabelContrastAnalyzerTests {
 
     static func analyze(_ configuration: DMGConfiguration) -> Set<LegibilityWarning> {
         LabelContrastAnalyzer.analyze(
-            input: LegibilityAnalysisInput(configuration: configuration, layerImages: [:])
+            input: LegibilityAnalysisInput(configuration: configuration, layerImages: [:]),
         )
     }
 
@@ -51,7 +51,7 @@ struct LabelContrastAnalyzerTests {
         width: Int,
         height: Int,
         first: UInt8,
-        second: UInt8
+        second: UInt8,
     ) -> CGImage? {
         makeImage(width: width, height: height) { x, y in
             (x / 8 + y / 8).isMultiple(of: 2) ? first : second
@@ -67,7 +67,7 @@ struct LabelContrastAnalyzerTests {
     nonisolated static func makeImage(
         width: Int,
         height: Int,
-        encodedGray: (Int, Int) -> UInt8
+        encodedGray: (Int, Int) -> UInt8,
     ) -> CGImage? {
         guard let space = CGColorSpace(name: CGColorSpace.sRGB),
               let context = CGContext(
@@ -77,7 +77,7 @@ struct LabelContrastAnalyzerTests {
                   bitsPerComponent: 8,
                   bytesPerRow: 0,
                   space: space,
-                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
               ),
               let data = context.data
         else { return nil }
@@ -100,11 +100,11 @@ struct LabelContrastAnalyzerTests {
 
     // MARK: - Phase Acceptance: solid backgrounds
 
-    @Test("White background flags every item for dark mode and none for light")
-    func whiteBackgroundFlagsDarkOnly() {
+    @Test
+    func `White background flags every item for dark mode and none for light`() {
         let config = Self.solidBackgroundConfiguration(
             color: RGBColor(red: 1, green: 1, blue: 1),
-            itemCount: 3
+            itemCount: 3,
         )
         let warnings = Self.analyze(config)
 
@@ -114,11 +114,11 @@ struct LabelContrastAnalyzerTests {
         }
     }
 
-    @Test("Black background flags every item for light mode and none for dark")
-    func blackBackgroundFlagsLightOnly() {
+    @Test
+    func `Black background flags every item for light mode and none for dark`() {
         let config = Self.solidBackgroundConfiguration(
             color: RGBColor(red: 0, green: 0, blue: 0),
-            itemCount: 3
+            itemCount: 3,
         )
         let warnings = Self.analyze(config)
 
@@ -128,22 +128,22 @@ struct LabelContrastAnalyzerTests {
         }
     }
 
-    @Test("Mid-gray background passes both modes when flat")
-    func midGrayPassesBothModes() {
+    @Test
+    func `Mid-gray background passes both modes when flat`() {
         let config = Self.solidBackgroundConfiguration(
             color: RGBColor(red: 0.5, green: 0.5, blue: 0.5),
-            itemCount: 2
+            itemCount: 2,
         )
         #expect(Self.analyze(config).isEmpty)
     }
 
     // MARK: - Phase Acceptance: panel remediation
 
-    @Test("Adding a dark glass panel behind a flagged label clears its dark-mode warning")
-    func darkGlassPanelClearsDarkWarning() {
+    @Test
+    func `Adding a dark glass panel behind a flagged label clears its dark-mode warning`() {
         var config = Self.solidBackgroundConfiguration(
             color: RGBColor(red: 1, green: 1, blue: 1),
-            itemCount: 1
+            itemCount: 1,
         )
         let itemID = config.items[0].id
 
@@ -154,7 +154,7 @@ struct LabelContrastAnalyzerTests {
             enabled: true,
             color: RGBColor(red: 0, green: 0, blue: 0),
             opacity: 0.6,
-            blurRadius: 20
+            blurRadius: 20,
         )
         let after = Self.analyze(config)
         #expect(!after.contains(LegibilityWarning(itemID: itemID, mode: .dark)))
@@ -163,11 +163,11 @@ struct LabelContrastAnalyzerTests {
 
     // MARK: - Placeholders
 
-    @Test("Placeholder items are analyzed at their position")
-    func placeholdersAreAnalyzed() {
+    @Test
+    func `Placeholder items are analyzed at their position`() {
         var config = Self.solidBackgroundConfiguration(
             color: RGBColor(red: 1, green: 1, blue: 1),
-            itemCount: 0
+            itemCount: 0,
         )
         let placeholder = CanvasItem.appPlaceholder(position: CGPoint(x: 220, y: 190))
         config.items = [placeholder]
@@ -178,8 +178,8 @@ struct LabelContrastAnalyzerTests {
 
     // MARK: - Variance penalty
 
-    @Test("Busy checker flags earlier than a flat background at the same mean luminance")
-    func busyFlagsEarlierThanFlat() throws {
+    @Test
+    func `Busy checker flags earlier than a flat background at the same mean luminance`() throws {
         let windowSize = CGSize(width: 660, height: 400)
         let item = CanvasItem(kind: .app, label: "App.app", position: CGPoint(x: 330, y: 190))
 
@@ -188,14 +188,14 @@ struct LabelContrastAnalyzerTests {
         // threshold, below the 4.5 busy ceiling.
         let flat = try #require(Self.makeFlatImage(width: 660, height: 400, encodedGray: 141))
         let checker = try #require(
-            Self.makeCheckerImage(width: 660, height: 400, first: 26, second: 191)
+            Self.makeCheckerImage(width: 660, height: 400, first: 26, second: 191),
         )
 
         let flatWarnings = LabelContrastAnalyzer.analyze(
-            composite: flat, items: [item], iconSize: 160, textSize: 13, windowSize: windowSize
+            composite: flat, items: [item], iconSize: 160, textSize: 13, windowSize: windowSize,
         )
         let busyWarnings = LabelContrastAnalyzer.analyze(
-            composite: checker, items: [item], iconSize: 160, textSize: 13, windowSize: windowSize
+            composite: checker, items: [item], iconSize: 160, textSize: 13, windowSize: windowSize,
         )
 
         #expect(!flatWarnings.contains(LegibilityWarning(itemID: item.id, mode: .dark)))
@@ -204,12 +204,12 @@ struct LabelContrastAnalyzerTests {
 
     // MARK: - Geometry
 
-    @Test("Label rect sits just below the icon cell and matches canvas metrics")
-    func labelRectGeometry() {
+    @Test
+    func `Label rect sits just below the icon cell and matches canvas metrics`() {
         let rect = LabelContrastAnalyzer.labelRect(
             position: CGPoint(x: 330, y: 200),
             iconSize: 160,
-            textSize: 13
+            textSize: 13,
         )
         // Block height = 160 + 20 + 4 + 20 = 204; block top = 200 - 102 = 98;
         // label top = 98 + 180 + 4 = 282; width = iconSize + 40; two 17 pt lines.
@@ -221,8 +221,8 @@ struct LabelContrastAnalyzerTests {
 
     // MARK: - Bundled templates
 
-    @Test("Bundled templates produce zero legibility warnings")
-    func bundledTemplatesHaveZeroWarnings() throws {
+    @Test
+    func `Bundled templates produce zero legibility warnings`() throws {
         let repoRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
@@ -231,13 +231,13 @@ struct LabelContrastAnalyzerTests {
         guard FileManager.default.fileExists(atPath: templatesDir.path) else {
             print(
                 "SKIPPED: bundled templates not present in this tree "
-                    + "(\(templatesDir.path) missing); re-run after the templates branch merges."
+                    + "(\(templatesDir.path) missing); re-run after the templates branch merges.",
             )
             return
         }
 
         let entries = try FileManager.default.contentsOfDirectory(
-            at: templatesDir, includingPropertiesForKeys: nil
+            at: templatesDir, includingPropertiesForKeys: nil,
         )
         var analyzedCount = 0
         for entry in entries {
@@ -256,11 +256,11 @@ struct LabelContrastAnalyzerTests {
             }
 
             let warnings = LabelContrastAnalyzer.analyze(
-                input: LegibilityAnalysisInput(configuration: config, layerImages: layerImages)
+                input: LegibilityAnalysisInput(configuration: config, layerImages: layerImages),
             )
             #expect(
                 warnings.isEmpty,
-                "Template \(entry.lastPathComponent) unexpectedly flagged: \(warnings)"
+                "Template \(entry.lastPathComponent) unexpectedly flagged: \(warnings)",
             )
             analyzedCount += 1
         }
@@ -268,20 +268,20 @@ struct LabelContrastAnalyzerTests {
         if analyzedCount == 0 {
             print(
                 "SKIPPED: template directory exists but contained no parseable "
-                    + "document.json packages; re-run after the templates branch merges."
+                    + "document.json packages; re-run after the templates branch merges.",
             )
         }
     }
 
     // MARK: - Performance & isolation
 
-    @Test("4K-equivalent pass with 8 items completes under 150 ms off the main thread")
-    func fourKPassStaysUnderBudgetOffMain() async throws {
+    @Test
+    func `4K-equivalent pass with 8 items completes under 150 ms off the main thread`() async throws {
         let items = (0 ..< 8).map { index in
             CanvasItem(
                 kind: .app,
                 label: "Item \(index).app",
-                position: CGPoint(x: 160 + index * 220, y: 540)
+                position: CGPoint(x: 160 + index * 220, y: 540),
             )
         }
 
@@ -290,7 +290,7 @@ struct LabelContrastAnalyzerTests {
         let probe: (wasOffMain: Bool, elapsed: Duration, warnings: Set<LegibilityWarning>)? =
             await Task.detached(name: "Legibility Perf Probe") {
                 guard let composite = LabelContrastAnalyzerTests.makeFlatImage(
-                    width: 3840, height: 2160, encodedGray: 255
+                    width: 3_840, height: 2_160, encodedGray: 255,
                 ) else { return nil }
 
                 let wasOffMain = !LabelContrastAnalyzerTests.isOnMainThread()
@@ -302,7 +302,7 @@ struct LabelContrastAnalyzerTests {
                         items: items,
                         iconSize: 160,
                         textSize: 13,
-                        windowSize: CGSize(width: 1920, height: 1080)
+                        windowSize: CGSize(width: 1_920, height: 1_080),
                     )
                 }
                 return (wasOffMain, elapsed, warnings)

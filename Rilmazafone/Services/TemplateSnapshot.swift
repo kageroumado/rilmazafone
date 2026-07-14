@@ -60,7 +60,7 @@ nonisolated enum TemplateSnapshot {
     /// Returns the rewritten items plus the new payloads keyed by asset name.
     static func embedItems(
         _ items: [CanvasItem],
-        documentURL: URL?
+        documentURL: URL?,
     ) -> (items: [CanvasItem], payloads: [String: Data]) {
         var payloads: [String: Data] = [:]
         let embedded = items.map { item -> CanvasItem in
@@ -78,7 +78,7 @@ nonisolated enum TemplateSnapshot {
             if let payload {
                 var portable = item
                 let assetName = EmbeddedAssets.assetName(
-                    itemID: item.id, label: item.label, kind: item.kind
+                    itemID: item.id, label: item.label, kind: item.kind,
                 )
                 portable.assetName = assetName
                 portable.sourcePath = nil

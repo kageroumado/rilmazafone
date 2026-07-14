@@ -24,7 +24,7 @@ final class TemplateSaveCoordinator {
             informativeText: "The current design is added to your template library. "
                 + "The app becomes a placeholder slot that new documents fill by dropping an app in.",
             defaultName: suggestedName,
-            confirmTitle: "Save"
+            confirmTitle: "Save",
         ) else { return }
 
         let snapshot = document.templateSnapshot()
@@ -32,7 +32,7 @@ final class TemplateSaveCoordinator {
             let entry = try TemplateRegistry.shared.saveUserTemplate(
                 named: name,
                 configuration: snapshot.configuration,
-                assets: snapshot.assets
+                assets: snapshot.assets,
             )
             presentSaveConfirmation(for: entry)
         } catch {
@@ -49,7 +49,7 @@ final class TemplateSaveCoordinator {
     func createTemplateFromDMG() {
         guard let url = DMGImportCoordinator.shared.promptForDiskImage(
             message: "Choose a disk image to turn into a template.",
-            prompt: "Import"
+            prompt: "Import",
         ) else { return }
 
         Task(name: "Template from DMG") {
@@ -58,7 +58,7 @@ final class TemplateSaveCoordinator {
             }
             saveTemplate(
                 from: result,
-                suggestedName: url.deletingPathExtension().lastPathComponent
+                suggestedName: url.deletingPathExtension().lastPathComponent,
             )
         }
     }
@@ -72,14 +72,14 @@ final class TemplateSaveCoordinator {
             informativeText: "The imported layout is added to your template library. "
                 + "The app becomes a placeholder slot that new documents fill by dropping an app in.",
             defaultName: suggestedName,
-            confirmTitle: "Save"
+            confirmTitle: "Save",
         ) else { return }
 
         do {
             let entry = try TemplateRegistry.shared.saveUserTemplate(
                 named: name,
                 configuration: TemplateSnapshot.templateConfiguration(from: result.configuration),
-                assets: result.assets
+                assets: result.assets,
             )
             TemplateChooserController.shared.show(selecting: entry)
         } catch {
@@ -101,14 +101,14 @@ final class TemplateSaveCoordinator {
         title: String,
         informativeText: String,
         defaultName: String,
-        confirmTitle: String
+        confirmTitle: String,
     ) -> String? {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = informativeText
 
         let field = NSTextField(frame: NSRect(
-            x: 0, y: 0, width: Layout.nameFieldWidth, height: Layout.nameFieldHeight
+            x: 0, y: 0, width: Layout.nameFieldWidth, height: Layout.nameFieldHeight,
         ))
         field.stringValue = defaultName
         field.placeholderString = "Template Name"

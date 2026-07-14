@@ -40,7 +40,7 @@ nonisolated enum TemplateInstantiator {
         guard let contents = try? FileManager.default.contentsOfDirectory(
             at: assetsDirectory,
             includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
+            options: [.skipsHiddenFiles],
         ) else { return [:] }
 
         var assets: [String: Data] = [:]
@@ -59,7 +59,7 @@ nonisolated enum TemplateInstantiator {
     /// plus its asset payloads.
     static func instantiate(
         templateAt url: URL,
-        windowSizeOverride: CGSize? = nil
+        windowSizeOverride: CGSize? = nil,
     ) throws -> DMGImporter.Result {
         var configuration = try configuration(ofTemplateAt: url)
         if let size = windowSizeOverride {
@@ -68,7 +68,7 @@ nonisolated enum TemplateInstantiator {
         }
         return DMGImporter.Result(
             configuration: configuration,
-            assets: assets(ofTemplateAt: url)
+            assets: assets(ofTemplateAt: url),
         )
     }
 

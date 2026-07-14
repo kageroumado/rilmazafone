@@ -34,7 +34,7 @@ struct ItemInspector: View {
             itemID: item.id,
             background: item.background?.enabled ?? false,
             shadow: item.background?.shadow?.enabled ?? false,
-            bevel: item.background?.bevel?.enabled ?? false
+            bevel: item.background?.bevel?.enabled ?? false,
         )
     }
 
@@ -197,7 +197,7 @@ struct ItemInspector: View {
                 ColorPicker(
                     "Color",
                     selection: bgColorBinding(bg),
-                    supportsOpacity: false
+                    supportsOpacity: false,
                 )
 
                 InspectorSliderRow(label: "Opacity", value: bgOpacityBinding(bg), range: 0 ... 1, format: .percent)
@@ -323,21 +323,21 @@ struct ItemInspector: View {
     private var nameBinding: Binding<String> {
         Binding(
             get: { item.label },
-            set: { document.setItemLabel(item.id, to: $0, undoManager: undoManager) }
+            set: { document.setItemLabel(item.id, to: $0, undoManager: undoManager) },
         )
     }
 
     private var linkTypeBinding: Binding<ItemLinkType> {
         Binding(
             get: { item.linkType },
-            set: { document.setItemLinkType(item.id, to: $0, undoManager: undoManager) }
+            set: { document.setItemLinkType(item.id, to: $0, undoManager: undoManager) },
         )
     }
 
     private var symlinkTargetBinding: Binding<String> {
         Binding(
             get: { item.sourcePath ?? "" },
-            set: { document.setItemSourcePath(item.id, to: $0.isEmpty ? nil : $0, undoManager: undoManager) }
+            set: { document.setItemSourcePath(item.id, to: $0.isEmpty ? nil : $0, undoManager: undoManager) },
         )
     }
 
@@ -347,7 +347,7 @@ struct ItemInspector: View {
             set: {
                 let clamped = min(max($0, 0), windowWidth)
                 document.moveItem(item.id, to: CGPoint(x: clamped, y: item.position.y), undoManager: undoManager)
-            }
+            },
         )
     }
 
@@ -357,7 +357,7 @@ struct ItemInspector: View {
             set: {
                 let clamped = min(max($0, 0), windowHeight)
                 document.moveItem(item.id, to: CGPoint(x: item.position.x, y: clamped), undoManager: undoManager)
-            }
+            },
         )
     }
 
@@ -385,7 +385,7 @@ struct ItemInspector: View {
                 } else {
                     document.setItemBackgroundEnabled(item.id, false, undoManager: undoManager)
                 }
-            }
+            },
         )
     }
 
@@ -399,7 +399,7 @@ struct ItemInspector: View {
             set: { newColor in
                 guard let rgb = RGBColor(swiftUIColor: newColor) else { return }
                 updateBg { $0.color = rgb }
-            }
+            },
         )
     }
 
@@ -426,7 +426,7 @@ struct ItemInspector: View {
     private func bgBlendModeBinding(_ bg: ItemBackground) -> Binding<ItemBlendMode> {
         Binding(
             get: { bg.blendMode },
-            set: { val in updateBg { $0.blendMode = val } }
+            set: { val in updateBg { $0.blendMode = val } },
         )
     }
 
@@ -454,7 +454,7 @@ struct ItemInspector: View {
                         document.setItemShadow(item.id, to: shadow, undoManager: undoManager)
                     }
                 }
-            }
+            },
         )
     }
 
@@ -470,35 +470,35 @@ struct ItemInspector: View {
             set: { newColor in
                 guard let rgb = RGBColor(swiftUIColor: newColor) else { return }
                 updateShadow { $0.color = rgb }
-            }
+            },
         )
     }
 
     private func shadowOpacityBinding(_ shadow: ShadowConfiguration) -> Binding<Double> {
         Binding(
             get: { shadow.opacity },
-            set: { val in updateShadow { $0.opacity = val } }
+            set: { val in updateShadow { $0.opacity = val } },
         )
     }
 
     private func shadowRadiusBinding(_ shadow: ShadowConfiguration) -> Binding<Double> {
         Binding(
             get: { shadow.radius },
-            set: { val in updateShadow { $0.radius = val } }
+            set: { val in updateShadow { $0.radius = val } },
         )
     }
 
     private func shadowOffsetXBinding(_ shadow: ShadowConfiguration) -> Binding<Double> {
         Binding(
             get: { shadow.offsetX },
-            set: { val in updateShadow { $0.offsetX = val } }
+            set: { val in updateShadow { $0.offsetX = val } },
         )
     }
 
     private func shadowOffsetYBinding(_ shadow: ShadowConfiguration) -> Binding<Double> {
         Binding(
             get: { shadow.offsetY },
-            set: { val in updateShadow { $0.offsetY = val } }
+            set: { val in updateShadow { $0.offsetY = val } },
         )
     }
 
@@ -526,7 +526,7 @@ struct ItemInspector: View {
                         document.setItemBevel(item.id, to: bevel, undoManager: undoManager)
                     }
                 }
-            }
+            },
         )
     }
 
@@ -539,21 +539,21 @@ struct ItemInspector: View {
     private func bevelDepthBinding(_ bevel: BevelConfiguration) -> Binding<Double> {
         Binding(
             get: { bevel.depth },
-            set: { val in updateBevel { $0.depth = val } }
+            set: { val in updateBevel { $0.depth = val } },
         )
     }
 
     private func bevelLightAngleBinding(_ bevel: BevelConfiguration) -> Binding<Double> {
         Binding(
             get: { bevel.lightAngle },
-            set: { val in updateBevel { $0.lightAngle = val } }
+            set: { val in updateBevel { $0.lightAngle = val } },
         )
     }
 
     private func bevelIntensityBinding(_ bevel: BevelConfiguration) -> Binding<Double> {
         Binding(
             get: { bevel.intensity },
-            set: { val in updateBevel { $0.intensity = val } }
+            set: { val in updateBevel { $0.intensity = val } },
         )
     }
 }

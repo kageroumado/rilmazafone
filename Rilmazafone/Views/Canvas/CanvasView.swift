@@ -36,23 +36,23 @@ struct CanvasView: View {
                     dmgWindowPreview
                         .frame(
                             width: windowWidth,
-                            height: totalHeight
+                            height: totalHeight,
                         )
                         .scaleEffect(ez)
                         .frame(
                             width: windowWidth * ez,
-                            height: totalHeight * ez
+                            height: totalHeight * ez,
                         )
                 }
                 .frame(
                     width: max(
                         geometry.size.width,
-                        windowWidth * effectiveZoom(fitZoom: fitZoom) + 80
+                        windowWidth * effectiveZoom(fitZoom: fitZoom) + 80,
                     ),
                     height: max(
                         geometry.size.height,
-                        (windowHeight + Self.titleBarHeight) * effectiveZoom(fitZoom: fitZoom) + 80
-                    )
+                        (windowHeight + Self.titleBarHeight) * effectiveZoom(fitZoom: fitZoom) + 80,
+                    ),
                 )
             }
             .onAppear {
@@ -85,7 +85,7 @@ struct CanvasView: View {
         .fileImporter(
             isPresented: $isFileImporterPresented,
             allowedContentTypes: [.applicationBundle],
-            allowsMultipleSelection: false
+            allowsMultipleSelection: false,
         ) { result in
             if case let .success(urls) = result, let url = urls.first {
                 Task {
@@ -96,7 +96,7 @@ struct CanvasView: View {
                     await document.addApp(
                         from: url,
                         at: CGPoint(x: appX, y: centerY),
-                        undoManager: undoManager
+                        undoManager: undoManager,
                     )
                 }
             }
@@ -122,9 +122,9 @@ struct CanvasView: View {
     /// `itemsGeneration`) so drag-moves never re-composite.
     private var panelBackdropGeneration: Int? {
         guard document.items.contains(where: { item in
-                  guard let bg = item.background else { return false }
-                  return bg.enabled && bg.blurRadius > 0
-              })
+            guard let bg = item.background else { return false }
+            return bg.enabled && bg.blurRadius > 0
+        })
         else { return nil }
 
         var hasher = Hasher()
@@ -158,13 +158,13 @@ struct CanvasView: View {
 
         let input = BackdropRenderInput(
             configuration: document.configuration,
-            layerImages: document.backgroundImages
+            layerImages: document.backgroundImages,
         )
         let image = await Task.detached(name: "Panel Backdrop Composite", priority: .userInitiated) {
             CompositeRenderer.renderPanelBackdrop(
                 configuration: input.configuration,
                 layerImages: input.layerImages,
-                scale: 2
+                scale: 2,
             )
         }.value
 
@@ -179,9 +179,9 @@ struct CanvasView: View {
             image: image,
             pointSize: CGSize(
                 width: configuration.window.width,
-                height: configuration.window.height
+                height: configuration.window.height,
             ),
-            generation: generation
+            generation: generation,
         )
     }
 
@@ -265,7 +265,7 @@ struct CanvasView: View {
                 Text(document.volumeName)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(
-                        prefersDarkAppearance ? ChromeColors.darkTitleText : ChromeColors.lightTitleText
+                        prefersDarkAppearance ? ChromeColors.darkTitleText : ChromeColors.lightTitleText,
                     )
                     .lineLimit(1)
 
@@ -319,14 +319,14 @@ struct CanvasView: View {
             let radians = grad.angle * .pi / 180
             let startPoint = UnitPoint(
                 x: 0.5 + cos(radians + .pi) * 0.5,
-                y: 0.5 + sin(radians + .pi) * 0.5
+                y: 0.5 + sin(radians + .pi) * 0.5,
             )
             let endPoint = UnitPoint(
                 x: 0.5 + cos(radians) * 0.5,
-                y: 0.5 + sin(radians) * 0.5
+                y: 0.5 + sin(radians) * 0.5,
             )
             Rectangle().fill(
-                LinearGradient(stops: swiftUIStops, startPoint: startPoint, endPoint: endPoint)
+                LinearGradient(stops: swiftUIStops, startPoint: startPoint, endPoint: endPoint),
             )
         case .radial:
             Rectangle().fill(
@@ -334,8 +334,8 @@ struct CanvasView: View {
                     stops: swiftUIStops,
                     center: UnitPoint(x: grad.centerX, y: grad.centerY),
                     startRadius: grad.startRadius * windowWidth,
-                    endRadius: grad.endRadius * windowWidth
-                )
+                    endRadius: grad.endRadius * windowWidth,
+                ),
             )
         }
     }
@@ -353,13 +353,13 @@ struct CanvasView: View {
                     windowWidth: windowWidth,
                     onDragChanged: { proposed in
                         snapToGuides(proposed: proposed, excludingItemID: layer.id)
-                    }
+                    },
                 ) { newPosition in
                     activeGuides = .none
                     document.moveBackgroundLayer(
                         layer.id,
                         to: newPosition,
-                        undoManager: undoManager
+                        undoManager: undoManager,
                     )
                 } onSelect: {
                     selectedItemID = layer.id
@@ -379,13 +379,13 @@ struct CanvasView: View {
                 zoom: currentZoom,
                 onDragChanged: { proposed in
                     snapToGuides(proposed: proposed, excludingItemID: layer.id)
-                }
+                },
             ) { newPosition in
                 activeGuides = .none
                 document.moveTextLayer(
                     layer.id,
                     to: newPosition,
-                    undoManager: undoManager
+                    undoManager: undoManager,
                 )
             } onSelect: {
                 selectedItemID = layer.id
@@ -404,13 +404,13 @@ struct CanvasView: View {
                 zoom: currentZoom,
                 onDragChanged: { proposed in
                     snapToGuides(proposed: proposed, excludingItemID: layer.id)
-                }
+                },
             ) { newPosition in
                 activeGuides = .none
                 document.moveSFSymbolLayer(
                     layer.id,
                     to: newPosition,
-                    undoManager: undoManager
+                    undoManager: undoManager,
                 )
             } onSelect: {
                 selectedItemID = layer.id
@@ -433,7 +433,7 @@ struct CanvasView: View {
                 bg: item.background!,
                 currentZoom: currentZoom,
                 iconSize: iconSize,
-                backdrop: panelBackdrop
+                backdrop: panelBackdrop,
             )
             .equatable()
         }
@@ -451,12 +451,12 @@ struct CanvasView: View {
                 zoom: currentZoom,
                 windowSize: CGSize(
                     width: windowWidth,
-                    height: windowHeight
+                    height: windowHeight,
                 ),
                 hideExtensions: document.hideExtensions,
                 onDragChanged: { proposed in
                     snapToGuides(proposed: proposed, excludingItemID: item.id)
-                }
+                },
             ) { newPosition in
                 activeGuides = .none
                 document.moveItem(item.id, to: newPosition, undoManager: undoManager)
@@ -511,7 +511,7 @@ struct CanvasView: View {
     /// Returns the snapped position (rounded to integers) and updates `activeGuides`.
     private func snapToGuides(
         proposed: CGPoint,
-        excludingItemID id: UUID
+        excludingItemID id: UUID,
     ) -> CGPoint {
         let threshold = Self.guideSnapThreshold
         var guides = AlignmentGuides()
@@ -634,7 +634,7 @@ struct CanvasView: View {
             await document.handleDrop(
                 urls: urls,
                 defaultPosition: CGPoint(x: windowWidth / 2, y: windowHeight / 2),
-                undoManager: undoManager
+                undoManager: undoManager,
             )
         }
     }

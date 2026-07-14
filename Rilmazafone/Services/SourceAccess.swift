@@ -32,14 +32,14 @@ nonisolated enum SourceAccess {
                let data = try? url.bookmarkData(
                    options: [.withSecurityScope],
                    includingResourceValuesForKeys: nil,
-                   relativeTo: documentURL
+                   relativeTo: documentURL,
                ) {
                 return data
             }
             return try? url.bookmarkData(
                 options: [.withSecurityScope],
                 includingResourceValuesForKeys: nil,
-                relativeTo: nil
+                relativeTo: nil,
             )
         #else
             _ = url
@@ -51,7 +51,7 @@ nonisolated enum SourceAccess {
     // MARK: - Reconciliation
 
     /// The outcome of reconciling a stored bookmark against the current document URL.
-    struct Reconciliation: Sendable {
+    struct Reconciliation {
         /// The source URL the bookmark resolved to.
         let url: URL
         /// A replacement bookmark when the stored one was stale or app-scoped
@@ -80,7 +80,7 @@ nonisolated enum SourceAccess {
                     resolvingBookmarkData: bookmark,
                     options: [.withSecurityScope, .withoutUI],
                     relativeTo: documentURL,
-                    bookmarkDataIsStale: &isStale
+                    bookmarkDataIsStale: &isStale,
                 )
             }
             if resolved == nil {
@@ -90,7 +90,7 @@ nonisolated enum SourceAccess {
                     resolvingBookmarkData: bookmark,
                     options: [.withSecurityScope, .withoutUI],
                     relativeTo: nil,
-                    bookmarkDataIsStale: &isStale
+                    bookmarkDataIsStale: &isStale,
                 )
             }
             guard let url = resolved else { return nil }
@@ -107,7 +107,7 @@ nonisolated enum SourceAccess {
                let documentScoped = try? url.bookmarkData(
                    options: [.withSecurityScope],
                    includingResourceValuesForKeys: nil,
-                   relativeTo: documentURL
+                   relativeTo: documentURL,
                ) {
                 return Reconciliation(url: url, refreshedBookmark: documentScoped)
             }
@@ -115,7 +115,7 @@ nonisolated enum SourceAccess {
                 let appScoped = try? url.bookmarkData(
                     options: [.withSecurityScope],
                     includingResourceValuesForKeys: nil,
-                    relativeTo: nil
+                    relativeTo: nil,
                 )
                 return Reconciliation(url: url, refreshedBookmark: appScoped)
             }
@@ -139,7 +139,7 @@ nonisolated enum SourceAccess {
         bookmark: Data?,
         path: String?,
         documentURL: URL?,
-        _ body: (URL?) throws -> T
+        _ body: (URL?) throws -> T,
     ) rethrows -> T {
         #if APPSTORE
             if let bookmark, let url = resolveForAccess(bookmark, documentURL: documentURL) {
@@ -158,7 +158,7 @@ nonisolated enum SourceAccess {
         bookmark: Data?,
         path: String?,
         documentURL: URL?,
-        _ body: (URL?) async throws -> T
+        _ body: (URL?) async throws -> T,
     ) async rethrows -> T {
         #if APPSTORE
             if let bookmark, let url = resolveForAccess(bookmark, documentURL: documentURL) {
@@ -174,13 +174,13 @@ nonisolated enum SourceAccess {
     static func withScope<T>(
         item: CanvasItem,
         documentURL: URL?,
-        _ body: (URL?) throws -> T
+        _ body: (URL?) throws -> T,
     ) rethrows -> T {
         try withScope(
             bookmark: item.sourceBookmark,
             path: item.sourcePath,
             documentURL: documentURL,
-            body
+            body,
         )
     }
 
@@ -188,13 +188,13 @@ nonisolated enum SourceAccess {
     static func withScope<T>(
         item: CanvasItem,
         documentURL: URL?,
-        _ body: (URL?) async throws -> T
+        _ body: (URL?) async throws -> T,
     ) async rethrows -> T {
         try await withScope(
             bookmark: item.sourceBookmark,
             path: item.sourcePath,
             documentURL: documentURL,
-            body
+            body,
         )
     }
 
@@ -225,7 +225,7 @@ nonisolated enum SourceAccess {
                    resolvingBookmarkData: bookmark,
                    options: [.withSecurityScope, .withoutUI],
                    relativeTo: documentURL,
-                   bookmarkDataIsStale: &isStale
+                   bookmarkDataIsStale: &isStale,
                ) {
                 return url
             }
@@ -233,7 +233,7 @@ nonisolated enum SourceAccess {
                 resolvingBookmarkData: bookmark,
                 options: [.withSecurityScope, .withoutUI],
                 relativeTo: nil,
-                bookmarkDataIsStale: &isStale
+                bookmarkDataIsStale: &isStale,
             )
         }
     #endif

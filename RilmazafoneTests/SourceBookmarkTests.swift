@@ -1,5 +1,5 @@
-import CoreGraphics
 import AppKit
+import CoreGraphics
 import Foundation
 import Testing
 @testable import Rilmazafone
@@ -23,15 +23,15 @@ struct SourceBookmarkTests {
 
     // MARK: - Codable
 
-    @Test("CanvasItem with sourceBookmark survives JSON round-trip")
-    func bookmarkRoundTrip() throws {
+    @Test
+    func `CanvasItem with sourceBookmark survives JSON round-trip`() throws {
         let bookmark = Data([0x62, 0x6F, 0x6F, 0x6B, 0x00, 0xFF])
         let item = CanvasItem(
             kind: .app,
             label: "App.app",
             sourcePath: "/tmp/App.app",
             sourceBookmark: bookmark,
-            position: CGPoint(x: 100, y: 200)
+            position: CGPoint(x: 100, y: 200),
         )
 
         let encoded = try JSONEncoder().encode(item)
@@ -41,8 +41,8 @@ struct SourceBookmarkTests {
         #expect(decoded.sourceBookmark == bookmark)
     }
 
-    @Test("CanvasItem without sourceBookmark decodes nil (legacy documents)")
-    func bookmarkAbsentDecodesNil() throws {
+    @Test
+    func `CanvasItem without sourceBookmark decodes nil (legacy documents)`() throws {
         let json = Data("""
         {
             "kind": "app",
@@ -58,8 +58,8 @@ struct SourceBookmarkTests {
         #expect(decoded.sourcePath == "/tmp/App.app")
     }
 
-    @Test("Configuration with bookmarked items survives JSON round-trip")
-    func configurationBookmarkRoundTrip() throws {
+    @Test
+    func `Configuration with bookmarked items survives JSON round-trip`() throws {
         var config = DMGConfiguration()
         config.items = [
             CanvasItem(
@@ -67,12 +67,12 @@ struct SourceBookmarkTests {
                 label: "README.txt",
                 sourcePath: "/tmp/README.txt",
                 sourceBookmark: Data([1, 2, 3]),
-                position: CGPoint(x: 50, y: 60)
+                position: CGPoint(x: 50, y: 60),
             ),
             CanvasItem(
                 kind: .applicationsSymlink,
                 label: "Applications",
-                position: CGPoint(x: 400, y: 60)
+                position: CGPoint(x: 400, y: 60),
             ),
         ]
 
@@ -84,8 +84,8 @@ struct SourceBookmarkTests {
 
     // MARK: - requiresSource
 
-    @Test("requiresSource: copy items need one, symlinks do not")
-    func requiresSourceSemantics() {
+    @Test
+    func `requiresSource: copy items need one, symlinks do not`() {
         let copyItem = CanvasItem(kind: .file, label: "F", position: .zero)
         #expect(copyItem.requiresSource)
 
@@ -100,8 +100,8 @@ struct SourceBookmarkTests {
     // MARK: - GitHub-Build Fallbacks
 
     #if !APPSTORE
-        @Test("makeBookmark returns nil in the unsandboxed build")
-        func makeBookmarkUnsandboxed() throws {
+        @Test
+        func `makeBookmark returns nil in the unsandboxed build`() throws {
             let file = try makeTempFile()
             defer { cleanup(file) }
 
@@ -110,23 +110,23 @@ struct SourceBookmarkTests {
         }
     #endif
 
-    @Test("withScope passes the raw path URL through when no bookmark exists")
-    func withScopePassthrough() {
+    @Test
+    func `withScope passes the raw path URL through when no bookmark exists`() {
         let received = SourceAccess.withScope(
-            bookmark: nil, path: "/tmp/some/file", documentURL: nil
+            bookmark: nil, path: "/tmp/some/file", documentURL: nil,
         ) { $0 }
         #expect(received?.path == "/tmp/some/file")
 
         let nilReceived = SourceAccess.withScope(
-            bookmark: nil, path: nil, documentURL: nil
+            bookmark: nil, path: nil, documentURL: nil,
         ) { $0 }
         #expect(nilReceived == nil)
     }
 
     // MARK: - Availability
 
-    @Test("isSourceAvailable reflects on-disk existence for copy items")
-    func availabilityTracksDisk() throws {
+    @Test
+    func `isSourceAvailable reflects on-disk existence for copy items`() throws {
         let file = try makeTempFile()
         defer { cleanup(file) }
 
@@ -137,10 +137,10 @@ struct SourceBookmarkTests {
         #expect(!SourceAccess.isSourceAvailable(item: item, documentURL: nil))
     }
 
-    @Test("Symlink-type and Applications-symlink items are always available")
-    func nonCopyItemsAlwaysAvailable() {
+    @Test
+    func `Symlink-type and Applications-symlink items are always available`() {
         var symlinkItem = CanvasItem(
-            kind: .folder, label: "L", sourcePath: "/nonexistent/target", position: .zero
+            kind: .folder, label: "L", sourcePath: "/nonexistent/target", position: .zero,
         )
         symlinkItem.linkType = .symlink
         #expect(SourceAccess.isSourceAvailable(item: symlinkItem, documentURL: nil))
@@ -149,17 +149,17 @@ struct SourceBookmarkTests {
         #expect(SourceAccess.isSourceAvailable(item: appsLink, documentURL: nil))
     }
 
-    @Test("Copy item with no source path is unavailable")
-    func nilSourceUnavailable() {
+    @Test
+    func `Copy item with no source path is unavailable`() {
         let item = CanvasItem(kind: .file, label: "F", position: .zero)
         #expect(!SourceAccess.isSourceAvailable(item: item, documentURL: nil))
     }
 
     // MARK: - Document Missing-Source State
 
-    @Test("refreshSourceStates flags deleted sources and clears restored ones")
+    @Test
     @MainActor
-    func missingStateLifecycle() throws {
+    func `refreshSourceStates flags deleted sources and clears restored ones`() throws {
         let file = try makeTempFile()
         defer { cleanup(file) }
 
@@ -177,15 +177,15 @@ struct SourceBookmarkTests {
         #expect(!doc.missingSourceIDs.contains(item.id))
     }
 
-    @Test("GitHub-created document (path only, no bookmark) with a dead path shows missing, not crash")
+    @Test
     @MainActor
-    func pathOnlyDocumentMissing() {
+    func `GitHub-created document (path only, no bookmark) with a dead path shows missing, not crash`() {
         let doc = RilmazafoneDocument()
         let item = CanvasItem(
             kind: .app,
             label: "Gone.app",
             sourcePath: "/nonexistent/Gone.app",
-            position: .zero
+            position: .zero,
         )
         doc.addItem(item, undoManager: nil)
         doc.documentFileURLDidChange(nil)
@@ -195,9 +195,9 @@ struct SourceBookmarkTests {
 
     // MARK: - Relink
 
-    @Test("relinkItem updates the source path, clears missing state, and resolves the icon")
+    @Test
     @MainActor
-    func relinkUpdatesPathAndIcon() async throws {
+    func `relinkItem updates the source path, clears missing state, and resolves the icon`() async throws {
         let original = try makeTempFile(named: "original.txt")
         defer { cleanup(original) }
         let replacement = try makeTempFile(named: "replacement.txt")
@@ -223,9 +223,9 @@ struct SourceBookmarkTests {
         #endif
     }
 
-    @Test("relinkItem is undoable: undo restores the previous source path and bookmark")
+    @Test
     @MainActor
-    func relinkUndo() async throws {
+    func `relinkItem is undoable: undo restores the previous source path and bookmark`() async throws {
         let replacement = try makeTempFile(named: "replacement.txt")
         defer { cleanup(replacement) }
 
@@ -236,7 +236,7 @@ struct SourceBookmarkTests {
             label: "F",
             sourcePath: "/nonexistent/old.txt",
             sourceBookmark: oldBookmark,
-            position: .zero
+            position: .zero,
         )
         doc.addItem(item, undoManager: nil)
 
@@ -252,8 +252,8 @@ struct SourceBookmarkTests {
 
     // MARK: - Build Validation
 
-    @Test("validateSources throws missingSources listing offending labels")
-    func validateSourcesThrows() throws {
+    @Test
+    func `validateSources throws missingSources listing offending labels`() throws {
         var config = DMGConfiguration()
         config.items = [
             CanvasItem(kind: .app, label: "Gone.app", sourcePath: "/nonexistent/Gone.app", position: .zero),
@@ -269,13 +269,13 @@ struct SourceBookmarkTests {
         }
     }
 
-    @Test("validateSources passes when all copy sources exist")
-    func validateSourcesPasses() throws {
+    @Test
+    func `validateSources passes when all copy sources exist`() throws {
         let file = try makeTempFile()
         defer { cleanup(file) }
 
         var symlinkItem = CanvasItem(
-            kind: .folder, label: "Link", sourcePath: "/nonexistent/target", position: .zero
+            kind: .folder, label: "Link", sourcePath: "/nonexistent/target", position: .zero,
         )
         symlinkItem.linkType = .symlink
 

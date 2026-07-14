@@ -24,7 +24,7 @@ final class DMGImportCoordinator {
     func presentOpenPanel() {
         guard let url = promptForDiskImage(
             message: "Choose a disk image to import its layout.",
-            prompt: "Import"
+            prompt: "Import",
         ) else { return }
         Task {
             await importIntoNewDocument(from: url)
@@ -97,7 +97,7 @@ final class DMGImportCoordinator {
             contentRect: NSRect(x: 0, y: 0, width: Layout.panelWidth, height: Layout.panelHeight),
             styleMask: [.titled],
             backing: .buffered,
-            defer: false
+            defer: false,
         )
         panel.title = "Import DMG"
         panel.isFloatingPanel = true
@@ -109,7 +109,7 @@ final class DMGImportCoordinator {
         spinner.startAnimation(nil)
 
         let label = NSTextField(
-            labelWithString: "Importing \u{201C}\(url.lastPathComponent)\u{201D}\u{2026}"
+            labelWithString: "Importing \u{201C}\(url.lastPathComponent)\u{201D}\u{2026}",
         )
         label.lineBreakMode = .byTruncatingMiddle
 
@@ -120,7 +120,7 @@ final class DMGImportCoordinator {
             top: Layout.padding,
             left: Layout.padding,
             bottom: Layout.padding,
-            right: Layout.padding
+            right: Layout.padding,
         )
 
         panel.contentView = stack

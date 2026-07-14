@@ -50,7 +50,7 @@ nonisolated enum AliasRecordBuilder {
     static func createBackgroundAlias(
         imageName: String,
         volumeName: String,
-        mountPoint: URL
+        mountPoint: URL,
     ) throws -> Data {
         let backgroundDir = mountPoint.appending(path: ".background")
         let fileURL = backgroundDir.appending(path: imageName)
@@ -91,7 +91,7 @@ nonisolated enum AliasRecordBuilder {
             filename: imageName,
             fileID: UInt32(fileInode),
             fileCreated: fileCTime,
-            volumeRelativePath: volumeRelativePath
+            volumeRelativePath: volumeRelativePath,
         ))
     }
 

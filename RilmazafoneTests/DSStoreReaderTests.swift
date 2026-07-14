@@ -7,8 +7,8 @@ import Testing
 struct DSStoreReaderTests {
     // MARK: - Round-Trip: DSStoreWriter Output
 
-    @Test("Round-trips a minimal configuration")
-    func roundTripMinimal() throws {
+    @Test
+    func `Round-trips a minimal configuration`() throws {
         let config = Self.minimalConfiguration()
         let contents = try DSStoreReader.read(DSStoreWriter.write(configuration: config))
 
@@ -23,8 +23,8 @@ struct DSStoreReaderTests {
         #expect(contents.sidebarWidth == nil)
     }
 
-    @Test("Round-trips item positions exactly (modulo Finder content inset)")
-    func roundTripPositions() throws {
+    @Test
+    func `Round-trips item positions exactly (modulo Finder content inset)`() throws {
         var config = Self.minimalConfiguration()
         config.items = [
             CanvasItem(kind: .app, label: "MyApp.app", position: CGPoint(x: 150, y: 200)),
@@ -38,14 +38,14 @@ struct DSStoreReaderTests {
         for item in config.items {
             let expected = CGPoint(
                 x: item.position.x,
-                y: item.position.y - DSStoreWriter.finderContentInset
+                y: item.position.y - DSStoreWriter.finderContentInset,
             )
             #expect(contents.iconPositions[item.label] == expected)
         }
     }
 
-    @Test("Round-trips window bounds exactly (modulo Finder title bar)")
-    func roundTripWindowBounds() throws {
+    @Test
+    func `Round-trips window bounds exactly (modulo Finder title bar)`() throws {
         var config = Self.minimalConfiguration()
         config.window = WindowConfiguration(width: 500, height: 300)
         config.windowPosition = WindowPosition(x: 100, y: 50)
@@ -56,13 +56,13 @@ struct DSStoreReaderTests {
             x: 100,
             y: 50,
             width: 500,
-            height: 300 + DSStoreWriter.finderTitleBarHeight
+            height: 300 + DSStoreWriter.finderTitleBarHeight,
         )
         #expect(contents.windowBounds == expected)
     }
 
-    @Test("Round-trips icon size, text size, and grid spacing exactly")
-    func roundTripViewSizes() throws {
+    @Test
+    func `Round-trips icon size, text size, and grid spacing exactly`() throws {
         var config = Self.minimalConfiguration()
         config.iconSize = 128
         config.textSize = 14
@@ -76,8 +76,8 @@ struct DSStoreReaderTests {
         #expect(contents.gridSpacing == 80)
     }
 
-    @Test("Round-trips a color background")
-    func roundTripColorBackground() throws {
+    @Test
+    func `Round-trips a color background`() throws {
         var config = Self.minimalConfiguration()
         config.background.type = .color
         config.background.color = RGBColor(red: 0.5, green: 0.6, blue: 0.7)
@@ -87,8 +87,8 @@ struct DSStoreReaderTests {
         #expect(contents.backgroundKind == .color(red: 0.5, green: 0.6, blue: 0.7))
     }
 
-    @Test("Round-trips an image background with byte-exact alias and bookmark")
-    func roundTripImageBackground() throws {
+    @Test
+    func `Round-trips an image background with byte-exact alias and bookmark`() throws {
         var config = Self.minimalConfiguration()
         config.background.type = .image
         config.window = WindowConfiguration(width: 500, height: 300)
@@ -99,7 +99,7 @@ struct DSStoreReaderTests {
         let data = try DSStoreWriter.write(
             configuration: config,
             backgroundAlias: alias,
-            backgroundBookmark: bookmark
+            backgroundBookmark: bookmark,
         )
 
         let contents = try DSStoreReader.read(data)
@@ -110,8 +110,8 @@ struct DSStoreReaderTests {
         #expect(contents.iconPositions[".background"] == CGPoint(x: 250, y: 364))
     }
 
-    @Test("Gradient background round-trips as default (writer fallthrough)")
-    func roundTripGradientBackground() throws {
+    @Test
+    func `Gradient background round-trips as default (writer fallthrough)`() throws {
         var config = Self.minimalConfiguration()
         config.background.type = .gradient
 
@@ -122,8 +122,8 @@ struct DSStoreReaderTests {
 
     // MARK: - Fixture: Python ds_store Reference
 
-    @Test("Parses the Python ds_store reference fixture")
-    func referenceFixture() throws {
+    @Test
+    func `Parses the Python ds_store reference fixture`() throws {
         let data = try Self.fixture(named: "reference")
         let contents = try DSStoreReader.read(data)
 
@@ -140,8 +140,8 @@ struct DSStoreReaderTests {
 
     // MARK: - Fixture: Finder-Written Third-Party DMG
 
-    @Test("Parses a Finder-written .DS_Store from the CodeEdit DMG")
-    func thirdPartyCodeEditFixture() throws {
+    @Test
+    func `Parses a Finder-written .DS_Store from the CodeEdit DMG`() throws {
         // Extracted from CodeEdit.dmg (github.com/CodeEditApp/CodeEdit,
         // built with create-dmg, which drives Finder via AppleScript).
         // Contains an unknown `pBB0` record that must be skipped gracefully.
@@ -164,8 +164,8 @@ struct DSStoreReaderTests {
 
     // MARK: - Internal Nodes
 
-    @Test("Walks a two-level tree with an internal node")
-    func internalNodeTree() throws {
+    @Test
+    func `Walks a two-level tree with an internal node`() throws {
         let store = Self.makeTwoLevelStore()
         let contents = try DSStoreReader.read(store)
 
@@ -175,8 +175,8 @@ struct DSStoreReaderTests {
         #expect(contents.iconPositions["Gamma.app"] == CGPoint(x: 50, y: 60))
     }
 
-    @Test("Every data type in the skip table is consumed without desync")
-    func skipTableCoversAllDataTypes() throws {
+    @Test
+    func `Every data type in the skip table is consumed without desync`() throws {
         var records: [Data] = []
         records.append(Self.record(name: "a", type: "xxx1", value: Self.boolValue(true)))
         records.append(Self.record(name: "b", type: "xxx2", value: Self.compValue(0x0102_0304_0506_0708)))
@@ -196,8 +196,8 @@ struct DSStoreReaderTests {
 
     // MARK: - Malformed Input
 
-    @Test("Empty and tiny inputs throw")
-    func emptyAndTinyInputs() {
+    @Test
+    func `Empty and tiny inputs throw`() {
         #expect(throws: DSStoreReader.ReadError.self) {
             try DSStoreReader.read(Data())
         }
@@ -206,8 +206,8 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Corrupted file magic throws")
-    func corruptedMagic() throws {
+    @Test
+    func `Corrupted file magic throws`() throws {
         var data = try DSStoreWriter.write(configuration: Self.minimalConfiguration())
         data[0] = 0xFF
         #expect(throws: DSStoreReader.ReadError.invalidMagic) {
@@ -215,8 +215,8 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Corrupted Bud1 signature throws")
-    func corruptedAllocatorMagic() throws {
+    @Test
+    func `Corrupted Bud1 signature throws`() throws {
         var data = try DSStoreWriter.write(configuration: Self.minimalConfiguration())
         data[5] = UInt8(ascii: "X")
         #expect(throws: DSStoreReader.ReadError.invalidMagic) {
@@ -224,8 +224,8 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Out-of-bounds block address throws")
-    func outOfBoundsBlockAddress() throws {
+    @Test
+    func `Out-of-bounds block address throws`() throws {
         var data = try DSStoreWriter.write(configuration: Self.minimalConfiguration())
         // Block 2 (the leaf) table entry lives at bookkeeping + 8 + 2 * 4.
         Self.patchBE32(&data, 0xFFFF_E00C, at: 0x2004 + 8 + 8)
@@ -234,8 +234,8 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Unallocated (zero) block address throws")
-    func zeroBlockAddress() throws {
+    @Test
+    func `Unallocated (zero) block address throws`() throws {
         var data = try DSStoreWriter.write(configuration: Self.minimalConfiguration())
         Self.patchBE32(&data, 0, at: 0x2004 + 8 + 8)
         #expect(throws: DSStoreReader.ReadError.invalidBlockNumber(2)) {
@@ -243,16 +243,16 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Cycle-inducing node pointers throw")
-    func nodeCycle() throws {
+    @Test
+    func `Cycle-inducing node pointers throw`() throws {
         let store = Self.makeTwoLevelStore(cycleRoot: true)
         #expect(throws: DSStoreReader.ReadError.nodeCycle) {
             try DSStoreReader.read(store)
         }
     }
 
-    @Test("Oversized record count throws instead of hanging or crashing")
-    func oversizedRecordCount() throws {
+    @Test
+    func `Oversized record count throws instead of hanging or crashing`() throws {
         var data = try DSStoreWriter.write(configuration: Self.minimalConfiguration())
         // Leaf node record count lives at file offset 0x1004 + 4. The walk
         // fails on the zero padding (unknown tag) or block exhaustion.
@@ -262,8 +262,8 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Unknown data-type tag throws")
-    func unknownDataTypeTag() throws {
+    @Test
+    func `Unknown data-type tag throws`() throws {
         var data = try DSStoreWriter.write(configuration: Self.minimalConfiguration())
         let tag = Data("blob".utf8)
         let range = try #require(data.range(of: tag))
@@ -273,8 +273,8 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Truncated prefixes throw or parse to the full contents")
-    func truncatedPrefixes() throws {
+    @Test
+    func `Truncated prefixes throw or parse to the full contents`() throws {
         let data = try DSStoreWriter.write(configuration: Self.configurationWithItems())
         let full = try DSStoreReader.read(data)
 
@@ -289,12 +289,12 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Deterministic single-byte corruption never crashes")
-    func seededByteFlips() throws {
+    @Test
+    func `Deterministic single-byte corruption never crashes`() throws {
         let sources: [Data] = try [
             DSStoreWriter.write(
                 configuration: Self.configurationWithItems(),
-                backgroundAlias: Data([0xDE, 0xAD, 0xBE, 0xEF])
+                backgroundAlias: Data([0xDE, 0xAD, 0xBE, 0xEF]),
             ),
             Self.fixture(named: "thirdparty-codeedit"),
         ]
@@ -308,12 +308,12 @@ struct DSStoreReaderTests {
         }
     }
 
-    @Test("Missing DSDB directory entry throws")
-    func missingDSDBEntry() throws {
+    @Test
+    func `Missing DSDB directory entry throws`() throws {
         var data = try DSStoreWriter.write(configuration: Self.minimalConfiguration())
         // The TOC name "DSDB" starts after the 256-entry block table:
         // bookkeeping(0x2004) + count/unknown(8) + table(1024) + entryCount(4) + nameLength(1).
-        let nameOffset = 0x2004 + 8 + 1024 + 4 + 1
+        let nameOffset = 0x2004 + 8 + 1_024 + 4 + 1
         #expect(data.readASCII(at: nameOffset, count: 4) == "DSDB")
         data[nameOffset] = UInt8(ascii: "X")
         #expect(throws: DSStoreReader.ReadError.missingDSDB) {
@@ -342,7 +342,7 @@ struct DSStoreReaderTests {
     private static func fixture(named name: String) throws -> Data {
         let url = try #require(
             Bundle(for: ReaderBundleMarker.self).url(forResource: name, withExtension: "dsstore"),
-            "Fixture \(name).dsstore missing from test bundle"
+            "Fixture \(name).dsstore missing from test bundle",
         )
         return try Data(contentsOf: url)
     }
@@ -454,7 +454,7 @@ struct DSStoreReaderTests {
             rootBlock: 2,
             height: 0,
             recordCount: UInt32(records.count),
-            nodeCount: 1
+            nodeCount: 1,
         )
     }
 
@@ -487,7 +487,7 @@ struct DSStoreReaderTests {
             rootBlock: 2,
             height: 1,
             recordCount: 3,
-            nodeCount: 3
+            nodeCount: 3,
         )
     }
 
@@ -499,7 +499,7 @@ struct DSStoreReaderTests {
         rootBlock: UInt32,
         height: UInt32,
         recordCount: UInt32,
-        nodeCount: UInt32
+        nodeCount: UInt32,
     ) -> Data {
         var file = Data(repeating: 0, count: 0x2804)
 

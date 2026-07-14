@@ -9,7 +9,7 @@ import Foundation
 /// Finder colors icon labels by system appearance — black in Light Mode, white in
 /// Dark Mode — while a DMG background is a single static image with no
 /// per-appearance variant.
-nonisolated enum LabelAppearanceMode: String, CaseIterable, Hashable, Sendable {
+nonisolated enum LabelAppearanceMode: String, CaseIterable, Hashable {
     case light
     case dark
 
@@ -32,7 +32,7 @@ nonisolated enum LabelAppearanceMode: String, CaseIterable, Hashable, Sendable {
 // MARK: - Warning
 
 /// One item's label flagged as potentially unreadable in one Finder appearance.
-nonisolated struct LegibilityWarning: Hashable, Sendable {
+nonisolated struct LegibilityWarning: Hashable {
     let itemID: UUID
     let mode: LabelAppearanceMode
 }
@@ -124,7 +124,7 @@ nonisolated enum LabelContrastAnalyzer {
     static func labelRect(
         position: CGPoint,
         iconSize: CGFloat,
-        textSize: CGFloat
+        textSize: CGFloat,
     ) -> CGRect {
         let cellHeight = iconSize + LabelGeometry.iconCellPadding * 2
         let blockHeight = cellHeight + LabelGeometry.textGap + LabelGeometry.estimatedTextHeight
@@ -135,7 +135,7 @@ nonisolated enum LabelContrastAnalyzer {
             x: position.x - width / 2,
             y: labelTop,
             width: width,
-            height: lineHeight * LabelGeometry.sampledLineCount
+            height: lineHeight * LabelGeometry.sampledLineCount,
         )
     }
 
@@ -152,7 +152,7 @@ nonisolated enum LabelContrastAnalyzer {
         guard let composite = CompositeRenderer.renderAnalysisComposite(
             configuration: configuration,
             layerImages: input.layerImages,
-            scale: analysisScale
+            scale: analysisScale,
         ) else { return [] }
 
         return analyze(
@@ -162,8 +162,8 @@ nonisolated enum LabelContrastAnalyzer {
             textSize: configuration.textSize,
             windowSize: CGSize(
                 width: configuration.window.width,
-                height: configuration.window.height
-            )
+                height: configuration.window.height,
+            ),
         )
     }
 
@@ -185,7 +185,7 @@ nonisolated enum LabelContrastAnalyzer {
         items: [CanvasItem],
         iconSize: CGFloat,
         textSize: CGFloat,
-        windowSize: CGSize
+        windowSize: CGSize,
     ) -> Set<LegibilityWarning> {
         guard windowSize.width > 0, windowSize.height > 0, !items.isEmpty,
               let buffer = PixelBuffer(normalizing: composite)
@@ -283,7 +283,7 @@ nonisolated enum LabelContrastAnalyzer {
             let height = composite.height
             guard width > 0, height > 0,
                   let context = CompositeRenderer.makeBitmapContext(
-                      pixelsWide: width, pixelsHigh: height
+                      pixelsWide: width, pixelsHigh: height,
                   )
             else { return nil }
 
@@ -294,7 +294,7 @@ nonisolated enum LabelContrastAnalyzer {
             self.height = height
             self.bytesPerRow = context.bytesPerRow
             self.data = [UInt8](
-                UnsafeRawBufferPointer(start: base, count: context.bytesPerRow * height)
+                UnsafeRawBufferPointer(start: base, count: context.bytesPerRow * height),
             )
         }
 
@@ -326,7 +326,7 @@ nonisolated enum LabelContrastAnalyzer {
                             let luminance = Self.luminance(
                                 red: Self.linearized[Int(pixel[0])],
                                 green: Self.linearized[Int(pixel[1])],
-                                blue: Self.linearized[Int(pixel[2])]
+                                blue: Self.linearized[Int(pixel[2])],
                             )
                             lightSum += luminance
                             lightSumSquares += luminance * luminance
@@ -341,12 +341,12 @@ nonisolated enum LabelContrastAnalyzer {
                             let lightLuminance = Self.luminance(
                                 red: Self.linearize(red + lightBase * (1 - alpha)),
                                 green: Self.linearize(green + lightBase * (1 - alpha)),
-                                blue: Self.linearize(blue + lightBase * (1 - alpha))
+                                blue: Self.linearize(blue + lightBase * (1 - alpha)),
                             )
                             let darkLuminance = Self.luminance(
                                 red: Self.linearize(red + darkBase * (1 - alpha)),
                                 green: Self.linearize(green + darkBase * (1 - alpha)),
-                                blue: Self.linearize(blue + darkBase * (1 - alpha))
+                                blue: Self.linearize(blue + darkBase * (1 - alpha)),
                             )
                             lightSum += lightLuminance
                             lightSumSquares += lightLuminance * lightLuminance
@@ -360,14 +360,14 @@ nonisolated enum LabelContrastAnalyzer {
             let count = Double((maxX - minX) * (maxY - minY))
             return ModeStatistics(
                 light: Self.statistics(sum: lightSum, sumSquares: lightSumSquares, count: count),
-                dark: Self.statistics(sum: darkSum, sumSquares: darkSumSquares, count: count)
+                dark: Self.statistics(sum: darkSum, sumSquares: darkSumSquares, count: count),
             )
         }
 
         private static func statistics(
             sum: Double,
             sumSquares: Double,
-            count: Double
+            count: Double,
         ) -> LuminanceStatistics {
             let mean = sum / count
             let variance = max(sumSquares / count - mean * mean, 0)

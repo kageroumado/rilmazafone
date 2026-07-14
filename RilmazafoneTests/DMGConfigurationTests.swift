@@ -8,8 +8,8 @@ import Testing
 struct DMGConfigurationTests {
     // MARK: - Effective Grid Spacing
 
-    @Test("Auto grid spacing: width/6 clamped to 100")
-    func autoGridSpacingClamped() {
+    @Test
+    func `Auto grid spacing: width/6 clamped to 100`() {
         var config = DMGConfiguration()
         config.isGridSpacingAuto = true
         config.window.width = 660
@@ -18,8 +18,8 @@ struct DMGConfigurationTests {
         #expect(config.effectiveGridSpacing == 100)
     }
 
-    @Test("Auto grid spacing: narrow window below clamp")
-    func autoGridSpacingNarrow() {
+    @Test
+    func `Auto grid spacing: narrow window below clamp`() {
         var config = DMGConfiguration()
         config.isGridSpacingAuto = true
         config.window.width = 480
@@ -28,8 +28,8 @@ struct DMGConfigurationTests {
         #expect(config.effectiveGridSpacing == 80)
     }
 
-    @Test("Manual grid spacing: value above 100 is clamped")
-    func manualGridSpacingClamped() {
+    @Test
+    func `Manual grid spacing: value above 100 is clamped`() {
         var config = DMGConfiguration()
         config.isGridSpacingAuto = false
         config.gridSpacing = 120
@@ -37,8 +37,8 @@ struct DMGConfigurationTests {
         #expect(config.effectiveGridSpacing == 100)
     }
 
-    @Test("Manual grid spacing: value below 100 passes through")
-    func manualGridSpacingPassthrough() {
+    @Test
+    func `Manual grid spacing: value below 100 passes through`() {
         var config = DMGConfiguration()
         config.isGridSpacingAuto = false
         config.gridSpacing = 60
@@ -48,8 +48,8 @@ struct DMGConfigurationTests {
 
     // MARK: - Codable Round-Trip
 
-    @Test("Default configuration survives JSON encode/decode")
-    func codableRoundTripDefault() throws {
+    @Test
+    func `Default configuration survives JSON encode/decode`() throws {
         let original = DMGConfiguration()
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(DMGConfiguration.self, from: encoded)
@@ -57,8 +57,8 @@ struct DMGConfigurationTests {
         #expect(original == decoded)
     }
 
-    @Test("Fully populated configuration survives JSON encode/decode")
-    func codableRoundTripFull() throws {
+    @Test
+    func `Fully populated configuration survives JSON encode/decode`() throws {
         var config = DMGConfiguration()
         config.volumeName = "My App Installer"
         config.window = WindowConfiguration(width: 800, height: 500)
@@ -84,7 +84,7 @@ struct DMGConfigurationTests {
                 fontFamily: "SF Pro",
                 fontSize: 18,
                 isBold: true,
-                color: RGBColor(red: 1, green: 1, blue: 1)
+                color: RGBColor(red: 1, green: 1, blue: 1),
             ),
         ]
         config.sfSymbolLayers = [
@@ -93,7 +93,7 @@ struct DMGConfigurationTests {
                 symbolName: "arrow.right",
                 pointSize: 64,
                 weight: .bold,
-                color: RGBColor(red: 0.5, green: 0.5, blue: 0.5)
+                color: RGBColor(red: 0.5, green: 0.5, blue: 0.5),
             ),
         ]
 
@@ -103,8 +103,8 @@ struct DMGConfigurationTests {
         #expect(config == decoded)
     }
 
-    @Test("Decoding empty JSON uses all defaults")
-    func codableEmptyDefaults() throws {
+    @Test
+    func `Decoding empty JSON uses all defaults`() throws {
         let emptyJSON = Data("{}".utf8)
         let decoded = try JSONDecoder().decode(DMGConfiguration.self, from: emptyJSON)
 
@@ -126,8 +126,8 @@ struct DMGConfigurationTests {
 
     // MARK: - Path Abbreviation
 
-    @Test("abbreviatePaths and expandAbbreviatedPaths round-trip")
-    func pathRoundTrip() {
+    @Test
+    func `abbreviatePaths and expandAbbreviatedPaths round-trip`() {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         var config = DMGConfiguration()
         config.items = [
@@ -145,8 +145,8 @@ struct DMGConfigurationTests {
         #expect(config.items.map(\.sourcePath) == originalPaths)
     }
 
-    @Test("abbreviatePaths does not modify nil source paths")
-    func abbreviateNilPaths() {
+    @Test
+    func `abbreviatePaths does not modify nil source paths`() {
         var config = DMGConfiguration()
         config.items = [
             CanvasItem(kind: .applicationsSymlink, label: "Applications", position: .zero),
@@ -158,8 +158,8 @@ struct DMGConfigurationTests {
 
     // MARK: - Gradient Configuration
 
-    @Test("Gradient default stops")
-    func gradientDefaults() {
+    @Test
+    func `Gradient default stops`() {
         let gradient = GradientConfiguration()
 
         #expect(gradient.stops.count == 2)

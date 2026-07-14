@@ -5,8 +5,8 @@ import Testing
 @MainActor
 @Suite("AppDelegate Dock menu")
 struct AppDelegateTests {
-    @Test("First item is New Document following the chooser policy")
-    func newDocumentItem() throws {
+    @Test
+    func `First item is New Document following the chooser policy`() throws {
         let delegate = AppDelegate()
         let menu = try #require(delegate.applicationDockMenu(NSApp))
         let first = try #require(menu.items.first)
@@ -16,14 +16,14 @@ struct AppDelegateTests {
         #expect(first.target === delegate)
     }
 
-    @Test("Seeded recent document appears with display name and represented URL")
-    func recentDocumentListed() throws {
+    @Test
+    func `Seeded recent document appears with display name and represented URL`() throws {
         let url = try seededRecentDocument()
 
         let delegate = AppDelegate()
         let menu = try #require(delegate.applicationDockMenu(NSApp))
         let recentItem = try #require(
-            menu.items.first { ($0.representedObject as? URL)?.standardizedFileURL == url.standardizedFileURL }
+            menu.items.first { ($0.representedObject as? URL)?.standardizedFileURL == url.standardizedFileURL },
         )
 
         #expect(recentItem.title == FileManager.default.displayName(atPath: url.path))
@@ -36,8 +36,8 @@ struct AppDelegateTests {
         #expect(menu.index(of: recentItem) > separatorIndex)
     }
 
-    @Test("Recent documents are capped at ten")
-    func recentDocumentsCapped() throws {
+    @Test
+    func `Recent documents are capped at ten`() throws {
         _ = try seededRecentDocument()
 
         let menu = try dockMenu()

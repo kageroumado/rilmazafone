@@ -8,7 +8,7 @@ struct DMGSettingsSection: View {
         Section("DMG Settings") {
             TextField("Volume Name", text: Binding(
                 get: { document.volumeName },
-                set: { document.setVolumeName($0, undoManager: undoManager) }
+                set: { document.setVolumeName($0, undoManager: undoManager) },
             ))
             .textFieldStyle(.roundedBorder)
 
@@ -29,14 +29,14 @@ struct DMGSettingsSection: View {
     private var formatBinding: Binding<DMGImageFormat> {
         Binding(
             get: { document.dmgFormat },
-            set: { document.setDMGFormat($0, undoManager: undoManager) }
+            set: { document.setDMGFormat($0, undoManager: undoManager) },
         )
     }
 
     private var filesystemBinding: Binding<DMGFilesystem> {
         Binding(
             get: { document.filesystem },
-            set: { document.setFilesystem($0, undoManager: undoManager) }
+            set: { document.setFilesystem($0, undoManager: undoManager) },
         )
     }
 }

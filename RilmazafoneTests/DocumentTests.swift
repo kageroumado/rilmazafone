@@ -7,57 +7,57 @@ import Testing
 struct DocumentTests {
     // MARK: - Clamping
 
-    @Test("setIconSize clamps below 16 to 16")
+    @Test
     @MainActor
-    func iconSizeClampLow() {
+    func `setIconSize clamps below 16 to 16`() {
         let doc = RilmazafoneDocument()
         doc.setIconSize(8, undoManager: nil)
         #expect(doc.configuration.iconSize == 16)
     }
 
-    @Test("setIconSize clamps above 512 to 512")
+    @Test
     @MainActor
-    func iconSizeClampHigh() {
+    func `setIconSize clamps above 512 to 512`() {
         let doc = RilmazafoneDocument()
         doc.setIconSize(1_024, undoManager: nil)
         #expect(doc.configuration.iconSize == 512)
     }
 
-    @Test("setIconSize passes through valid values")
+    @Test
     @MainActor
-    func iconSizeValid() {
+    func `setIconSize passes through valid values`() {
         let doc = RilmazafoneDocument()
         doc.setIconSize(128, undoManager: nil)
         #expect(doc.configuration.iconSize == 128)
     }
 
-    @Test("setTextSize clamps below 10 to 10")
+    @Test
     @MainActor
-    func textSizeClampLow() {
+    func `setTextSize clamps below 10 to 10`() {
         let doc = RilmazafoneDocument()
         doc.setTextSize(5, undoManager: nil)
         #expect(doc.configuration.textSize == 10)
     }
 
-    @Test("setTextSize clamps above 16 to 16")
+    @Test
     @MainActor
-    func textSizeClampHigh() {
+    func `setTextSize clamps above 16 to 16`() {
         let doc = RilmazafoneDocument()
         doc.setTextSize(24, undoManager: nil)
         #expect(doc.configuration.textSize == 16)
     }
 
-    @Test("setGridSpacing clamps below 1 to 1")
+    @Test
     @MainActor
-    func gridSpacingClampLow() {
+    func `setGridSpacing clamps below 1 to 1`() {
         let doc = RilmazafoneDocument()
         doc.setGridSpacing(0, undoManager: nil)
         #expect(doc.configuration.gridSpacing == 1)
     }
 
-    @Test("setGridSpacing clamps above 100 to 100")
+    @Test
     @MainActor
-    func gridSpacingClampHigh() {
+    func `setGridSpacing clamps above 100 to 100`() {
         let doc = RilmazafoneDocument()
         doc.setGridSpacing(200, undoManager: nil)
         #expect(doc.configuration.gridSpacing == 100)
@@ -65,9 +65,9 @@ struct DocumentTests {
 
     // MARK: - Undo
 
-    @Test("setIconSize undo restores previous value")
+    @Test
     @MainActor
-    func iconSizeUndo() {
+    func `setIconSize undo restores previous value`() {
         let doc = RilmazafoneDocument()
         let undoManager = UndoManager()
         doc.configuration.iconSize = 100
@@ -79,9 +79,9 @@ struct DocumentTests {
         #expect(doc.configuration.iconSize == 100)
     }
 
-    @Test("setIconSize redo re-applies value")
+    @Test
     @MainActor
-    func iconSizeRedo() {
+    func `setIconSize redo re-applies value`() {
         let doc = RilmazafoneDocument()
         let undoManager = UndoManager()
         doc.configuration.iconSize = 100
@@ -93,9 +93,9 @@ struct DocumentTests {
         #expect(doc.configuration.iconSize == 200)
     }
 
-    @Test("setVolumeName undo/redo cycle")
+    @Test
     @MainActor
-    func volumeNameUndoRedo() {
+    func `setVolumeName undo/redo cycle`() {
         let doc = RilmazafoneDocument()
         let undoManager = UndoManager()
         undoManager.groupsByEvent = false
@@ -117,16 +117,16 @@ struct DocumentTests {
 
     // MARK: - Queries
 
-    @Test("hasApp returns false when no items")
+    @Test
     @MainActor
-    func hasAppEmpty() {
+    func `hasApp returns false when no items`() {
         let doc = RilmazafoneDocument()
         #expect(doc.hasApp == false)
     }
 
-    @Test("hasApp returns true when app item exists")
+    @Test
     @MainActor
-    func hasAppTrue() {
+    func `hasApp returns true when app item exists`() {
         let doc = RilmazafoneDocument()
         doc.configuration.items = [
             CanvasItem(kind: .app, label: "Test.app", position: .zero),
@@ -134,9 +134,9 @@ struct DocumentTests {
         #expect(doc.hasApp == true)
     }
 
-    @Test("hasApp returns false with only non-app items")
+    @Test
     @MainActor
-    func hasAppFalseNonApp() {
+    func `hasApp returns false with only non-app items`() {
         let doc = RilmazafoneDocument()
         doc.configuration.items = [
             CanvasItem(kind: .applicationsSymlink, label: "Applications", position: .zero),
@@ -147,9 +147,9 @@ struct DocumentTests {
 
     // MARK: - Item Management
 
-    @Test("addItem appends to items list")
+    @Test
     @MainActor
-    func addItem() {
+    func `addItem appends to items list`() {
         let doc = RilmazafoneDocument()
         let item = CanvasItem(kind: .file, label: "test.txt", position: CGPoint(x: 100, y: 200))
         doc.addItem(item, undoManager: nil)
@@ -158,9 +158,9 @@ struct DocumentTests {
         #expect(doc.configuration.items[0].label == "test.txt")
     }
 
-    @Test("removeItem removes from items list")
+    @Test
     @MainActor
-    func removeItem() {
+    func `removeItem removes from items list`() {
         let doc = RilmazafoneDocument()
         let item = CanvasItem(kind: .file, label: "test.txt", position: .zero)
         doc.configuration.items = [item]
@@ -169,9 +169,9 @@ struct DocumentTests {
         #expect(doc.configuration.items.isEmpty)
     }
 
-    @Test("removeItem undo restores item")
+    @Test
     @MainActor
-    func removeItemUndo() {
+    func `removeItem undo restores item`() {
         let doc = RilmazafoneDocument()
         let undoManager = UndoManager()
         let item = CanvasItem(kind: .file, label: "test.txt", position: CGPoint(x: 50, y: 100))
@@ -186,9 +186,9 @@ struct DocumentTests {
         #expect(doc.configuration.items[0].position == CGPoint(x: 50, y: 100))
     }
 
-    @Test("moveItem updates position")
+    @Test
     @MainActor
-    func moveItem() {
+    func `moveItem updates position`() {
         let doc = RilmazafoneDocument()
         let item = CanvasItem(kind: .app, label: "App.app", position: CGPoint(x: 100, y: 100))
         doc.configuration.items = [item]
@@ -198,9 +198,9 @@ struct DocumentTests {
         #expect(doc.configuration.items[0].position == CGPoint(x: 200, y: 300))
     }
 
-    @Test("setItemLabel updates label")
+    @Test
     @MainActor
-    func setItemLabel() {
+    func `setItemLabel updates label`() {
         let doc = RilmazafoneDocument()
         let item = CanvasItem(kind: .file, label: "old.txt", position: .zero)
         doc.configuration.items = [item]
@@ -211,9 +211,9 @@ struct DocumentTests {
 
     // MARK: - Layer Management
 
-    @Test("addTextLayer creates a text layer at center")
+    @Test
     @MainActor
-    func addTextLayer() {
+    func `addTextLayer creates a text layer at center`() {
         let doc = RilmazafoneDocument()
         doc.addTextLayer(undoManager: nil)
 
@@ -223,9 +223,9 @@ struct DocumentTests {
         #expect(doc.configuration.textLayers[0].text == "Text")
     }
 
-    @Test("removeTextLayer removes the layer")
+    @Test
     @MainActor
-    func removeTextLayer() {
+    func `removeTextLayer removes the layer`() {
         let doc = RilmazafoneDocument()
         doc.addTextLayer(undoManager: nil)
         let id = doc.configuration.textLayers[0].id
@@ -234,9 +234,9 @@ struct DocumentTests {
         #expect(doc.configuration.textLayers.isEmpty)
     }
 
-    @Test("removeTextLayer undo restores the layer")
+    @Test
     @MainActor
-    func removeTextLayerUndo() {
+    func `removeTextLayer undo restores the layer`() {
         let doc = RilmazafoneDocument()
         let undoManager = UndoManager()
         doc.addTextLayer(undoManager: nil)
@@ -249,9 +249,9 @@ struct DocumentTests {
         #expect(doc.configuration.textLayers[0].id == id)
     }
 
-    @Test("updateTextLayerStyle updates all style properties atomically")
+    @Test
     @MainActor
-    func updateTextLayerStyle() {
+    func `updateTextLayerStyle updates all style properties atomically`() {
         let doc = RilmazafoneDocument()
         doc.addTextLayer(undoManager: nil)
         let id = doc.configuration.textLayers[0].id
@@ -272,9 +272,9 @@ struct DocumentTests {
         #expect(layer.color.red == 1)
     }
 
-    @Test("addSFSymbolLayer creates a symbol layer")
+    @Test
     @MainActor
-    func addSFSymbolLayer() {
+    func `addSFSymbolLayer creates a symbol layer`() {
         let doc = RilmazafoneDocument()
         doc.addSFSymbolLayer(undoManager: nil)
 
@@ -285,9 +285,9 @@ struct DocumentTests {
 
     // MARK: - Snapshot
 
-    @Test("Snapshot abbreviates paths without mutating document")
+    @Test
     @MainActor
-    func snapshotAbbreviatesPaths() throws {
+    func `Snapshot abbreviates paths without mutating document`() throws {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let doc = RilmazafoneDocument()
         doc.configuration.items = [
@@ -305,17 +305,17 @@ struct DocumentTests {
 
     // MARK: - Background Type Transitions
 
-    @Test("setBackgroundType changes background type")
+    @Test
     @MainActor
-    func backgroundTypeChange() {
+    func `setBackgroundType changes background type`() {
         let doc = RilmazafoneDocument()
         doc.setBackgroundType(.color, undoManager: nil)
         #expect(doc.configuration.background.type == .color)
     }
 
-    @Test("setBackgroundColor updates RGB values")
+    @Test
     @MainActor
-    func backgroundColorChange() {
+    func `setBackgroundColor updates RGB values`() {
         let doc = RilmazafoneDocument()
         let color = RGBColor(red: 0.1, green: 0.2, blue: 0.3)
         doc.setBackgroundColor(color, undoManager: nil)

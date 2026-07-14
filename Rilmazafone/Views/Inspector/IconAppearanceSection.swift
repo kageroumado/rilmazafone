@@ -46,7 +46,7 @@ struct IconAppearanceSection: View {
                 value: document.iconSize,
                 presets: iconSizePresets,
                 showCustom: $showCustomIconSize,
-                setValue: { document.setIconSize($0, undoManager: undoManager) }
+                setValue: { document.setIconSize($0, undoManager: undoManager) },
             )
 
             presetRow(
@@ -54,7 +54,7 @@ struct IconAppearanceSection: View {
                 value: document.textSize,
                 presets: textSizePresets,
                 showCustom: $showCustomTextSize,
-                setValue: { document.setTextSize($0, undoManager: undoManager) }
+                setValue: { document.setTextSize($0, undoManager: undoManager) },
             )
 
             gridSpacingRow
@@ -63,8 +63,8 @@ struct IconAppearanceSection: View {
                 "Hide File Extensions",
                 isOn: Binding(
                     get: { document.hideExtensions },
-                    set: { document.setHideExtensions($0, undoManager: undoManager) }
-                )
+                    set: { document.setHideExtensions($0, undoManager: undoManager) },
+                ),
             )
             .toggleStyle(.switch)
 
@@ -164,9 +164,9 @@ struct IconAppearanceSection: View {
                             "",
                             value: Binding(
                                 get: { Double(document.gridSpacing) },
-                                set: { document.setGridSpacing(CGFloat($0), undoManager: undoManager) }
+                                set: { document.setGridSpacing(CGFloat($0), undoManager: undoManager) },
                             ),
-                            format: .number
+                            format: .number,
                         )
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 55)
@@ -183,7 +183,7 @@ struct IconAppearanceSection: View {
     private var gridSpacingModeBinding: Binding<Bool> {
         Binding(
             get: { document.isGridSpacingAuto },
-            set: { document.setGridSpacingAuto($0, undoManager: undoManager) }
+            set: { document.setGridSpacingAuto($0, undoManager: undoManager) },
         )
     }
 
@@ -195,7 +195,7 @@ struct IconAppearanceSection: View {
             set: {
                 let clamped = min(max($0, 300), 1_200)
                 document.setWindowWidth(clamped, undoManager: undoManager)
-            }
+            },
         )
     }
 
@@ -205,7 +205,7 @@ struct IconAppearanceSection: View {
             set: {
                 let clamped = min(max($0, 200), 800)
                 document.setWindowHeight(clamped, undoManager: undoManager)
-            }
+            },
         )
     }
 
@@ -215,7 +215,7 @@ struct IconAppearanceSection: View {
         height: CGFloat,
         iconSize: CGFloat,
         textSize: CGFloat,
-        gridSpacing: CGFloat
+        gridSpacing: CGFloat,
     ) -> some View {
         Button(label) {
             undoManager?.beginUndoGrouping()
@@ -238,7 +238,7 @@ struct IconAppearanceSection: View {
         value: CGFloat,
         presets: [Int],
         showCustom: Binding<Bool>,
-        setValue: @escaping (CGFloat) -> Void
+        setValue: @escaping (CGFloat) -> Void,
     ) -> some View {
         LabeledContent(label) {
             HStack(spacing: 6) {
@@ -285,9 +285,9 @@ struct IconAppearanceSection: View {
                         "",
                         value: Binding(
                             get: { Double(value) },
-                            set: { setValue(CGFloat($0)) }
+                            set: { setValue(CGFloat($0)) },
                         ),
-                        format: .number
+                        format: .number,
                     )
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 55)

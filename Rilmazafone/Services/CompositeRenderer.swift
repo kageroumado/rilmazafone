@@ -29,7 +29,7 @@ nonisolated enum CompositeRenderer {
             bitsPerComponent: 8,
             bytesPerRow: 0,
             space: sRGB,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
         )
     }
 
@@ -42,7 +42,7 @@ nonisolated enum CompositeRenderer {
     /// and correctly sized non-Retina ones from one file.
     static func renderBackgroundTIFF(
         configuration: DMGConfiguration,
-        assetsDirectory: URL
+        assetsDirectory: URL,
     ) -> Data? {
         let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
         guard pointSize.width > 0, pointSize.height > 0,
@@ -57,7 +57,7 @@ nonisolated enum CompositeRenderer {
     /// The baked DMG background is produced by `renderBackgroundTIFF` directly.
     static func renderBackground(
         configuration: DMGConfiguration,
-        assetsDirectory: URL
+        assetsDirectory: URL,
     ) -> NSImage? {
         let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
         guard pointSize.width > 0, pointSize.height > 0,
@@ -77,7 +77,7 @@ nonisolated enum CompositeRenderer {
         configuration: DMGConfiguration,
         assetsDirectory: URL,
         pointSize: CGSize,
-        scale: CGFloat
+        scale: CGFloat,
     ) -> NSBitmapImageRep? {
         let pixelsWide = Int((pointSize.width * scale).rounded())
         let pixelsHigh = Int((pointSize.height * scale).rounded())
@@ -99,7 +99,7 @@ nonisolated enum CompositeRenderer {
         into context: CGContext,
         configuration: DMGConfiguration,
         assetsDirectory: URL,
-        scale: CGFloat
+        scale: CGFloat,
     ) {
         // Bridge AppKit drawing (NSImage / NSAttributedString / NSBezierPath) onto this
         // CGContext. `flipped: false` keeps the y-up geometry the layer math assumes.
@@ -116,7 +116,7 @@ nonisolated enum CompositeRenderer {
             iconSize: configuration.iconSize,
             in: context,
             canvasHeight: configuration.window.height,
-            scale: scale
+            scale: scale,
         )
     }
 
@@ -126,7 +126,7 @@ nonisolated enum CompositeRenderer {
     private static func renderBeneathPanels(
         into context: CGContext,
         configuration: DMGConfiguration,
-        imageProvider: (BackgroundLayer) -> NSImage?
+        imageProvider: (BackgroundLayer) -> NSImage?,
     ) {
         let width = configuration.window.width
         let height = configuration.window.height
@@ -140,7 +140,7 @@ nonisolated enum CompositeRenderer {
                 layers: configuration.background.layers,
                 canvasWidth: width,
                 canvasHeight: height,
-                imageProvider: imageProvider
+                imageProvider: imageProvider,
             )
         }
 
@@ -160,13 +160,13 @@ nonisolated enum CompositeRenderer {
     static func renderPanelBackdrop(
         configuration: DMGConfiguration,
         layerImages: [UUID: NSImage],
-        scale: CGFloat
+        scale: CGFloat,
     ) -> CGImage? {
         compositeImage(
             configuration: configuration,
             layerImages: layerImages,
             scale: scale,
-            includePanels: false
+            includePanels: false,
         )
     }
 
@@ -182,13 +182,13 @@ nonisolated enum CompositeRenderer {
     static func renderAnalysisComposite(
         configuration: DMGConfiguration,
         layerImages: [UUID: NSImage],
-        scale: CGFloat
+        scale: CGFloat,
     ) -> CGImage? {
         compositeImage(
             configuration: configuration,
             layerImages: layerImages,
             scale: scale,
-            includePanels: true
+            includePanels: true,
         )
     }
 
@@ -199,7 +199,7 @@ nonisolated enum CompositeRenderer {
         configuration: DMGConfiguration,
         layerImages: [UUID: NSImage],
         scale: CGFloat,
-        includePanels: Bool
+        includePanels: Bool,
     ) -> CGImage? {
         let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
         guard pointSize.width > 0, pointSize.height > 0 else { return nil }
@@ -221,7 +221,7 @@ nonisolated enum CompositeRenderer {
                 iconSize: configuration.iconSize,
                 in: context,
                 canvasHeight: configuration.window.height,
-                scale: scale
+                scale: scale,
             )
         }
 
@@ -233,7 +233,7 @@ nonisolated enum CompositeRenderer {
     private static func renderBaseBackground(
         context: CGContext,
         configuration: DMGConfiguration,
-        rect: CGRect
+        rect: CGRect,
     ) {
         switch configuration.background.type {
         case .none:
@@ -241,7 +241,7 @@ nonisolated enum CompositeRenderer {
         case .color, .image:
             let bgColor = configuration.background.color
             context.setFillColor(CGColor(
-                srgbRed: bgColor.red, green: bgColor.green, blue: bgColor.blue, alpha: 1
+                srgbRed: bgColor.red, green: bgColor.green, blue: bgColor.blue, alpha: 1,
             ))
             context.fill(rect)
         case .gradient:
@@ -260,7 +260,7 @@ nonisolated enum CompositeRenderer {
         layers: [BackgroundLayer],
         canvasWidth: CGFloat,
         canvasHeight: CGFloat,
-        imageProvider: (BackgroundLayer) -> NSImage?
+        imageProvider: (BackgroundLayer) -> NSImage?,
     ) {
         for layer in layers {
             guard let layerImage = imageProvider(layer) else { continue }
@@ -276,7 +276,7 @@ nonisolated enum CompositeRenderer {
             let processedImage = applyLayerEffects(
                 to: layerImage,
                 layer: layer,
-                displaySize: CGSize(width: displayWidth, height: displayHeight)
+                displaySize: CGSize(width: displayWidth, height: displayHeight),
             )
 
             let originX = layer.position.x - displayWidth / 2
@@ -286,7 +286,7 @@ nonisolated enum CompositeRenderer {
                 in: NSRect(x: originX, y: originY, width: displayWidth, height: displayHeight),
                 from: .zero,
                 operation: .sourceOver,
-                fraction: 1.0
+                fraction: 1.0,
             )
         }
     }
@@ -296,7 +296,7 @@ nonisolated enum CompositeRenderer {
     private static func renderTextLayers(
         _ textLayers: [TextLayerConfiguration],
         in _: CGContext,
-        canvasHeight: CGFloat
+        canvasHeight: CGFloat,
     ) {
         for textLayer in textLayers {
             var fontTraits: NSFontDescriptor.SymbolicTraits = []
@@ -318,7 +318,7 @@ nonisolated enum CompositeRenderer {
                 srgbRed: textLayer.color.red,
                 green: textLayer.color.green,
                 blue: textLayer.color.blue,
-                alpha: 1
+                alpha: 1,
             )
 
             let attributes: [NSAttributedString.Key: Any] = [
@@ -341,17 +341,17 @@ nonisolated enum CompositeRenderer {
     private static func renderSFSymbolLayers(
         _ symbolLayers: [SFSymbolLayerConfiguration],
         in context: CGContext,
-        canvasHeight: CGFloat
+        canvasHeight: CGFloat,
     ) {
         for symbolLayer in symbolLayers {
             let config = NSImage.SymbolConfiguration(
                 pointSize: symbolLayer.pointSize,
                 weight: symbolLayer.weight.nsFontWeight,
-                scale: .medium
+                scale: .medium,
             )
             guard let symbolImage = NSImage(
                 systemSymbolName: symbolLayer.symbolName,
-                accessibilityDescription: nil
+                accessibilityDescription: nil,
             )?.withSymbolConfiguration(config) else { continue }
 
             let symbolSize = symbolImage.size
@@ -363,7 +363,7 @@ nonisolated enum CompositeRenderer {
                 srgbRed: symbolLayer.color.red,
                 green: symbolLayer.color.green,
                 blue: symbolLayer.color.blue,
-                alpha: 1
+                alpha: 1,
             )
 
             // Draw the template glyph then tint it in place inside a transparency layer,
@@ -387,7 +387,7 @@ nonisolated enum CompositeRenderer {
         iconSize: CGFloat,
         in context: CGContext,
         canvasHeight: CGFloat,
-        scale: CGFloat
+        scale: CGFloat,
     ) {
         let iconCellPadding: CGFloat = 10
         let textGap: CGFloat = 4
@@ -416,7 +416,7 @@ nonisolated enum CompositeRenderer {
     private static func renderItemShadow(
         bg: ItemBackground,
         rect: CGRect,
-        in context: CGContext
+        in context: CGContext,
     ) {
         guard let shadow = bg.shadow, shadow.enabled else { return }
 
@@ -424,13 +424,13 @@ nonisolated enum CompositeRenderer {
             srgbRed: shadow.color.red,
             green: shadow.color.green,
             blue: shadow.color.blue,
-            alpha: shadow.opacity
+            alpha: shadow.opacity,
         )
         let shadowPath = CGPath(
             roundedRect: rect,
             cornerWidth: bg.cornerRadius,
             cornerHeight: bg.cornerRadius,
-            transform: nil
+            transform: nil,
         )
 
         // Use transparency layer so we can erase the casting shape,
@@ -441,7 +441,7 @@ nonisolated enum CompositeRenderer {
         context.setShadow(
             offset: CGSize(width: shadow.offsetX, height: -shadow.offsetY),
             blur: shadow.radius,
-            color: shadowColor
+            color: shadowColor,
         )
         context.addPath(shadowPath)
         context.setFillColor(CGColor(gray: 0, alpha: 1))
@@ -460,7 +460,7 @@ nonisolated enum CompositeRenderer {
         bg: ItemBackground,
         rect: CGRect,
         in context: CGContext,
-        scale: CGFloat
+        scale: CGFloat,
     ) {
         guard bg.enabled else { return }
 
@@ -470,24 +470,24 @@ nonisolated enum CompositeRenderer {
             if bg.blurFeather > 0 {
                 renderFeatheredBlurRegion(
                     context: context, rect: rect, cornerRadius: cornerRadius,
-                    blurRadius: bg.blurRadius, feather: bg.blurFeather, scale: scale
+                    blurRadius: bg.blurRadius, feather: bg.blurFeather, scale: scale,
                 )
             } else {
                 renderBlurredRegion(
                     context: context, rect: rect, cornerRadius: cornerRadius,
-                    blurRadius: bg.blurRadius, scale: scale
+                    blurRadius: bg.blurRadius, scale: scale,
                 )
             }
         }
 
         let bgColor = CGColor(
             srgbRed: bg.color.red, green: bg.color.green,
-            blue: bg.color.blue, alpha: bg.opacity
+            blue: bg.color.blue, alpha: bg.opacity,
         )
 
         if bg.blurFeather > 0 {
             guard let maskImage = generateContourMask(
-                size: rect.size, cornerRadius: cornerRadius, feather: bg.blurFeather, scale: scale
+                size: rect.size, cornerRadius: cornerRadius, feather: bg.blurFeather, scale: scale,
             ) else { return }
 
             context.saveGState()
@@ -500,7 +500,7 @@ nonisolated enum CompositeRenderer {
             let path = CGPath(
                 roundedRect: rect,
                 cornerWidth: cornerRadius, cornerHeight: cornerRadius,
-                transform: nil
+                transform: nil,
             )
             context.saveGState()
             context.addPath(path)
@@ -519,7 +519,7 @@ nonisolated enum CompositeRenderer {
     static func applyLayerEffects(
         to image: NSImage,
         layer: BackgroundLayer,
-        displaySize: CGSize
+        displaySize: CGSize,
     ) -> NSImage {
         // Resize to target display size before applying effects
         let source: NSImage = if abs(image.size.width - displaySize.width) > 1
@@ -631,11 +631,11 @@ nonisolated enum CompositeRenderer {
             let halfDiag = sqrt(extent.width * extent.width + extent.height * extent.height) / 2
             let point0 = CGPoint(
                 x: cx + cos(radians + .pi) * halfDiag,
-                y: cy + sin(radians + .pi) * halfDiag
+                y: cy + sin(radians + .pi) * halfDiag,
             )
             let point1 = CGPoint(
                 x: cx + cos(radians) * halfDiag,
-                y: cy + sin(radians) * halfDiag
+                y: cy + sin(radians) * halfDiag,
             )
             let grad = CIFilter.smoothLinearGradient()
             grad.point0 = point0
@@ -648,7 +648,7 @@ nonisolated enum CompositeRenderer {
             let grad = CIFilter.radialGradient()
             grad.center = CGPoint(
                 x: extent.width * config.centerX,
-                y: extent.height * config.centerY
+                y: extent.height * config.centerY,
             )
             grad.radius0 = Float(extent.width * config.startPoint)
             grad.radius1 = Float(extent.width * config.endPoint)
@@ -669,7 +669,7 @@ nonisolated enum CompositeRenderer {
     static func renderGradient(
         context: CGContext,
         gradient: GradientConfiguration,
-        rect: CGRect
+        rect: CGRect,
     ) {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let sortedStops = gradient.stops.sorted { $0.location < $1.location }
@@ -680,14 +680,14 @@ nonisolated enum CompositeRenderer {
                 srgbRed: stop.color.red,
                 green: stop.color.green,
                 blue: stop.color.blue,
-                alpha: 1
+                alpha: 1,
             ))
             locations.append(stop.location)
         }
         guard let cgGradient = CGGradient(
             colorsSpace: colorSpace,
             colors: cgColors as CFArray,
-            locations: &locations
+            locations: &locations,
         ) else { return }
 
         context.saveGState()
@@ -701,23 +701,23 @@ nonisolated enum CompositeRenderer {
             let halfDiag = max(rect.width, rect.height) / 2
             let startPoint = CGPoint(
                 x: cx + cos(radians + .pi) * halfDiag,
-                y: cy - sin(radians + .pi) * halfDiag // y-up in CG
+                y: cy - sin(radians + .pi) * halfDiag, // y-up in CG
             )
             let endPoint = CGPoint(
                 x: cx + cos(radians) * halfDiag,
-                y: cy - sin(radians) * halfDiag
+                y: cy - sin(radians) * halfDiag,
             )
             context.drawLinearGradient(
                 cgGradient,
                 start: startPoint,
                 end: endPoint,
-                options: [.drawsAfterEndLocation, .drawsBeforeStartLocation]
+                options: [.drawsAfterEndLocation, .drawsBeforeStartLocation],
             )
 
         case .radial:
             let center = CGPoint(
                 x: rect.width * gradient.centerX,
-                y: rect.height * (1 - gradient.centerY) // flip y for CG
+                y: rect.height * (1 - gradient.centerY), // flip y for CG
             )
             let r0 = gradient.startRadius * rect.width
             let r1 = gradient.endRadius * rect.width
@@ -727,7 +727,7 @@ nonisolated enum CompositeRenderer {
                 startRadius: r0,
                 endCenter: center,
                 endRadius: r1,
-                options: [.drawsAfterEndLocation]
+                options: [.drawsAfterEndLocation],
             )
         }
 
@@ -739,7 +739,7 @@ nonisolated enum CompositeRenderer {
     static func renderBevelImage(
         size: CGSize,
         cornerRadius: CGFloat,
-        bevel: BevelConfiguration
+        bevel: BevelConfiguration,
     ) -> NSImage? {
         guard size.width > 0, size.height > 0 else { return nil }
 
@@ -747,13 +747,13 @@ nonisolated enum CompositeRenderer {
         let bounds = CGRect(origin: .zero, size: size)
         guard let maskContext = makeBitmapContext(
             pixelsWide: Int(size.width.rounded()),
-            pixelsHigh: Int(size.height.rounded())
+            pixelsHigh: Int(size.height.rounded()),
         ) else { return nil }
         maskContext.setFillColor(CGColor(gray: 0, alpha: 1))
         maskContext.fill(bounds)
         maskContext.setFillColor(CGColor(gray: 1, alpha: 1))
         maskContext.addPath(CGPath(
-            roundedRect: bounds, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil
+            roundedRect: bounds, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil,
         ))
         maskContext.fillPath()
 
@@ -786,12 +786,12 @@ nonisolated enum CompositeRenderer {
         context: CGContext,
         rect: CGRect,
         cornerRadius: CGFloat,
-        bevel: BevelConfiguration
+        bevel: BevelConfiguration,
     ) {
         guard let bevelImage = renderBevelImage(
             size: rect.size,
             cornerRadius: cornerRadius,
-            bevel: bevel
+            bevel: bevel,
         ), let cgBevel = bevelImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
 
         context.saveGState()
@@ -846,7 +846,7 @@ nonisolated enum CompositeRenderer {
             bytesPerRow: size * 4,
             size: CGSize(width: size, height: size),
             format: .RGBA8,
-            colorSpace: CGColorSpaceCreateDeviceRGB()
+            colorSpace: CGColorSpaceCreateDeviceRGB(),
         )
     }
 
@@ -857,7 +857,7 @@ nonisolated enum CompositeRenderer {
         rect: CGRect,
         cornerRadius: CGFloat,
         blurRadius: CGFloat,
-        scale: CGFloat
+        scale: CGFloat,
     ) {
         // `context.makeImage()` returns the full backing at pixel resolution, so the
         // point-space panel rect and blur radius are mapped into pixels before cropping
@@ -881,7 +881,7 @@ nonisolated enum CompositeRenderer {
             roundedRect: rect,
             cornerWidth: cornerRadius,
             cornerHeight: cornerRadius,
-            transform: nil
+            transform: nil,
         )
         context.saveGState()
         context.addPath(path)
@@ -896,7 +896,7 @@ nonisolated enum CompositeRenderer {
         cornerRadius: CGFloat,
         blurRadius: CGFloat,
         feather: CGFloat,
-        scale: CGFloat
+        scale: CGFloat,
     ) {
         guard let currentBitmap = context.makeImage() else { return }
         let ciImage = CIImage(cgImage: currentBitmap)
@@ -911,7 +911,7 @@ nonisolated enum CompositeRenderer {
             size: rect.size,
             cornerRadius: cornerRadius,
             feather: feather,
-            scale: scale
+            scale: scale,
         ) else { return }
 
         let ciMask = CIImage(cgImage: maskImage)
@@ -939,7 +939,7 @@ nonisolated enum CompositeRenderer {
         size: CGSize,
         cornerRadius: CGFloat,
         feather: CGFloat,
-        scale: CGFloat = 1
+        scale: CGFloat = 1,
     ) -> CGImage? {
         let pixelsWide = Int((size.width * scale).rounded())
         let pixelsHigh = Int((size.height * scale).rounded())

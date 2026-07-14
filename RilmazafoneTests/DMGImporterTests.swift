@@ -8,10 +8,9 @@ struct DMGImporterTests {
     // MARK: - Round Trip
 
     @Test(
-        "Round-trip: importing a built DMG reproduces the design",
-        .timeLimit(.minutes(3))
+        .timeLimit(.minutes(3)),
     )
-    func roundTripImport() async throws {
+    func `Round-trip: importing a built DMG reproduces the design`() async throws {
         let fixture = try makeTinyApp()
         defer { cleanup(fixture.root) }
 
@@ -34,12 +33,12 @@ struct DMGImporterTests {
                 kind: .app,
                 label: "Tiny.app",
                 sourcePath: fixture.app.path,
-                position: CGPoint(x: 150, y: 210)
+                position: CGPoint(x: 150, y: 210),
             ),
             CanvasItem(
                 kind: .applicationsSymlink,
                 label: "Applications",
-                position: CGPoint(x: 450, y: 210)
+                position: CGPoint(x: 450, y: 210),
             ),
         ]
 
@@ -55,7 +54,7 @@ struct DMGImporterTests {
             configuration: config,
             assetsDirectory: assetsDir,
             outputURL: outputDMG,
-            progress: { _ in }
+            progress: { _ in },
         )
 
         let result = try await DMGImporter.importLayout(of: outputDMG)
@@ -111,14 +110,13 @@ struct DMGImporterTests {
     }
 
     @Test(
-        "Importing a third-party DMG yields a sensible document",
         .enabled(
             if: DMGImporterTests.thirdPartyDMG != nil,
-            "No third-party DMG fixture found in ~/Downloads — skipping"
+            "No third-party DMG fixture found in ~/Downloads — skipping",
         ),
-        .timeLimit(.minutes(2))
+        .timeLimit(.minutes(2)),
     )
-    func thirdPartyImport() async throws {
+    func `Importing a third-party DMG yields a sensible document`() async throws {
         let dmg = try #require(Self.thirdPartyDMG)
         let result = try await DMGImporter.importLayout(of: dmg)
         let imported = result.configuration
@@ -146,10 +144,9 @@ struct DMGImporterTests {
     // MARK: - Defaults Without .DS_Store
 
     @Test(
-        "A DMG with no .DS_Store imports with default layout",
-        .timeLimit(.minutes(2))
+        .timeLimit(.minutes(2)),
     )
-    func importWithoutDSStore() async throws {
+    func `A DMG with no .DS_Store imports with default layout`() async throws {
         let dmg = try await makeBareDMG(volumeName: "BareVolume", fileName: "Readme.txt")
         defer { cleanup(dmg) }
 
@@ -172,8 +169,8 @@ struct DMGImporterTests {
 
     // MARK: - Error Paths
 
-    @Test("A corrupt file fails with a clean error and no stray mounts")
-    func corruptImageFails() async throws {
+    @Test
+    func `A corrupt file fails with a clean error and no stray mounts`() async throws {
         let bogus = tempPath("corrupt", extension: "dmg")
         try Data("this is not a disk image".utf8).write(to: bogus)
         defer { cleanup(bogus) }
@@ -192,8 +189,8 @@ struct DMGImporterTests {
         let app: URL
     }
 
-    @Test("Embedded payloads survive a build → import round-trip")
-    func embeddedPayloadRoundTrip() async throws {
+    @Test
+    func `Embedded payloads survive a build → import round-trip`() async throws {
         let assetsDir = tempDir("embed-roundtrip-assets")
         try FileManager.default.createDirectory(at: assetsDir, withIntermediateDirectories: true)
         let outputDMG = tempPath("embed-roundtrip", extension: "dmg")
@@ -208,10 +205,10 @@ struct DMGImporterTests {
         config.filesystem = .hfsPlus
         config.volumeIcon = VolumeIconConfiguration(type: .none)
         var readme = CanvasItem(
-            kind: .file, label: "Read Me.txt", position: CGPoint(x: 120, y: 200)
+            kind: .file, label: "Read Me.txt", position: CGPoint(x: 120, y: 200),
         )
         let assetName = EmbeddedAssets.assetName(
-            itemID: readme.id, label: readme.label, kind: .file
+            itemID: readme.id, label: readme.label, kind: .file,
         )
         readme.assetName = assetName
         config.items = [readme]
@@ -221,13 +218,13 @@ struct DMGImporterTests {
             configuration: config,
             assetsDirectory: assetsDir,
             outputURL: outputDMG,
-            progress: { _ in }
+            progress: { _ in },
         )
 
         // The built volume contains the real file; import embeds it again.
         let result = try await DMGImporter.importLayout(of: outputDMG)
         let imported = try #require(
-            result.configuration.items.first { $0.label == "Read Me.txt" }
+            result.configuration.items.first { $0.label == "Read Me.txt" },
         )
         #expect(imported.kind == .file)
         #expect(!imported.isPlaceholder)
@@ -259,7 +256,7 @@ struct DMGImporterTests {
         let dmg = try await DMGBuilder.createWritableImage(
             volumeName: volumeName,
             size: "16m",
-            filesystem: .hfsPlus
+            filesystem: .hfsPlus,
         )
         let mountPoint = try await DMGBuilder.attach(dmg)
         do {

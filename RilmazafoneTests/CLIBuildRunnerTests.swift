@@ -7,53 +7,53 @@ import Testing
 struct CLIBuildRunnerTests {
     // MARK: - Argument Parsing
 
-    @Test("parseBuildArguments: valid arguments with -o")
-    func parseBuildArgsShort() {
+    @Test
+    func `parseBuildArguments: valid arguments with -o`() {
         let result = CLIBuildRunner.parseBuildArguments(["template.dmgtemplate", "-o", "out.dmg"])
         #expect(result?.template == "template.dmgtemplate")
         #expect(result?.output == "out.dmg")
     }
 
-    @Test("parseBuildArguments: valid arguments with --output")
-    func parseBuildArgsLong() {
+    @Test
+    func `parseBuildArguments: valid arguments with --output`() {
         let result = CLIBuildRunner.parseBuildArguments(["template.dmgtemplate", "--output", "out.dmg"])
         #expect(result?.template == "template.dmgtemplate")
         #expect(result?.output == "out.dmg")
     }
 
-    @Test("parseBuildArguments: returns nil with too few arguments")
-    func parseBuildArgsTooFew() {
+    @Test
+    func `parseBuildArguments: returns nil with too few arguments`() {
         #expect(CLIBuildRunner.parseBuildArguments([]) == nil)
         #expect(CLIBuildRunner.parseBuildArguments(["template.dmgtemplate"]) == nil)
         #expect(CLIBuildRunner.parseBuildArguments(["template.dmgtemplate", "-o"]) == nil)
     }
 
-    @Test("parseBuildArguments: returns nil with wrong flag")
-    func parseBuildArgsWrongFlag() {
+    @Test
+    func `parseBuildArguments: returns nil with wrong flag`() {
         #expect(CLIBuildRunner.parseBuildArguments(["template.dmgtemplate", "-x", "out.dmg"]) == nil)
     }
 
     // MARK: - Help Flags
 
-    @Test("run returns 0 for -h")
-    func runHelpShort() {
+    @Test
+    func `run returns 0 for -h`() {
         #expect(CLIBuildRunner.run(arguments: ["-h"]) == 0)
     }
 
-    @Test("run returns 0 for --help")
-    func runHelpLong() {
+    @Test
+    func `run returns 0 for --help`() {
         #expect(CLIBuildRunner.run(arguments: ["--help"]) == 0)
     }
 
-    @Test("runInit returns 0 for --help")
-    func runInitHelp() {
+    @Test
+    func `runInit returns 0 for --help`() {
         #expect(CLIBuildRunner.runInit(arguments: ["--help"]) == 0)
     }
 
     // MARK: - Template Generation (init)
 
-    @Test("generateTemplate creates valid directory structure")
-    func generateTemplateStructure() {
+    @Test
+    func `generateTemplate creates valid directory structure`() {
         let dir = tempDir("init-structure")
         defer { cleanup(dir) }
 
@@ -65,8 +65,8 @@ struct CLIBuildRunnerTests {
         #expect(fm.fileExists(atPath: dir.appending(path: "Assets").path))
     }
 
-    @Test("generateTemplate produces decodable configuration")
-    func generateTemplateDecodable() throws {
+    @Test
+    func `generateTemplate produces decodable configuration`() throws {
         let dir = tempDir("init-decodable")
         defer { cleanup(dir) }
 
@@ -84,8 +84,8 @@ struct CLIBuildRunnerTests {
         #expect(config.items.isEmpty)
     }
 
-    @Test("generateTemplate matches default DMGConfiguration")
-    func generateTemplateMatchesDefault() throws {
+    @Test
+    func `generateTemplate matches default DMGConfiguration`() throws {
         let dir = tempDir("init-default")
         defer { cleanup(dir) }
 
@@ -98,8 +98,8 @@ struct CLIBuildRunnerTests {
         #expect(decoded == original)
     }
 
-    @Test("generateTemplate fails if path already exists")
-    func generateTemplateExisting() throws {
+    @Test
+    func `generateTemplate fails if path already exists`() throws {
         let dir = tempDir("init-existing")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { cleanup(dir) }
@@ -110,8 +110,8 @@ struct CLIBuildRunnerTests {
 
     // MARK: - Template Loading
 
-    @Test("loadTemplate round-trips a configuration")
-    func loadTemplateRoundTrip() throws {
+    @Test
+    func `loadTemplate round-trips a configuration`() throws {
         let dir = tempDir("load-roundtrip")
         defer { cleanup(dir) }
 
@@ -133,8 +133,8 @@ struct CLIBuildRunnerTests {
         #expect(loaded.items[0].kind == .applicationsSymlink)
     }
 
-    @Test("loadTemplate expands abbreviated paths")
-    func loadTemplateExpandsPaths() throws {
+    @Test
+    func `loadTemplate expands abbreviated paths`() throws {
         let dir = tempDir("load-expand")
         defer { cleanup(dir) }
 
@@ -157,8 +157,8 @@ struct CLIBuildRunnerTests {
         #expect(loaded.items[0].sourcePath == "\(home)/Desktop/App.app")
     }
 
-    @Test("loadTemplate extracts assets")
-    func loadTemplateExtractsAssets() throws {
+    @Test
+    func `loadTemplate extracts assets`() throws {
         let dir = tempDir("load-assets")
         defer { cleanup(dir) }
 
@@ -179,8 +179,8 @@ struct CLIBuildRunnerTests {
         #expect(extractedData == assetData)
     }
 
-    @Test("loadTemplate fails with missing document.json")
-    func loadTemplateMissingManifest() throws {
+    @Test
+    func `loadTemplate fails with missing document.json`() throws {
         let dir = tempDir("load-missing")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { cleanup(dir) }
@@ -192,8 +192,8 @@ struct CLIBuildRunnerTests {
 
     // MARK: - Size Estimation
 
-    @Test("estimateSize returns at least APFS minimum for empty config")
-    func estimateSizeAPFSMinimum() throws {
+    @Test
+    func `estimateSize returns at least APFS minimum for empty config`() throws {
         var config = DMGConfiguration()
         config.filesystem = .apfs
         config.items = []
@@ -204,8 +204,8 @@ struct CLIBuildRunnerTests {
         #expect(size == "128m")
     }
 
-    @Test("estimateSize returns at least HFS+ minimum for empty config")
-    func estimateSizeHFSMinimum() throws {
+    @Test
+    func `estimateSize returns at least HFS+ minimum for empty config`() throws {
         var config = DMGConfiguration()
         config.filesystem = .hfsPlus
         config.items = []
@@ -215,8 +215,8 @@ struct CLIBuildRunnerTests {
         #expect(size == "48m")
     }
 
-    @Test("estimateSize skips Applications symlink items")
-    func estimateSizeSkipsSymlink() throws {
+    @Test
+    func `estimateSize skips Applications symlink items`() throws {
         var config = DMGConfiguration()
         config.filesystem = .apfs
         config.items = [
@@ -233,8 +233,8 @@ struct CLIBuildRunnerTests {
 
     // MARK: - Build Error Handling
 
-    @Test("run returns 1 for missing template")
-    func buildMissingTemplate() {
+    @Test
+    func `run returns 1 for missing template`() {
         let code = CLIBuildRunner.run(arguments: [
             "/tmp/nonexistent-\(UUID().uuidString).dmgtemplate",
             "-o", "/tmp/out.dmg",
@@ -242,15 +242,15 @@ struct CLIBuildRunnerTests {
         #expect(code == 1)
     }
 
-    @Test("run returns 1 for invalid arguments")
-    func buildInvalidArgs() {
+    @Test
+    func `run returns 1 for invalid arguments`() {
         #expect(CLIBuildRunner.run(arguments: []) == 1)
     }
 
     // MARK: - Init Default Path
 
-    @Test("runInit uses default name when no path given")
-    func runInitDefaultName() throws {
+    @Test
+    func `runInit uses default name when no path given`() throws {
         let originalDir = FileManager.default.currentDirectoryPath
         let workDir = tempDir("init-default-name")
         try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
@@ -263,17 +263,16 @@ struct CLIBuildRunnerTests {
         let code = CLIBuildRunner.runInit(arguments: [])
         #expect(code == 0)
         #expect(FileManager.default.fileExists(
-            atPath: workDir.appending(path: "Untitled.dmgtemplate/document.json").path
+            atPath: workDir.appending(path: "Untitled.dmgtemplate/document.json").path,
         ))
     }
 
     // MARK: - Full Build Integration
 
     @Test(
-        "CLI build produces a valid DMG from a minimal template",
-        .timeLimit(.minutes(2))
+        .timeLimit(.minutes(2)),
     )
-    func fullBuildIntegration() throws {
+    func `CLI build produces a valid DMG from a minimal template`() throws {
         let templateDir = tempDir("integration-template")
         let outputDMG = tempPath("integration-output", extension: "dmg")
         defer {
@@ -309,12 +308,12 @@ struct CLIBuildRunnerTests {
                 kind: .app,
                 label: "Tiny.app",
                 sourcePath: appDir.appending(path: "Tiny.app").path,
-                position: CGPoint(x: 150, y: 200)
+                position: CGPoint(x: 150, y: 200),
             ),
             CanvasItem(
                 kind: .applicationsSymlink,
                 label: "Applications",
-                position: CGPoint(x: 400, y: 200)
+                position: CGPoint(x: 400, y: 200),
             ),
         ]
 
@@ -340,14 +339,14 @@ struct CLIBuildRunnerTests {
         defer {
             _ = try? Process.run(
                 URL(fileURLWithPath: "/usr/bin/hdiutil"),
-                arguments: ["detach", mountPoint.path, "-force"]
+                arguments: ["detach", mountPoint.path, "-force"],
             )
             try? fm.removeItem(at: mountPoint)
         }
 
         let attach = try Process.run(
             URL(fileURLWithPath: "/usr/bin/hdiutil"),
-            arguments: ["attach", outputDMG.path, "-noautoopen", "-nobrowse", "-noverify", "-mountpoint", mountPoint.path]
+            arguments: ["attach", outputDMG.path, "-noautoopen", "-nobrowse", "-noverify", "-mountpoint", mountPoint.path],
         )
         attach.waitUntilExit()
         #expect(attach.terminationStatus == 0)
@@ -365,10 +364,9 @@ struct CLIBuildRunnerTests {
     }
 
     @Test(
-        "CLI build produces same .DS_Store as BuildManager for identical config",
-        .timeLimit(.minutes(2))
+        .timeLimit(.minutes(2)),
     )
-    func dsStoreParity() throws {
+    func `CLI build produces same .DS_Store as BuildManager for identical config`() throws {
         // Both paths use DSStoreWriter.write() with the same config,
         // so the .DS_Store bytes should be identical.
         var config = DMGConfiguration()
@@ -381,12 +379,12 @@ struct CLIBuildRunnerTests {
                 kind: .app,
                 label: "App.app",
                 sourcePath: "/tmp/fake",
-                position: CGPoint(x: 150, y: 190)
+                position: CGPoint(x: 150, y: 190),
             ),
             CanvasItem(
                 kind: .applicationsSymlink,
                 label: "Applications",
-                position: CGPoint(x: 390, y: 190)
+                position: CGPoint(x: 390, y: 190),
             ),
         ]
 
@@ -394,14 +392,14 @@ struct CLIBuildRunnerTests {
         let dsStoreData = try DSStoreWriter.write(
             configuration: config,
             backgroundAlias: nil,
-            backgroundBookmark: nil
+            backgroundBookmark: nil,
         )
 
         // Generate again — must be deterministic
         let dsStoreData2 = try DSStoreWriter.write(
             configuration: config,
             backgroundAlias: nil,
-            backgroundBookmark: nil
+            backgroundBookmark: nil,
         )
 
         if dsStoreData != dsStoreData2 {
@@ -414,7 +412,7 @@ struct CLIBuildRunnerTests {
                 differing offset \(firstDiff.map(String.init) ?? "n/a — length only")). \
                 This flake has only ever appeared under parallel suite load; \
                 capture these numbers when it recurs.
-                """
+                """,
             )
         }
         #expect(dsStoreData.count > 0)

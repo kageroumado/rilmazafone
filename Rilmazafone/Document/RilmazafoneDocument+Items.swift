@@ -22,7 +22,7 @@ extension RilmazafoneDocument {
         bookmark: Data?,
         assetName: String? = nil,
         actionName: String = "Change Source",
-        undoManager: UndoManager?
+        undoManager: UndoManager?,
     ) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         let oldPath = items[index].sourcePath
@@ -40,7 +40,7 @@ extension RilmazafoneDocument {
                 bookmark: oldBookmark,
                 assetName: oldAssetName,
                 actionName: actionName,
-                undoManager: um
+                undoManager: um,
             )
         }
     }
@@ -54,7 +54,7 @@ extension RilmazafoneDocument {
             path: url.path,
             bookmark: SourceAccess.makeBookmark(for: url, documentURL: fileURL),
             actionName: "Relink Item",
-            undoManager: undoManager
+            undoManager: undoManager,
         )
         guard let item = items.first(where: { $0.id == id }),
               item.kind == .app else { return }
@@ -86,7 +86,7 @@ extension RilmazafoneDocument {
     func updateItemBackground(
         _ id: UUID,
         with transform: (inout ItemBackground) -> Void,
-        undoManager: UndoManager?
+        undoManager: UndoManager?,
     ) {
         guard let index = items.firstIndex(where: { $0.id == id }),
               let old = items[index].background else { return }
@@ -346,7 +346,7 @@ extension RilmazafoneDocument {
             label: url.lastPathComponent,
             sourcePath: url.path,
             sourceBookmark: SourceAccess.makeBookmark(for: url, documentURL: fileURL),
-            position: position
+            position: position,
         )
         addItem(item, undoManager: undoManager)
 
@@ -364,7 +364,7 @@ extension RilmazafoneDocument {
                 let symlink = CanvasItem(
                     kind: .applicationsSymlink,
                     label: "Applications",
-                    position: CGPoint(x: symlinkX, y: centerY)
+                    position: CGPoint(x: symlinkX, y: centerY),
                 )
                 addItem(symlink, undoManager: undoManager)
             }
@@ -384,7 +384,7 @@ extension RilmazafoneDocument {
             label: url.lastPathComponent,
             sourcePath: url.path,
             sourceBookmark: SourceAccess.makeBookmark(for: url, documentURL: fileURL),
-            position: position
+            position: position,
         )
         addItem(item, undoManager: undoManager)
     }
@@ -428,7 +428,7 @@ extension RilmazafoneDocument {
             toItem: filledItem, toCodeSign: newCodeSign,
             fromItem: oldItem, fromCodeSign: oldCodeSign,
             actionName: Self.fillActionName(for: oldItem.kind),
-            undoManager: undoManager
+            undoManager: undoManager,
         )
     }
 
@@ -451,7 +451,7 @@ extension RilmazafoneDocument {
         fromItem: CanvasItem,
         fromCodeSign: CodeSignConfiguration,
         actionName: String,
-        undoManager: UndoManager?
+        undoManager: UndoManager?,
     ) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         items[index] = toItem
@@ -464,7 +464,7 @@ extension RilmazafoneDocument {
                 toItem: fromItem, toCodeSign: fromCodeSign,
                 fromItem: toItem, fromCodeSign: toCodeSign,
                 actionName: actionName,
-                undoManager: um
+                undoManager: um,
             )
         }
     }

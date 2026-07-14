@@ -22,10 +22,10 @@ nonisolated enum ValidationError: Error, LocalizedError {
         case let .unfilledPlaceholder(labels):
             labels.count == 1
                 ? "Fill the \u{201C}\(labels[0])\u{201D} placeholder slot before building. "
-                    + "Drop a matching item onto its dashed tile."
+                + "Drop a matching item onto its dashed tile."
                 : "Fill the placeholder slots before building: "
-                    + labels.map { "\u{201C}\($0)\u{201D}" }.joined(separator: ", ")
-                    + ". Drop a matching item onto each dashed tile."
+                + labels.map { "\u{201C}\($0)\u{201D}" }.joined(separator: ", ")
+                + ". Drop a matching item onto each dashed tile."
         case .volumeNameEmpty:
             "Volume name cannot be empty."
         case let .volumeNameTooLong(count):
@@ -79,7 +79,7 @@ final class BuildManager {
         configuration: DMGConfiguration,
         assetsDirectory: URL,
         outputURL: URL,
-        documentURL: URL? = nil
+        documentURL: URL? = nil,
     ) {
         buildTask = Task.detached { [weak self] in
             guard let self else { return }
@@ -91,7 +91,7 @@ final class BuildManager {
                     documentURL: documentURL,
                     progress: { [weak self] progress in
                         await self?.applyProgress(progress)
-                    }
+                    },
                 )
                 await MainActor.run { self.state = .completed(outputURL) }
             } catch is CancellationError {
@@ -120,7 +120,7 @@ final class BuildManager {
         state = .building(BuildProgress(
             currentStep: progress.step,
             stepIndex: progress.stepIndex,
-            totalSteps: progress.totalSteps
+            totalSteps: progress.totalSteps,
         ))
     }
 }

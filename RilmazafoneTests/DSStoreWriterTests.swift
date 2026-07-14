@@ -8,8 +8,8 @@ import Testing
 struct DSStoreWriterTests {
     // MARK: - File Structure
 
-    @Test("Output has correct file magic and Bud1 header")
-    func fileHeader() throws {
+    @Test
+    func `Output has correct file magic and Bud1 header`() throws {
         let config = Self.minimalConfiguration()
         let data = try DSStoreWriter.write(configuration: config)
 
@@ -26,8 +26,8 @@ struct DSStoreWriterTests {
         #expect(data.readBE32(at: 12) == 0x0000_0800)
     }
 
-    @Test("Output has correct total file size")
-    func fileSize() throws {
+    @Test
+    func `Output has correct total file size`() throws {
         let config = Self.minimalConfiguration()
         let data = try DSStoreWriter.write(configuration: config)
 
@@ -37,8 +37,8 @@ struct DSStoreWriterTests {
 
     // MARK: - DSDB Superblock
 
-    @Test("DSDB superblock has correct structure")
-    func dsdbSuperblock() throws {
+    @Test
+    func `DSDB superblock has correct structure`() throws {
         let config = Self.minimalConfiguration()
         let data = try DSStoreWriter.write(configuration: config)
 
@@ -54,8 +54,8 @@ struct DSStoreWriterTests {
         #expect(data.readBE32(at: sb + 16) == 0x1000)
     }
 
-    @Test("Record count matches expected records")
-    func recordCount() throws {
+    @Test
+    func `Record count matches expected records`() throws {
         var config = Self.minimalConfiguration()
         config.items = [
             CanvasItem(kind: .app, label: "MyApp.app", position: CGPoint(x: 150, y: 200)),
@@ -72,8 +72,8 @@ struct DSStoreWriterTests {
 
     // MARK: - Block Address Table
 
-    @Test("Bookkeeping block address table is correct")
-    func blockAddressTable() throws {
+    @Test
+    func `Bookkeeping block address table is correct`() throws {
         let config = Self.minimalConfiguration()
         let data = try DSStoreWriter.write(configuration: config)
 
@@ -92,8 +92,8 @@ struct DSStoreWriterTests {
 
     // MARK: - B-Tree Leaf Node
 
-    @Test("Leaf node starts with mode 0 and correct count")
-    func leafNodeHeader() throws {
+    @Test
+    func `Leaf node starts with mode 0 and correct count`() throws {
         var config = Self.minimalConfiguration()
         config.items = [
             CanvasItem(kind: .app, label: "Test.app", position: CGPoint(x: 100, y: 200)),
@@ -111,8 +111,8 @@ struct DSStoreWriterTests {
 
     // MARK: - Record Sorting
 
-    @Test("Records are sorted case-insensitively by filename then type code")
-    func recordSorting() throws {
+    @Test
+    func `Records are sorted case-insensitively by filename then type code`() throws {
         var config = Self.minimalConfiguration()
         config.items = [
             CanvasItem(kind: .app, label: "Zebra.app", position: CGPoint(x: 100, y: 200)),
@@ -126,7 +126,7 @@ struct DSStoreWriterTests {
 
         // "." records come first (bwsp, icvp, vSrn), then "alpha.app", then "Zebra.app"
         // "." < "a" < "z" in case-insensitive ASCII
-        let dotCount = filenames.filter { $0 == "." }.count
+        let dotCount = filenames.count(where: { $0 == "." })
         #expect(dotCount == 3)
 
         let nonDot = filenames.filter { $0 != "." }
@@ -135,8 +135,8 @@ struct DSStoreWriterTests {
 
     // MARK: - Iloc Records
 
-    @Test("Iloc record encodes position with content inset adjustment")
-    func ilocEncoding() throws {
+    @Test
+    func `Iloc record encodes position with content inset adjustment`() throws {
         var config = Self.minimalConfiguration()
         config.items = [
             CanvasItem(kind: .app, label: "App.app", position: CGPoint(x: 150, y: 250)),
@@ -167,8 +167,8 @@ struct DSStoreWriterTests {
 
     // MARK: - vSrn Record
 
-    @Test("vSrn record encodes as long value 1")
-    func vsrnEncoding() throws {
+    @Test
+    func `vSrn record encodes as long value 1`() throws {
         let config = Self.minimalConfiguration()
         let data = try DSStoreWriter.write(configuration: config)
 
@@ -183,8 +183,8 @@ struct DSStoreWriterTests {
 
     // MARK: - bwsp Record
 
-    @Test("bwsp window bounds include title bar offset")
-    func bwspWindowBounds() throws {
+    @Test
+    func `bwsp window bounds include title bar offset`() throws {
         var config = Self.minimalConfiguration()
         config.window = WindowConfiguration(width: 500, height: 300)
         config.windowPosition = WindowPosition(x: 100, y: 50)
@@ -202,7 +202,7 @@ struct DSStoreWriterTests {
 
         let plist = try #require(PropertyListSerialization.propertyList(
             from: plistData,
-            format: nil
+            format: nil,
         ) as? [String: Any])
 
         // Height should be 300 + 32 (title bar) = 332
@@ -217,8 +217,8 @@ struct DSStoreWriterTests {
 
     // MARK: - icvp Record
 
-    @Test("icvp encodes icon size, text size, and grid spacing")
-    func icvpBasicProperties() throws {
+    @Test
+    func `icvp encodes icon size, text size, and grid spacing`() throws {
         var config = Self.minimalConfiguration()
         config.iconSize = 128
         config.textSize = 14
@@ -237,7 +237,7 @@ struct DSStoreWriterTests {
 
         let plist = try #require(PropertyListSerialization.propertyList(
             from: plistData,
-            format: nil
+            format: nil,
         ) as? [String: Any])
 
         #expect(plist["iconSize"] as? Double == 128)
@@ -246,8 +246,8 @@ struct DSStoreWriterTests {
         #expect(plist["arrangeBy"] as? String == "none")
     }
 
-    @Test("icvp color background sets type 1 with RGB")
-    func icvpColorBackground() throws {
+    @Test
+    func `icvp color background sets type 1 with RGB`() throws {
         var config = Self.minimalConfiguration()
         config.background.type = .color
         config.background.color = RGBColor(red: 0.5, green: 0.6, blue: 0.7)
@@ -264,7 +264,7 @@ struct DSStoreWriterTests {
 
         let plist = try #require(PropertyListSerialization.propertyList(
             from: plistData,
-            format: nil
+            format: nil,
         ) as? [String: Any])
 
         #expect(plist["backgroundType"] as? Int == 1)
@@ -273,15 +273,15 @@ struct DSStoreWriterTests {
         #expect(plist["backgroundColorBlue"] as? Double == 0.7)
     }
 
-    @Test("icvp image background sets type 2 and embeds alias")
-    func icvpImageBackground() throws {
+    @Test
+    func `icvp image background sets type 2 and embeds alias`() throws {
         var config = Self.minimalConfiguration()
         config.background.type = .image
 
         let fakeAlias = Data([0xDE, 0xAD, 0xBE, 0xEF])
         let data = try DSStoreWriter.write(
             configuration: config,
-            backgroundAlias: fakeAlias
+            backgroundAlias: fakeAlias,
         )
 
         guard let payload = Self.findRecordPayload(for: ".", typeCode: "icvp", in: data, at: 0x1004) else {
@@ -294,15 +294,15 @@ struct DSStoreWriterTests {
 
         let plist = try #require(PropertyListSerialization.propertyList(
             from: plistData,
-            format: nil
+            format: nil,
         ) as? [String: Any])
 
         #expect(plist["backgroundType"] as? Int == 2)
         #expect(plist["backgroundImageAlias"] as? Data == fakeAlias)
     }
 
-    @Test("icvp gradient falls through to no background")
-    func icvpGradientFallthrough() throws {
+    @Test
+    func `icvp gradient falls through to no background`() throws {
         var config = Self.minimalConfiguration()
         config.background.type = .gradient
 
@@ -318,7 +318,7 @@ struct DSStoreWriterTests {
 
         let plist = try #require(PropertyListSerialization.propertyList(
             from: plistData,
-            format: nil
+            format: nil,
         ) as? [String: Any])
 
         #expect(plist["backgroundType"] as? Int == 0)
@@ -326,8 +326,8 @@ struct DSStoreWriterTests {
 
     // MARK: - Hidden File Positioning
 
-    @Test("Background directory is positioned below visible area")
-    func backgroundIlocPositioning() throws {
+    @Test
+    func `Background directory is positioned below visible area`() throws {
         var config = Self.minimalConfiguration()
         config.window = WindowConfiguration(width: 500, height: 300)
         config.iconSize = 64
@@ -348,8 +348,8 @@ struct DSStoreWriterTests {
         #expect(y == 364)
     }
 
-    @Test("Volume icon is positioned below visible area")
-    func volumeIconIlocPositioning() throws {
+    @Test
+    func `Volume icon is positioned below visible area`() throws {
         var config = Self.minimalConfiguration()
         config.window = WindowConfiguration(width: 500, height: 300)
         config.iconSize = 64
@@ -368,8 +368,8 @@ struct DSStoreWriterTests {
         #expect(y == 364)
     }
 
-    @Test("Hidden files not included when unnecessary")
-    func noHiddenIlocsWhenUnneeded() throws {
+    @Test
+    func `Hidden files not included when unnecessary`() throws {
         var config = Self.minimalConfiguration()
         config.volumeIcon.type = .none
 
@@ -381,8 +381,8 @@ struct DSStoreWriterTests {
 
     // MARK: - pBBk Record
 
-    @Test("pBBk record is included when bookmark data is provided")
-    func pBBkPresent() throws {
+    @Test
+    func `pBBk record is included when bookmark data is provided`() throws {
         let config = Self.minimalConfiguration()
         let bookmark = Data(repeating: 0xAB, count: 64)
         let data = try DSStoreWriter.write(configuration: config, backgroundBookmark: bookmark)
@@ -391,8 +391,8 @@ struct DSStoreWriterTests {
         #expect(payload != nil)
     }
 
-    @Test("pBBk record is absent when no bookmark data")
-    func pBBkAbsent() throws {
+    @Test
+    func `pBBk record is absent when no bookmark data`() throws {
         let config = Self.minimalConfiguration()
         let data = try DSStoreWriter.write(configuration: config)
 
@@ -402,8 +402,8 @@ struct DSStoreWriterTests {
 
     // MARK: - Reference File Comparison
 
-    @Test("Output matches Python ds_store reference file")
-    func referenceFileComparison() throws {
+    @Test
+    func `Output matches Python ds_store reference file`() throws {
         // Reference created with Python ds_store library (v1.3.2):
         //   Volume: "TestDMG", Window: 660x400 @ (200,120)
         //   Icon size: 160, Text size: 13, Grid spacing: 100
@@ -640,7 +640,7 @@ struct DSStoreWriterTests {
         let blobSize = Int(payload.readBE32(at: 4))
         let plistData = payload.subdata(in: 8 ..< (8 + blobSize))
         guard let result = try PropertyListSerialization.propertyList(
-            from: plistData, format: nil
+            from: plistData, format: nil,
         ) as? [String: Any] else {
             throw CocoaError(.propertyListReadCorrupt)
         }

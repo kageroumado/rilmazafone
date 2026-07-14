@@ -38,7 +38,7 @@ struct ItemBackgroundPanel: View, Equatable {
         return Color(
             red: shadow.color.red,
             green: shadow.color.green,
-            blue: shadow.color.blue
+            blue: shadow.color.blue,
         ).opacity(shadow.opacity)
     }
 
@@ -51,7 +51,7 @@ struct ItemBackgroundPanel: View, Equatable {
         guard let shadow = bg.shadow, shadow.enabled else { return .zero }
         return CGSize(
             width: shadow.offsetX * currentZoom,
-            height: shadow.offsetY * currentZoom
+            height: shadow.offsetY * currentZoom,
         )
     }
 
@@ -63,7 +63,7 @@ struct ItemBackgroundPanel: View, Equatable {
             x: item.position.x - side / 2,
             y: item.position.y - side / 2,
             width: side,
-            height: side
+            height: side,
         )
     }
 
@@ -103,7 +103,7 @@ struct ItemBackgroundPanel: View, Equatable {
                     .fill(Color(
                         red: bg.color.red,
                         green: bg.color.green,
-                        blue: bg.color.blue
+                        blue: bg.color.blue,
                     ).opacity(bg.opacity))
                     .blendMode(bg.blendMode.swiftUIBlendMode)
                     .mask {
@@ -132,11 +132,11 @@ struct ItemBackgroundPanel: View, Equatable {
             color: panelShadowColor,
             radius: panelShadowRadius,
             x: panelShadowOffset.width,
-            y: panelShadowOffset.height
+            y: panelShadowOffset.height,
         )
         .position(
             x: item.position.x * currentZoom,
-            y: item.position.y * currentZoom
+            y: item.position.y * currentZoom,
         )
         .allowsHitTesting(false)
         .task(id: bevelFingerprint) {
@@ -149,7 +149,7 @@ struct ItemBackgroundPanel: View, Equatable {
             bevelImage = CompositeRenderer.renderBevelImage(
                 size: size,
                 cornerRadius: bg.cornerRadius,
-                bevel: bevel
+                bevel: bevel,
             )
         }
     }

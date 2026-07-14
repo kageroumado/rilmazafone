@@ -4,11 +4,11 @@ import Observation
 // MARK: - Template Entry
 
 /// A single `.dmgtemplate` package known to the registry.
-nonisolated struct TemplateEntry: Identifiable, Hashable, Sendable {
+nonisolated struct TemplateEntry: Identifiable, Hashable {
     /// Where an item's filename label sits, in top-down content-space points —
     /// the gallery draws a redacted material pill there in place of the label
     /// text, which would be illegible at tile scale.
-    struct LabelPill: Hashable, Sendable {
+    struct LabelPill: Hashable {
         let x: CGFloat
         let y: CGFloat
         let width: CGFloat
@@ -31,7 +31,9 @@ nonisolated struct TemplateEntry: Identifiable, Hashable, Sendable {
     /// One pill per canvas item, in item order.
     let labelPills: [LabelPill]
 
-    var id: URL { url }
+    var id: URL {
+        url
+    }
 }
 
 // MARK: - Template Registry
@@ -99,13 +101,13 @@ final class TemplateRegistry {
         bundledDirectory: URL? = TemplateRegistry.defaultBundledDirectory,
         userDirectory: URL = TemplateRegistry.defaultUserDirectory,
         watchesUserDirectory: Bool = true,
-        prewarmsThumbnails: Bool = true
+        prewarmsThumbnails: Bool = true,
     ) {
         self.bundledDirectory = bundledDirectory
         self.userDirectory = userDirectory
 
         try? FileManager.default.createDirectory(
-            at: userDirectory, withIntermediateDirectories: true
+            at: userDirectory, withIntermediateDirectories: true,
         )
 
         refresh()
@@ -138,7 +140,7 @@ final class TemplateRegistry {
               let contents = try? FileManager.default.contentsOfDirectory(
                   at: directory,
                   includingPropertiesForKeys: nil,
-                  options: [.skipsHiddenFiles]
+                  options: [.skipsHiddenFiles],
               )
         else { return [] }
 
@@ -153,15 +155,15 @@ final class TemplateRegistry {
                     isBuiltIn: isBuiltIn,
                     windowSize: CGSize(
                         width: configuration.window.width,
-                        height: configuration.window.height
+                        height: configuration.window.height,
                     ),
                     labelPills: configuration.items.map { item in
                         TemplateThumbnailRenderer.labelPill(
                             for: item,
                             iconSize: configuration.iconSize,
-                            textSize: configuration.textSize
+                            textSize: configuration.textSize,
                         )
-                    }
+                    },
                 )
             }
             .sorted {
@@ -208,7 +210,7 @@ final class TemplateRegistry {
 
     private func renderThumbnail(
         for entry: TemplateEntry,
-        modificationDate: Date?
+        modificationDate: Date?,
     ) async -> NSImage? {
         guard let configuration = try? TemplateInstantiator.configuration(ofTemplateAt: entry.url)
         else { return nil }
@@ -217,15 +219,15 @@ final class TemplateRegistry {
         guard let cgImage = await TemplateThumbnailRenderer.render(
             configuration: configuration,
             assetsDirectory: entry.url.appending(path: "Assets"),
-            itemIcons: itemIcons
+            itemIcons: itemIcons,
         ) else { return nil }
 
         let image = NSImage(
             cgImage: cgImage,
-            size: CGSize(width: configuration.window.width, height: configuration.window.height)
+            size: CGSize(width: configuration.window.width, height: configuration.window.height),
         )
         thumbnailCache[entry.url] = CachedThumbnail(
-            modificationDate: modificationDate, image: image
+            modificationDate: modificationDate, image: image,
         )
         return image
     }
@@ -238,7 +240,7 @@ final class TemplateRegistry {
             guard let icon = CanvasItem.resolveIcon(for: item, documentURL: nil) else { continue }
             var proposedRect = CGRect(
                 origin: .zero,
-                size: CGSize(width: configuration.iconSize * 2, height: configuration.iconSize * 2)
+                size: CGSize(width: configuration.iconSize * 2, height: configuration.iconSize * 2),
             )
             if let cgIcon = icon.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil) {
                 icons[item.id] = cgIcon
@@ -262,7 +264,7 @@ final class TemplateRegistry {
     func saveUserTemplate(
         named name: String,
         configuration: DMGConfiguration,
-        assets: [String: Data] = [:]
+        assets: [String: Data] = [:],
     ) throws -> TemplateEntry {
         var portable = configuration
         portable.abbreviatePaths()
@@ -277,7 +279,7 @@ final class TemplateRegistry {
         if !assets.isEmpty {
             let assetsDirectory = url.appending(path: "Assets", directoryHint: .isDirectory)
             try FileManager.default.createDirectory(
-                at: assetsDirectory, withIntermediateDirectories: true
+                at: assetsDirectory, withIntermediateDirectories: true,
             )
             for (filename, data) in assets {
                 try data.write(to: assetsDirectory.appending(path: filename))
@@ -351,7 +353,7 @@ final class TemplateRegistry {
 /// Watches a directory for content changes via a `DispatchSource` on an
 /// `O_EVTONLY` file descriptor. The handler fires on a utility queue; the
 /// caller is responsible for hopping to its own isolation.
-private nonisolated final class DirectoryWatcher {
+private final nonisolated class DirectoryWatcher {
     private let source: any DispatchSourceFileSystemObject
 
     init?(url: URL, onChange: @escaping @Sendable () -> Void) {
@@ -361,7 +363,7 @@ private nonisolated final class DirectoryWatcher {
         let source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: fileDescriptor,
             eventMask: [.write, .rename, .delete],
-            queue: .global(qos: .utility)
+            queue: .global(qos: .utility),
         )
         source.setEventHandler(handler: onChange)
         source.setCancelHandler {

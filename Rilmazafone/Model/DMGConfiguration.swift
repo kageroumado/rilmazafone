@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 // MARK: - Document Root
 
-nonisolated struct DMGConfiguration: Codable, Hashable, Sendable {
+nonisolated struct DMGConfiguration: Codable, Hashable {
     let version: Int = 1
     var volumeName: String = "Untitled"
     var window: WindowConfiguration = .init()
@@ -101,14 +101,14 @@ nonisolated extension DMGConfiguration {
 
 // MARK: - Window
 
-nonisolated struct WindowConfiguration: Codable, Hashable, Sendable {
+nonisolated struct WindowConfiguration: Codable, Hashable {
     var width: CGFloat = 660
     var height: CGFloat = 400
 }
 
 // MARK: - Background
 
-nonisolated struct BackgroundConfiguration: Codable, Hashable, Sendable {
+nonisolated struct BackgroundConfiguration: Codable, Hashable {
     var type: BackgroundType = .none
     var color: RGBColor = .init(red: 0.92, green: 0.92, blue: 0.92)
     var gradient: GradientConfiguration?
@@ -132,14 +132,14 @@ nonisolated struct BackgroundConfiguration: Codable, Hashable, Sendable {
     }
 }
 
-nonisolated enum BackgroundType: String, Codable, CaseIterable, Sendable {
+nonisolated enum BackgroundType: String, Codable, CaseIterable {
     case none
     case color
     case gradient
     case image
 }
 
-nonisolated struct BackgroundLayer: Codable, Hashable, Identifiable, Sendable {
+nonisolated struct BackgroundLayer: Codable, Hashable, Identifiable {
     let id: UUID
     var imageName: String
     var label: String
@@ -175,7 +175,7 @@ nonisolated struct BackgroundLayer: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
-nonisolated struct RGBColor: Codable, Hashable, Sendable {
+nonisolated struct RGBColor: Codable, Hashable {
     var red: CGFloat
     var green: CGFloat
     var blue: CGFloat
@@ -196,7 +196,7 @@ extension RGBColor {
 
 // MARK: - Gradient
 
-nonisolated struct GradientConfiguration: Codable, Hashable, Sendable {
+nonisolated struct GradientConfiguration: Codable, Hashable {
     var type: GradientType = .linear
     var stops: [GradientStop] = [
         GradientStop(color: RGBColor(red: 0.3, green: 0.5, blue: 0.9), location: 0),
@@ -235,12 +235,12 @@ nonisolated struct GradientConfiguration: Codable, Hashable, Sendable {
     }
 }
 
-nonisolated enum GradientType: String, Codable, CaseIterable, Sendable {
+nonisolated enum GradientType: String, Codable, CaseIterable {
     case linear
     case radial
 }
 
-nonisolated struct GradientStop: Codable, Hashable, Identifiable, Sendable {
+nonisolated struct GradientStop: Codable, Hashable, Identifiable {
     var id: UUID = .init()
     var color: RGBColor
     var location: CGFloat
@@ -251,7 +251,7 @@ extension GradientConfiguration {
         stops.sorted { $0.location < $1.location }.map { stop in
             Gradient.Stop(
                 color: Color(red: stop.color.red, green: stop.color.green, blue: stop.color.blue),
-                location: stop.location
+                location: stop.location,
             )
         }
     }
@@ -259,7 +259,7 @@ extension GradientConfiguration {
 
 // MARK: - Variable Blur
 
-nonisolated struct VariableBlurConfiguration: Codable, Hashable, Sendable {
+nonisolated struct VariableBlurConfiguration: Codable, Hashable {
     var radius: CGFloat = 20
     var maskType: VariableBlurMaskType = .linear
     var angle: CGFloat = 180
@@ -269,14 +269,14 @@ nonisolated struct VariableBlurConfiguration: Codable, Hashable, Sendable {
     var endPoint: CGFloat = 0.7
 }
 
-nonisolated enum VariableBlurMaskType: String, Codable, CaseIterable, Sendable {
+nonisolated enum VariableBlurMaskType: String, Codable, CaseIterable {
     case linear
     case radial
 }
 
 // MARK: - Color Adjustments
 
-nonisolated struct ColorAdjustments: Codable, Hashable, Sendable {
+nonisolated struct ColorAdjustments: Codable, Hashable {
     var brightness: CGFloat = 0
     var contrast: CGFloat = 1
     var saturation: CGFloat = 1
@@ -286,21 +286,21 @@ nonisolated struct ColorAdjustments: Codable, Hashable, Sendable {
 
 // MARK: - Vignette
 
-nonisolated struct VignetteConfiguration: Codable, Hashable, Sendable {
+nonisolated struct VignetteConfiguration: Codable, Hashable {
     var intensity: CGFloat = 0.8
     var radius: CGFloat = 1.0
 }
 
 // MARK: - Bloom
 
-nonisolated struct BloomConfiguration: Codable, Hashable, Sendable {
+nonisolated struct BloomConfiguration: Codable, Hashable {
     var intensity: CGFloat = 0.5
     var radius: CGFloat = 10
 }
 
 // MARK: - Shadow
 
-nonisolated struct ShadowConfiguration: Codable, Hashable, Sendable {
+nonisolated struct ShadowConfiguration: Codable, Hashable {
     var enabled: Bool = true
     var color: RGBColor = .init(red: 0, green: 0, blue: 0)
     var opacity: CGFloat = 0.5
@@ -324,7 +324,7 @@ nonisolated struct ShadowConfiguration: Codable, Hashable, Sendable {
 
 // MARK: - Bevel
 
-nonisolated struct BevelConfiguration: Codable, Hashable, Sendable {
+nonisolated struct BevelConfiguration: Codable, Hashable {
     var enabled: Bool = true
     var depth: CGFloat = 5
     var lightAngle: CGFloat = 135
@@ -334,7 +334,7 @@ nonisolated struct BevelConfiguration: Codable, Hashable, Sendable {
         enabled: Bool = true,
         depth: CGFloat = 5,
         lightAngle: CGFloat = 135,
-        intensity: CGFloat = 0.5
+        intensity: CGFloat = 0.5,
     ) {
         self.enabled = enabled
         self.depth = depth
@@ -353,7 +353,7 @@ nonisolated struct BevelConfiguration: Codable, Hashable, Sendable {
 
 // MARK: - Text Layers
 
-nonisolated struct TextLayerConfiguration: Codable, Hashable, Identifiable, Sendable {
+nonisolated struct TextLayerConfiguration: Codable, Hashable, Identifiable {
     var id: UUID = .init()
     var text: String = "Text"
     var position: CGPoint
@@ -366,7 +366,7 @@ nonisolated struct TextLayerConfiguration: Codable, Hashable, Identifiable, Send
 
 // MARK: - SF Symbol Layers
 
-nonisolated struct SFSymbolLayerConfiguration: Codable, Hashable, Identifiable, Sendable {
+nonisolated struct SFSymbolLayerConfiguration: Codable, Hashable, Identifiable {
     var id: UUID = .init()
     var position: CGPoint
     var symbolName: String = "arrow.right"
@@ -375,7 +375,7 @@ nonisolated struct SFSymbolLayerConfiguration: Codable, Hashable, Identifiable, 
     var color: RGBColor = .init(red: 0, green: 0, blue: 0)
 }
 
-nonisolated enum SFSymbolWeight: String, Codable, CaseIterable, Sendable {
+nonisolated enum SFSymbolWeight: String, Codable, CaseIterable {
     case ultraLight
     case thin
     case light
@@ -403,7 +403,7 @@ nonisolated enum SFSymbolWeight: String, Codable, CaseIterable, Sendable {
 
 // MARK: - Canvas Items
 
-nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
+nonisolated struct CanvasItem: Codable, Hashable, Identifiable {
     var id: UUID = .init()
     var kind: CanvasItemKind
     var label: String
@@ -467,7 +467,7 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
     /// Creates an unfilled app placeholder slot at the given position.
     static func appPlaceholder(
         label: String = placeholderLabel,
-        position: CGPoint
+        position: CGPoint,
     ) -> CanvasItem {
         CanvasItem(kind: .app, label: label, position: position, isPlaceholder: true)
     }
@@ -476,7 +476,7 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
     /// slot a dropped folder (e.g. bundled documentation) fills.
     static func folderPlaceholder(
         label: String = folderPlaceholderLabel,
-        position: CGPoint
+        position: CGPoint,
     ) -> CanvasItem {
         CanvasItem(kind: .folder, label: label, position: position, isPlaceholder: true)
     }
@@ -485,7 +485,7 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
     /// slot a dropped file (e.g. a Read Me) fills.
     static func filePlaceholder(
         label: String = filePlaceholderLabel,
-        position: CGPoint
+        position: CGPoint,
     ) -> CanvasItem {
         CanvasItem(kind: .file, label: label, position: position, isPlaceholder: true)
     }
@@ -503,7 +503,9 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
 
     /// Whether this item carries its content inside the containing package
     /// rather than referencing an external source.
-    var isEmbedded: Bool { assetName != nil }
+    var isEmbedded: Bool {
+        assetName != nil
+    }
 
     /// Whether this item copies a filesystem source into the DMG and therefore
     /// needs a reachable source. The Applications symlink and symlink-type items
@@ -519,7 +521,7 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
 
 // MARK: - Item Background
 
-nonisolated struct ItemBackground: Codable, Hashable, Sendable {
+nonisolated struct ItemBackground: Codable, Hashable {
     var enabled: Bool = true
     var color: RGBColor = .init(red: 1, green: 1, blue: 1)
     var opacity: CGFloat = 0.3
@@ -554,7 +556,7 @@ nonisolated struct ItemBackground: Codable, Hashable, Sendable {
         blurFeather: CGFloat = 0,
         blendMode: ItemBlendMode = .normal,
         shadow: ShadowConfiguration? = nil,
-        bevel: BevelConfiguration? = nil
+        bevel: BevelConfiguration? = nil,
     ) {
         self.enabled = enabled
         self.color = color
@@ -583,7 +585,7 @@ nonisolated struct ItemBackground: Codable, Hashable, Sendable {
     }
 }
 
-nonisolated enum ItemBlendMode: String, Codable, CaseIterable, Sendable {
+nonisolated enum ItemBlendMode: String, Codable, CaseIterable {
     case normal
     case overlay
     case softLight
@@ -637,12 +639,12 @@ nonisolated enum ItemBlendMode: String, Codable, CaseIterable, Sendable {
     }
 }
 
-nonisolated enum ItemLinkType: String, Codable, CaseIterable, Sendable {
+nonisolated enum ItemLinkType: String, Codable, CaseIterable {
     case copy
     case symlink
 }
 
-nonisolated enum CanvasItemKind: String, Codable, CaseIterable, Sendable {
+nonisolated enum CanvasItemKind: String, Codable, CaseIterable {
     case app
     case applicationsSymlink
     case file
@@ -660,7 +662,7 @@ extension CanvasItem {
         defer { try? FileManager.default.removeItem(at: tempLink) }
         try? FileManager.default.createSymbolicLink(
             at: tempLink,
-            withDestinationURL: URL(filePath: "/Applications")
+            withDestinationURL: URL(filePath: "/Applications"),
         )
         return NSWorkspace.shared.icon(forFile: tempLink.path)
     }()
@@ -712,19 +714,19 @@ extension CanvasItem {
             sourcePath: sourcePath,
             sourceBookmark: sourceBookmark,
             assetName: assetName,
-            isSourceMissing: isSourceMissing
+            isSourceMissing: isSourceMissing,
         )
     }
 }
 
 // MARK: - Volume Icon
 
-nonisolated struct VolumeIconConfiguration: Codable, Hashable, Sendable {
+nonisolated struct VolumeIconConfiguration: Codable, Hashable {
     var type: VolumeIconType = .composed
     var sourceIconName: String?
 }
 
-nonisolated enum VolumeIconType: String, Codable, CaseIterable, Sendable {
+nonisolated enum VolumeIconType: String, Codable, CaseIterable {
     case composed
     case custom
     case none
@@ -732,14 +734,14 @@ nonisolated enum VolumeIconType: String, Codable, CaseIterable, Sendable {
 
 // MARK: - Code Signing
 
-nonisolated struct CodeSignConfiguration: Codable, Hashable, Sendable {
+nonisolated struct CodeSignConfiguration: Codable, Hashable {
     var enabled: Bool = false
     var identity: String?
 }
 
 // MARK: - DMG Image Format
 
-nonisolated enum DMGImageFormat: String, Codable, CaseIterable, Sendable {
+nonisolated enum DMGImageFormat: String, Codable, CaseIterable {
     case udzo = "UDZO" // zlib compressed (most compatible)
     case udbz = "UDBZ" // bzip2 compressed (smaller, slower)
     case ulfo = "ULFO" // LZFSE compressed (fast, macOS 10.11+)
@@ -757,7 +759,7 @@ nonisolated enum DMGImageFormat: String, Codable, CaseIterable, Sendable {
 
 // MARK: - DMG Filesystem
 
-nonisolated enum DMGFilesystem: String, Codable, CaseIterable, Sendable {
+nonisolated enum DMGFilesystem: String, Codable, CaseIterable {
     case hfsPlus = "HFS+"
     case apfs = "APFS"
 
@@ -771,7 +773,7 @@ nonisolated enum DMGFilesystem: String, Codable, CaseIterable, Sendable {
 
 // MARK: - Window Position
 
-nonisolated struct WindowPosition: Codable, Hashable, Sendable {
+nonisolated struct WindowPosition: Codable, Hashable {
     var x: Int = 200
     var y: Int = 120
 }

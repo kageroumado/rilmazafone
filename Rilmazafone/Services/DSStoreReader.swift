@@ -25,7 +25,7 @@ nonisolated enum DSStoreReader {
     // MARK: - Public Types
 
     /// Semantic content extracted from a `.DS_Store` file.
-    struct Contents: Equatable, Sendable {
+    struct Contents: Equatable {
         /// Icon positions keyed by filename, from `Iloc` records.
         /// Coordinates are raw Finder icon-view values.
         var iconPositions: [String: CGPoint] = [:]
@@ -57,7 +57,7 @@ nonisolated enum DSStoreReader {
     }
 
     /// Background style stored in the `icvp` record's `backgroundType`.
-    enum BackgroundKind: Equatable, Sendable {
+    enum BackgroundKind: Equatable {
         /// Type 0: default (no custom background).
         case `default`
         /// Type 1: solid color.
@@ -117,7 +117,7 @@ nonisolated enum DSStoreReader {
             allocator: allocator,
             depth: 0,
             visited: &visited,
-            contents: &contents
+            contents: &contents,
         )
         return contents
     }
@@ -221,7 +221,7 @@ nonisolated enum DSStoreReader {
             var units = [UInt16]()
             units.reserveCapacity(codeUnits)
             for _ in 0 ..< codeUnits {
-                units.append(try readBE16())
+                try units.append(readBE16())
             }
             return String(utf16CodeUnits: units, count: codeUnits)
         }
@@ -267,7 +267,7 @@ nonisolated enum DSStoreReader {
 
     private static func readAllocator(
         bytes: [UInt8],
-        cursor: inout Cursor
+        cursor: inout Cursor,
     ) throws -> Allocator {
         let bookkeepingOffset = try cursor.readBE32()
         let bookkeepingSize = try cursor.readBE32()
@@ -306,7 +306,7 @@ nonisolated enum DSStoreReader {
         return Allocator(
             bytes: bytes,
             blockAddresses: addresses,
-            directory: directory
+            directory: directory,
         )
     }
 
@@ -319,7 +319,7 @@ nonisolated enum DSStoreReader {
 
     private static func readSuperblock(
         block: UInt32,
-        allocator: Allocator
+        allocator: Allocator,
     ) throws -> Superblock {
         var cursor = try allocator.blockCursor(block)
         let rootBlock = try cursor.readBE32()
@@ -333,7 +333,7 @@ nonisolated enum DSStoreReader {
         allocator: Allocator,
         depth: Int,
         visited: inout Set<UInt32>,
-        contents: inout Contents
+        contents: inout Contents,
     ) throws {
         guard depth <= maxTreeDepth else { throw ReadError.treeTooDeep }
         guard visited.insert(block).inserted else { throw ReadError.nodeCycle }
@@ -354,7 +354,7 @@ nonisolated enum DSStoreReader {
                     allocator: allocator,
                     depth: depth + 1,
                     visited: &visited,
-                    contents: &contents
+                    contents: &contents,
                 )
                 try readRecord(&cursor, into: &contents)
             }
@@ -363,7 +363,7 @@ nonisolated enum DSStoreReader {
                 allocator: allocator,
                 depth: depth + 1,
                 visited: &visited,
-                contents: &contents
+                contents: &contents,
             )
         }
     }
@@ -384,7 +384,7 @@ nonisolated enum DSStoreReader {
 
     private static func readRecord(
         _ cursor: inout Cursor,
-        into contents: inout Contents
+        into contents: inout Contents,
     ) throws {
         let nameLength = try cursor.readBE32()
         let name = try cursor.readUTF16BE(codeUnits: Int(nameLength))
@@ -399,19 +399,19 @@ nonisolated enum DSStoreReader {
         let tag = try cursor.readASCII(count: 4)
         switch tag {
         case "long":
-            return .long(try cursor.readBE32())
+            return try .long(cursor.readBE32())
         case "shor":
-            return .shor(try cursor.readBE32())
+            return try .shor(cursor.readBE32())
         case "bool":
-            return .bool(try cursor.readUInt8() != 0)
+            return try .bool(cursor.readUInt8() != 0)
         case "blob":
             let length = try cursor.readBE32()
-            return .blob(try cursor.readData(count: Int(length)))
+            return try .blob(cursor.readData(count: Int(length)))
         case "type":
-            return .type(try cursor.readASCII(count: 4))
+            return try .type(cursor.readASCII(count: 4))
         case "ustr":
             let codeUnits = try cursor.readBE32()
-            return .ustr(try cursor.readUTF16BE(codeUnits: Int(codeUnits)))
+            return try .ustr(cursor.readUTF16BE(codeUnits: Int(codeUnits)))
         case "comp", "dutc":
             let high = try cursor.readBE32()
             let low = try cursor.readBE32()
@@ -428,7 +428,7 @@ nonisolated enum DSStoreReader {
         name: String,
         structType: String,
         value: RecordValue,
-        into contents: inout Contents
+        into contents: inout Contents,
     ) {
         guard case let .blob(blob) = value else { return }
 
@@ -457,7 +457,7 @@ nonisolated enum DSStoreReader {
         }
         return CGPoint(
             x: CGFloat(Int32(bitPattern: x)),
-            y: CGFloat(Int32(bitPattern: y))
+            y: CGFloat(Int32(bitPattern: y)),
         )
     }
 
@@ -494,7 +494,7 @@ nonisolated enum DSStoreReader {
             contents.backgroundKind = .color(
                 red: (plist["backgroundColorRed"] as? NSNumber)?.doubleValue ?? 1,
                 green: (plist["backgroundColorGreen"] as? NSNumber)?.doubleValue ?? 1,
-                blue: (plist["backgroundColorBlue"] as? NSNumber)?.doubleValue ?? 1
+                blue: (plist["backgroundColorBlue"] as? NSNumber)?.doubleValue ?? 1,
             )
         case 2:
             contents.backgroundKind = .image

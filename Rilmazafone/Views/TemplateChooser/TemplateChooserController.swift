@@ -71,7 +71,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
     static let shared = TemplateChooserController()
 
     private static let logger = Logger(
-        subsystem: "glass.kagerou.rilmazafone", category: "template-chooser"
+        subsystem: "glass.kagerou.rilmazafone", category: "template-chooser",
     )
 
     private enum Layout {
@@ -87,7 +87,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
     func newDocument() {
         let action = NewDocumentPolicy.action(
             showsChooser: NewDocumentPolicy.showsChooser(),
-            isExplicitChooserRequest: false
+            isExplicitChooserRequest: false,
         )
         switch action {
         case .showChooser:
@@ -115,7 +115,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
             },
             onCancel: { [weak self] in
                 self?.close()
-            }
+            },
         )
 
         let hostingController = NSHostingController(rootView: rootView)
@@ -152,7 +152,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
         do {
             let result = try TemplateInstantiator.instantiate(
                 templateAt: entry.url,
-                windowSizeOverride: windowSizeOverride
+                windowSizeOverride: windowSizeOverride,
             )
             DMGImportCoordinator.shared.openNewDocument(with: result)
         } catch {
@@ -168,7 +168,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
         case .blank:
             if let size = windowSizeOverride {
                 DMGImportCoordinator.shared.openNewDocument(
-                    with: TemplateInstantiator.blank(windowSize: size)
+                    with: TemplateInstantiator.blank(windowSize: size),
                 )
             } else {
                 NSDocumentController.shared.newDocument(nil)

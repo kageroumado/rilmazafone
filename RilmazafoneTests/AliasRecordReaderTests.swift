@@ -6,22 +6,22 @@ import Testing
 struct AliasRecordReaderTests {
     // MARK: - Round-Trip vs AliasRecordBuilder
 
-    @Test("Round-trips a simple record from our builder")
-    func roundTripSimple() throws {
+    @Test
+    func `Round-trips a simple record from our builder`() throws {
         let data = try buildAlias(volumeName: "TestVol", imageName: "background.png")
 
         #expect(AliasRecordReader.volumeRelativePath(from: data) == ".background/background.png")
     }
 
-    @Test("Round-trips volume and image names containing spaces")
-    func roundTripSpaces() throws {
+    @Test
+    func `Round-trips volume and image names containing spaces`() throws {
         let data = try buildAlias(volumeName: "My App 1.0", imageName: "bg image.tiff")
 
         #expect(AliasRecordReader.volumeRelativePath(from: data) == ".background/bg image.tiff")
     }
 
-    @Test("Round-trips a 27-byte UTF-8 volume name")
-    func roundTripMaxUTF8VolumeName() throws {
+    @Test
+    func `Round-trips a 27-byte UTF-8 volume name`() throws {
         let volumeName = "日本語ボリューム名"
         #expect(volumeName.utf8.count == 27)
 
@@ -30,8 +30,8 @@ struct AliasRecordReaderTests {
         #expect(AliasRecordReader.volumeRelativePath(from: data) == ".background/background.png")
     }
 
-    @Test("Round-trips a Unicode image name")
-    func roundTripUnicodeImageName() throws {
+    @Test
+    func `Round-trips a Unicode image name`() throws {
         let data = try buildAlias(volumeName: "TestVol", imageName: "背景 image.png")
 
         #expect(AliasRecordReader.volumeRelativePath(from: data) == ".background/背景 image.png")
@@ -39,32 +39,32 @@ struct AliasRecordReaderTests {
 
     // MARK: - Signal Priority Fallbacks
 
-    @Test("Falls back to the Carbon path when the POSIX path record is absent")
-    func carbonPathFallback() throws {
+    @Test
+    func `Falls back to the Carbon path when the POSIX path record is absent`() throws {
         let data = try buildAlias(volumeName: "TestVol", imageName: "bg.png")
         let stripped = removingExtras(withTags: [18, 19], from: data)
 
         #expect(AliasRecordReader.volumeRelativePath(from: stripped) == ".background/bg.png")
     }
 
-    @Test("Falls back to Unicode file name plus parent folder name")
-    func unicodeNameFallback() throws {
+    @Test
+    func `Falls back to Unicode file name plus parent folder name`() throws {
         let data = try buildAlias(volumeName: "TestVol", imageName: "bg.png")
         let stripped = removingExtras(withTags: [2, 18, 19], from: data)
 
         #expect(AliasRecordReader.volumeRelativePath(from: stripped) == ".background/bg.png")
     }
 
-    @Test("Falls back to the Pascal file name when all extras are absent")
-    func pascalNameFallback() throws {
+    @Test
+    func `Falls back to the Pascal file name when all extras are absent`() throws {
         let data = try buildAlias(volumeName: "TestVol", imageName: "bg.png")
         let stripped = removingExtras(withTags: [0, 1, 2, 14, 15, 18, 19], from: data)
 
         #expect(AliasRecordReader.volumeRelativePath(from: stripped) == ".background/bg.png")
     }
 
-    @Test("Decodes a MacRoman Pascal file name")
-    func macRomanFileName() throws {
+    @Test
+    func `Decodes a MacRoman Pascal file name`() throws {
         let data = try buildAlias(volumeName: "TestVol", imageName: "cafe.png")
         var stripped = removingExtras(withTags: [0, 1, 2, 14, 15, 18, 19], from: data)
         // Patch the Pascal file name at offset 50 to MacRoman "café.png"
@@ -78,29 +78,29 @@ struct AliasRecordReaderTests {
 
     // MARK: - Third-Party DMG Fixtures
 
-    @Test("Resolves the background path from a DMG Canvas alias (SigmaOS)")
-    func dmgCanvasFixture() throws {
+    @Test
+    func `Resolves the background path from a DMG Canvas alias (SigmaOS)`() throws {
         let data = try fixture("alias-sigmaos")
 
         #expect(AliasRecordReader.volumeRelativePath(from: data) == ".background/dmgcanvas_bg.tiff")
     }
 
-    @Test("Resolves the background path from a create-dmg alias (ImHex)")
-    func createDMGFixture() throws {
+    @Test
+    func `Resolves the background path from a create-dmg alias (ImHex)`() throws {
         let data = try fixture("alias-imhex")
 
         #expect(AliasRecordReader.volumeRelativePath(from: data) == ".background/dmg-background.tiff")
     }
 
-    @Test("Resolves the background path from an appdmg alias (Refrax)")
-    func appdmgFixture() throws {
+    @Test
+    func `Resolves the background path from an appdmg alias (Refrax)`() throws {
         let data = try fixture("alias-refrax")
 
         #expect(AliasRecordReader.volumeRelativePath(from: data) == ".background/background.png")
     }
 
-    @Test("Normalizes the DMG Canvas Carbon path form (/:Volumes:Name:…)")
-    func dmgCanvasCarbonPathForm() throws {
+    @Test
+    func `Normalizes the DMG Canvas Carbon path form (/:Volumes:Name:…)`() throws {
         // SigmaOS's tag 2 reads "/:Volumes:SigmaOS:.background:dmgcanvas_bg.tiff".
         // Stripping the POSIX records forces the Carbon path branch.
         let data = try fixture("alias-sigmaos")
@@ -111,13 +111,13 @@ struct AliasRecordReaderTests {
 
     // MARK: - Malformed Input
 
-    @Test("Empty data returns nil")
-    func emptyData() {
+    @Test
+    func `Empty data returns nil`() {
         #expect(AliasRecordReader.volumeRelativePath(from: Data()) == nil)
     }
 
-    @Test("Data shorter than the header returns nil")
-    func truncatedHeader() throws {
+    @Test
+    func `Data shorter than the header returns nil`() throws {
         let data = try buildAlias(volumeName: "TestVol", imageName: "bg.png")
 
         for length in [1, 40, 149] {
@@ -125,8 +125,8 @@ struct AliasRecordReaderTests {
         }
     }
 
-    @Test("Unsupported version returns nil")
-    func wrongVersion() throws {
+    @Test
+    func `Unsupported version returns nil`() throws {
         var data = try buildAlias(volumeName: "TestVol", imageName: "bg.png")
         data[6] = 0
         data[7] = 3
@@ -134,10 +134,10 @@ struct AliasRecordReaderTests {
         #expect(AliasRecordReader.volumeRelativePath(from: data) == nil)
     }
 
-    @Test("Random bytes return nil without crashing")
-    func randomBytes() {
+    @Test
+    func `Random bytes return nil without crashing`() {
         var generator = SplitMix64(seed: 0x5EED)
-        for length in [150, 200, 336, 512, 4096] {
+        for length in [150, 200, 336, 512, 4_096] {
             var data = Data((0 ..< length).map { _ in UInt8.random(in: .min ... .max, using: &generator) })
             data[6] = 0x09
             data[7] = 0x99
@@ -146,8 +146,8 @@ struct AliasRecordReaderTests {
         }
     }
 
-    @Test("Record truncated mid-extras still recovers the file name")
-    func truncatedExtras() throws {
+    @Test
+    func `Record truncated mid-extras still recovers the file name`() throws {
         let data = try buildAlias(volumeName: "TestVol", imageName: "background.png")
 
         for length in [150, 160] {
@@ -158,8 +158,8 @@ struct AliasRecordReaderTests {
 
     // MARK: - Directory-Scan Fallback
 
-    @Test("firstImage returns the lexicographically first image")
-    func firstImageSorted() throws {
+    @Test
+    func `firstImage returns the lexicographically first image`() throws {
         let root = try makeVolume(backgroundDir: ".background", files: ["zebra.png", "alpha.tiff", "notes.txt"])
         defer { try? FileManager.default.removeItem(at: root) }
 
@@ -168,8 +168,8 @@ struct AliasRecordReaderTests {
         #expect(found?.lastPathComponent == "alpha.tiff")
     }
 
-    @Test("firstImage supports the .bg directory convention")
-    func firstImageDotBG() throws {
+    @Test
+    func `firstImage supports the .bg directory convention`() throws {
         let root = try makeVolume(backgroundDir: ".bg", files: ["back.jpeg"])
         defer { try? FileManager.default.removeItem(at: root) }
 
@@ -178,24 +178,24 @@ struct AliasRecordReaderTests {
         #expect(found?.lastPathComponent == "back.jpeg")
     }
 
-    @Test("firstImage ignores non-image files")
-    func firstImageNonImages() throws {
+    @Test
+    func `firstImage ignores non-image files`() throws {
         let root = try makeVolume(backgroundDir: ".background", files: ["readme.txt", "data.json"])
         defer { try? FileManager.default.removeItem(at: root) }
 
         #expect(AliasRecordReader.firstImage(inBackgroundDirectoryOf: root) == nil)
     }
 
-    @Test("firstImage returns nil for an empty background directory")
-    func firstImageEmptyDirectory() throws {
+    @Test
+    func `firstImage returns nil for an empty background directory`() throws {
         let root = try makeVolume(backgroundDir: ".background", files: [])
         defer { try? FileManager.default.removeItem(at: root) }
 
         #expect(AliasRecordReader.firstImage(inBackgroundDirectoryOf: root) == nil)
     }
 
-    @Test("firstImage returns nil when no background directory exists")
-    func firstImageMissingDirectory() throws {
+    @Test
+    func `firstImage returns nil when no background directory exists`() {
         let root = FileManager.default.temporaryDirectory
             .appending(path: "rilmazafone-reader-missing-\(UUID().uuidString)")
 
@@ -220,7 +220,7 @@ struct AliasRecordReaderTests {
         return try AliasRecordBuilder.createBackgroundAlias(
             imageName: imageName,
             volumeName: volumeName,
-            mountPoint: tmpDir
+            mountPoint: tmpDir,
         )
     }
 
@@ -255,7 +255,7 @@ struct AliasRecordReaderTests {
     private func fixture(_ name: String) throws -> Data {
         let url = try #require(
             Bundle(for: ReaderBundleMarker.self).url(forResource: name, withExtension: "bin"),
-            "Missing test fixture \(name).bin"
+            "Missing test fixture \(name).bin",
         )
         return try Data(contentsOf: url)
     }

@@ -61,7 +61,7 @@ struct LayerEffectsSection: View {
             variableBlur: layer.variableBlur != nil,
             colorAdjustments: layer.colorAdjustments != nil,
             vignette: layer.vignette != nil,
-            bloom: layer.bloom != nil
+            bloom: layer.bloom != nil,
         )
     }
 
@@ -125,7 +125,7 @@ struct LayerEffectsSection: View {
                         .init(color: blurredColor, location: vb.endPoint),
                     ],
                     startPoint: linearStart(angle),
-                    endPoint: linearEnd(angle)
+                    endPoint: linearEnd(angle),
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 4))
             case .radial:
@@ -136,7 +136,7 @@ struct LayerEffectsSection: View {
                     ],
                     center: UnitPoint(x: vb.centerX, y: vb.centerY),
                     startRadius: 0,
-                    endRadius: 60
+                    endRadius: 60,
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 4))
             }
@@ -162,7 +162,7 @@ struct LayerEffectsSection: View {
         let rad = angle.radians
         return UnitPoint(
             x: 0.5 - cos(rad) * 0.5,
-            y: 0.5 - sin(rad) * 0.5
+            y: 0.5 - sin(rad) * 0.5,
         )
     }
 
@@ -170,7 +170,7 @@ struct LayerEffectsSection: View {
         let rad = angle.radians
         return UnitPoint(
             x: 0.5 + cos(rad) * 0.5,
-            y: 0.5 + sin(rad) * 0.5
+            y: 0.5 + sin(rad) * 0.5,
         )
     }
 
@@ -247,7 +247,7 @@ struct LayerEffectsSection: View {
                 } else {
                     document.setBackgroundLayerBlur(layer.id, to: newValue, undoManager: undoManager)
                 }
-            }
+            },
         )
     }
 
@@ -265,7 +265,7 @@ struct LayerEffectsSection: View {
                     document.setLayerVariableBlur(layer.id, to: nil, undoManager: undoManager)
                     document.setBackgroundLayerBlur(layer.id, to: radius, undoManager: undoManager)
                 }
-            }
+            },
         )
     }
 
@@ -280,42 +280,42 @@ struct LayerEffectsSection: View {
     private func variableBlurMaskTypeBinding(_ vb: VariableBlurConfiguration) -> Binding<VariableBlurMaskType> {
         Binding(
             get: { vb.maskType },
-            set: { newType in updateVariableBlur { $0.maskType = newType } }
+            set: { newType in updateVariableBlur { $0.maskType = newType } },
         )
     }
 
     private func variableBlurAngleBinding(_ vb: VariableBlurConfiguration) -> Binding<Double> {
         Binding(
             get: { vb.angle },
-            set: { val in updateVariableBlur { $0.angle = val } }
+            set: { val in updateVariableBlur { $0.angle = val } },
         )
     }
 
     private func variableBlurCenterXBinding(_ vb: VariableBlurConfiguration) -> Binding<Double> {
         Binding(
             get: { vb.centerX },
-            set: { val in updateVariableBlur { $0.centerX = val } }
+            set: { val in updateVariableBlur { $0.centerX = val } },
         )
     }
 
     private func variableBlurCenterYBinding(_ vb: VariableBlurConfiguration) -> Binding<Double> {
         Binding(
             get: { vb.centerY },
-            set: { val in updateVariableBlur { $0.centerY = val } }
+            set: { val in updateVariableBlur { $0.centerY = val } },
         )
     }
 
     private func variableBlurStartBinding(_ vb: VariableBlurConfiguration) -> Binding<Double> {
         Binding(
             get: { vb.startPoint },
-            set: { val in updateVariableBlur { $0.startPoint = val } }
+            set: { val in updateVariableBlur { $0.startPoint = val } },
         )
     }
 
     private func variableBlurEndBinding(_ vb: VariableBlurConfiguration) -> Binding<Double> {
         Binding(
             get: { vb.endPoint },
-            set: { val in updateVariableBlur { $0.endPoint = val } }
+            set: { val in updateVariableBlur { $0.endPoint = val } },
         )
     }
 
@@ -328,9 +328,9 @@ struct LayerEffectsSection: View {
                 document.setLayerColorAdjustments(
                     layer.id,
                     to: $0 ? ColorAdjustments() : nil,
-                    undoManager: undoManager
+                    undoManager: undoManager,
                 )
-            }
+            },
         )
     }
 
@@ -341,9 +341,9 @@ struct LayerEffectsSection: View {
                 document.setLayerVignette(
                     layer.id,
                     to: $0 ? VignetteConfiguration() : nil,
-                    undoManager: undoManager
+                    undoManager: undoManager,
                 )
-            }
+            },
         )
     }
 
@@ -354,9 +354,9 @@ struct LayerEffectsSection: View {
                 document.setLayerBloom(
                     layer.id,
                     to: $0 ? BloomConfiguration() : nil,
-                    undoManager: undoManager
+                    undoManager: undoManager,
                 )
-            }
+            },
         )
     }
 
@@ -371,35 +371,35 @@ struct LayerEffectsSection: View {
     private func caBrightnessBinding(_ ca: ColorAdjustments) -> Binding<Double> {
         Binding(
             get: { ca.brightness },
-            set: { val in updateColorAdjustments { $0.brightness = val } }
+            set: { val in updateColorAdjustments { $0.brightness = val } },
         )
     }
 
     private func caContrastBinding(_ ca: ColorAdjustments) -> Binding<Double> {
         Binding(
             get: { ca.contrast },
-            set: { val in updateColorAdjustments { $0.contrast = val } }
+            set: { val in updateColorAdjustments { $0.contrast = val } },
         )
     }
 
     private func caSaturationBinding(_ ca: ColorAdjustments) -> Binding<Double> {
         Binding(
             get: { ca.saturation },
-            set: { val in updateColorAdjustments { $0.saturation = val } }
+            set: { val in updateColorAdjustments { $0.saturation = val } },
         )
     }
 
     private func caHueBinding(_ ca: ColorAdjustments) -> Binding<Double> {
         Binding(
             get: { ca.hueRotation },
-            set: { val in updateColorAdjustments { $0.hueRotation = val } }
+            set: { val in updateColorAdjustments { $0.hueRotation = val } },
         )
     }
 
     private func caExposureBinding(_ ca: ColorAdjustments) -> Binding<Double> {
         Binding(
             get: { ca.exposure },
-            set: { val in updateColorAdjustments { $0.exposure = val } }
+            set: { val in updateColorAdjustments { $0.exposure = val } },
         )
     }
 
@@ -414,14 +414,14 @@ struct LayerEffectsSection: View {
     private func vignetteIntensityBinding(_ v: VignetteConfiguration) -> Binding<Double> {
         Binding(
             get: { v.intensity },
-            set: { val in updateVignette { $0.intensity = val } }
+            set: { val in updateVignette { $0.intensity = val } },
         )
     }
 
     private func vignetteRadiusBinding(_ v: VignetteConfiguration) -> Binding<Double> {
         Binding(
             get: { v.radius },
-            set: { val in updateVignette { $0.radius = val } }
+            set: { val in updateVignette { $0.radius = val } },
         )
     }
 
@@ -436,14 +436,14 @@ struct LayerEffectsSection: View {
     private func bloomIntensityBinding(_ b: BloomConfiguration) -> Binding<Double> {
         Binding(
             get: { b.intensity },
-            set: { val in updateBloom { $0.intensity = val } }
+            set: { val in updateBloom { $0.intensity = val } },
         )
     }
 
     private func bloomRadiusBinding(_ b: BloomConfiguration) -> Binding<Double> {
         Binding(
             get: { b.radius },
-            set: { val in updateBloom { $0.radius = val } }
+            set: { val in updateBloom { $0.radius = val } },
         )
     }
 }

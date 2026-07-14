@@ -1,5 +1,5 @@
-import CoreGraphics
 import AppKit
+import CoreGraphics
 import Foundation
 import Testing
 @testable import Rilmazafone
@@ -23,7 +23,7 @@ struct CompositeRendererTests {
                 text: "Determinism",
                 position: CGPoint(x: 200, y: 80),
                 fontSize: 28,
-                color: RGBColor(red: 1, green: 1, blue: 1)
+                color: RGBColor(red: 1, green: 1, blue: 1),
             ),
         ]
 
@@ -32,7 +32,7 @@ struct CompositeRendererTests {
                 kind: .app,
                 label: "App.app",
                 position: CGPoint(x: 200, y: 190),
-                background: ItemBackground(enabled: true, opacity: 0.3, blurRadius: 18, blurFeather: 0)
+                background: ItemBackground(enabled: true, opacity: 0.3, blurRadius: 18, blurFeather: 0),
             ),
         ]
 
@@ -41,8 +41,8 @@ struct CompositeRendererTests {
 
     // MARK: - Determinism
 
-    @Test("Rendering the same configuration twice is byte-identical")
-    func deterministicOutput() throws {
+    @Test
+    func `Rendering the same configuration twice is byte-identical`() throws {
         let config = Self.blurGradientTextConfiguration()
         let assets = FileManager.default.temporaryDirectory
 
@@ -54,8 +54,8 @@ struct CompositeRendererTests {
 
     // MARK: - Multi-Representation TIFF
 
-    @Test("Baked TIFF holds exactly a 1x and a 2x representation")
-    func twoRepresentationsAtOneAndTwoX() throws {
+    @Test
+    func `Baked TIFF holds exactly a 1x and a 2x representation`() throws {
         let config = Self.blurGradientTextConfiguration()
         let assets = FileManager.default.temporaryDirectory
 

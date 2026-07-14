@@ -52,7 +52,7 @@ struct ImageLayerInspector: View {
 
                 Slider(
                     value: scaleBinding,
-                    in: 0.1 ... 3.0
+                    in: 0.1 ... 3.0,
                 )
             }
 
@@ -69,21 +69,21 @@ struct ImageLayerInspector: View {
     private var xBinding: Binding<Double> {
         Binding(
             get: { round(layer.position.x) },
-            set: { document.moveBackgroundLayer(layer.id, to: CGPoint(x: $0, y: layer.position.y), undoManager: undoManager) }
+            set: { document.moveBackgroundLayer(layer.id, to: CGPoint(x: $0, y: layer.position.y), undoManager: undoManager) },
         )
     }
 
     private var yBinding: Binding<Double> {
         Binding(
             get: { round(layer.position.y) },
-            set: { document.moveBackgroundLayer(layer.id, to: CGPoint(x: layer.position.x, y: $0), undoManager: undoManager) }
+            set: { document.moveBackgroundLayer(layer.id, to: CGPoint(x: layer.position.x, y: $0), undoManager: undoManager) },
         )
     }
 
     private var scaleBinding: Binding<Double> {
         Binding(
             get: { layer.scale },
-            set: { document.setBackgroundLayerScale(layer.id, to: $0, undoManager: undoManager) }
+            set: { document.setBackgroundLayerScale(layer.id, to: $0, undoManager: undoManager) },
         )
     }
 }

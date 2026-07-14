@@ -15,7 +15,7 @@ import os
 /// background image into it.
 nonisolated enum DMGBuildPipeline {
     /// Progress emitted immediately before each build step begins.
-    struct Progress: Sendable {
+    struct Progress {
         /// Human-readable description of the step about to run (e.g. "Copying files…").
         let step: String
         /// 1-based index of the current step.
@@ -64,7 +64,7 @@ nonisolated enum DMGBuildPipeline {
         assetsDirectory: URL,
         outputURL: URL,
         documentURL: URL? = nil,
-        progress: @Sendable (Progress) async -> Void
+        progress: @Sendable (Progress) async -> Void,
     ) async throws {
         let total = Constants.totalSteps
         let fileManager = FileManager.default
@@ -78,7 +78,7 @@ nonisolated enum DMGBuildPipeline {
         configuration.items = try EmbeddedAssets.materialize(
             items: configuration.items,
             assetsDirectory: assetsDirectory,
-            stagingDirectory: embeddedStaging
+            stagingDirectory: embeddedStaging,
         )
 
         try validateSources(configuration: configuration, documentURL: documentURL)
@@ -93,7 +93,7 @@ nonisolated enum DMGBuildPipeline {
         let tempDMG = try await DMGBuilder.createWritableImage(
             volumeName: configuration.volumeName,
             size: sizeEstimate,
-            filesystem: configuration.filesystem
+            filesystem: configuration.filesystem,
         )
         defer { try? fileManager.removeItem(at: tempDMG) }
         try Task.checkCancellation()
@@ -126,7 +126,7 @@ nonisolated enum DMGBuildPipeline {
             let (backgroundAlias, backgroundBookmark) = try await buildCompositeBackground(
                 configuration: configuration,
                 assetsDirectory: assetsDirectory,
-                mountPoint: mountPoint
+                mountPoint: mountPoint,
             )
 
             var dsStoreConfig = configuration
@@ -137,7 +137,7 @@ nonisolated enum DMGBuildPipeline {
             let dsStoreData = try DSStoreWriter.write(
                 configuration: dsStoreConfig,
                 backgroundAlias: backgroundAlias,
-                backgroundBookmark: backgroundBookmark
+                backgroundBookmark: backgroundBookmark,
             )
             try dsStoreData.write(to: mountPoint.appending(path: ".DS_Store"))
             try Task.checkCancellation()
@@ -148,7 +148,7 @@ nonisolated enum DMGBuildPipeline {
                 configuration: configuration,
                 assetsDirectory: assetsDirectory,
                 mountPoint: mountPoint,
-                documentURL: documentURL
+                documentURL: documentURL,
             )
             try Task.checkCancellation()
 
@@ -172,13 +172,13 @@ nonisolated enum DMGBuildPipeline {
         try await DMGBuilder.convert(
             source: tempDMG,
             destination: stagedDMG,
-            format: configuration.dmgFormat
+            format: configuration.dmgFormat,
         )
 
         if configuration.codeSign.enabled {
             try await DMGBuilder.codeSign(
                 dmgPath: stagedDMG,
-                identity: configuration.codeSign.identity
+                identity: configuration.codeSign.identity,
             )
         }
 
@@ -205,7 +205,7 @@ nonisolated enum DMGBuildPipeline {
     /// `#if APPSTORE` without touching the build sequence.
     private static func blessIfApplicable(
         configuration: DMGConfiguration,
-        mountPoint: URL
+        mountPoint: URL,
     ) async {
         guard configuration.filesystem == .hfsPlus else { return }
         do {
@@ -222,7 +222,7 @@ nonisolated enum DMGBuildPipeline {
     private static func buildCompositeBackground(
         configuration: DMGConfiguration,
         assetsDirectory: URL,
-        mountPoint: URL
+        mountPoint: URL,
     ) async throws -> (alias: Data?, bookmark: Data?) {
         let needsComposite = (configuration.background.type == .image && !configuration.background.layers.isEmpty)
             || !configuration.textLayers.isEmpty
@@ -233,7 +233,7 @@ nonisolated enum DMGBuildPipeline {
         guard needsComposite else { return (nil, nil) }
 
         guard let tiffData = CompositeRenderer.renderBackgroundTIFF(
-            configuration: configuration, assetsDirectory: assetsDirectory
+            configuration: configuration, assetsDirectory: assetsDirectory,
         ) else { return (nil, nil) }
 
         let bgImageName = Constants.backgroundImageName
@@ -243,12 +243,12 @@ nonisolated enum DMGBuildPipeline {
         let alias = try AliasRecordBuilder.createBackgroundAlias(
             imageName: bgImageName,
             volumeName: configuration.volumeName,
-            mountPoint: mountPoint
+            mountPoint: mountPoint,
         )
 
         let bgFileOnVolume = mountPoint.appending(path: ".background").appending(path: bgImageName)
         let bookmark = try? bgFileOnVolume.bookmarkData(
-            options: [], includingResourceValuesForKeys: nil, relativeTo: nil
+            options: [], includingResourceValuesForKeys: nil, relativeTo: nil,
         )
 
         return (alias, bookmark)
@@ -262,7 +262,7 @@ nonisolated enum DMGBuildPipeline {
         configuration: DMGConfiguration,
         assetsDirectory: URL,
         mountPoint: URL,
-        documentURL: URL?
+        documentURL: URL?,
     ) async throws -> Data? {
         switch configuration.volumeIcon.type {
         case .composed:
@@ -362,7 +362,7 @@ private extension FileManager {
         let enumerator = enumerator(
             at: url,
             includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
-            options: [.skipsHiddenFiles]
+            options: [.skipsHiddenFiles],
         )
 
         while let fileURL = enumerator?.nextObject() as? URL {

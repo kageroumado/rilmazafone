@@ -23,13 +23,13 @@ nonisolated enum DSStoreWriter {
     static func write(
         configuration: DMGConfiguration,
         backgroundAlias: Data? = nil,
-        backgroundBookmark: Data? = nil
+        backgroundBookmark: Data? = nil,
     ) throws -> Data {
         // Build all records, then sort them
         var records = try buildRecords(
             configuration: configuration,
             backgroundAlias: backgroundAlias,
-            backgroundBookmark: backgroundBookmark
+            backgroundBookmark: backgroundBookmark,
         )
         records.sort()
 
@@ -39,7 +39,7 @@ nonisolated enum DSStoreWriter {
         // Wrap in buddy allocator structure
         return buildAllocatorFile(
             btreeNodeData: leafData,
-            recordCount: records.count
+            recordCount: records.count,
         )
     }
 
@@ -91,7 +91,7 @@ nonisolated enum DSStoreWriter {
     private static func buildRecords(
         configuration: DMGConfiguration,
         backgroundAlias: Data?,
-        backgroundBookmark: Data?
+        backgroundBookmark: Data?,
     ) throws -> [Record] {
         var records: [Record] = []
 
@@ -99,7 +99,7 @@ nonisolated enum DSStoreWriter {
         try records.append(bwspRecord(configuration: configuration))
         try records.append(icvpRecord(
             configuration: configuration,
-            backgroundAlias: backgroundAlias
+            backgroundAlias: backgroundAlias,
         ))
 
         // pBBk: background bookmark for modern Finder (macOS 12+)
@@ -107,7 +107,7 @@ nonisolated enum DSStoreWriter {
             records.append(Record(
                 filename: ".",
                 typeCode: .pBBk,
-                payload: encodeBlob(bookmark)
+                payload: encodeBlob(bookmark),
             ))
         }
 
@@ -118,7 +118,7 @@ nonisolated enum DSStoreWriter {
             records.append(ilocRecord(
                 filename: item.label,
                 x: Int32(item.position.x),
-                y: Int32(item.position.y - finderContentInset)
+                y: Int32(item.position.y - finderContentInset),
             ))
         }
 
@@ -143,7 +143,7 @@ nonisolated enum DSStoreWriter {
     private static func ilocRecord(
         filename: String,
         x: Int32,
-        y: Int32
+        y: Int32,
     ) -> Record {
         var data = Data(capacity: 16)
         data.appendBigEndianUInt32(UInt32(bitPattern: x))
@@ -154,7 +154,7 @@ nonisolated enum DSStoreWriter {
         return Record(
             filename: filename,
             typeCode: .iloc,
-            payload: encodeBlob(data)
+            payload: encodeBlob(data),
         )
     }
 
@@ -174,7 +174,7 @@ nonisolated enum DSStoreWriter {
 
     /// bwsp record: browser window settings as a binary plist.
     private static func bwspRecord(
-        configuration: DMGConfiguration
+        configuration: DMGConfiguration,
     ) throws -> Record {
         let left = configuration.windowPosition.x
         let top = configuration.windowPosition.y
@@ -193,20 +193,20 @@ nonisolated enum DSStoreWriter {
         let plistData = try PropertyListSerialization.data(
             fromPropertyList: plist,
             format: .binary,
-            options: 0
+            options: 0,
         )
 
         return Record(
             filename: ".",
             typeCode: .bwsp,
-            payload: encodeBlob(plistData)
+            payload: encodeBlob(plistData),
         )
     }
 
     /// icvp record: icon view properties as a binary plist.
     private static func icvpRecord(
         configuration: DMGConfiguration,
-        backgroundAlias: Data?
+        backgroundAlias: Data?,
     ) throws -> Record {
         var plist: [String: Any] = [
             "viewOptionsVersion": 1,
@@ -250,13 +250,13 @@ nonisolated enum DSStoreWriter {
         let plistData = try PropertyListSerialization.data(
             fromPropertyList: plist,
             format: .binary,
-            options: 0
+            options: 0,
         )
 
         return Record(
             filename: ".",
             typeCode: .icvp,
-            payload: encodeBlob(plistData)
+            payload: encodeBlob(plistData),
         )
     }
 
@@ -265,7 +265,7 @@ nonisolated enum DSStoreWriter {
         Record(
             filename: ".",
             typeCode: .vSrn,
-            payload: encodeLong(1)
+            payload: encodeLong(1),
         )
     }
 
@@ -344,7 +344,7 @@ nonisolated enum DSStoreWriter {
     /// - Block 2: B-tree leaf node   @ allocator offset 0x1000, width 12 (4096 bytes)
     private static func buildAllocatorFile(
         btreeNodeData: Data,
-        recordCount: Int
+        recordCount: Int,
     ) -> Data {
         // All "allocator offsets" are relative to file offset 4 (the allocator base).
         // File offset = allocator offset + 4.

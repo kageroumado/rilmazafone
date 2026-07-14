@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Launch & Reopen
 
-    func applicationWillFinishLaunching(_ notification: Notification) {
+    func applicationWillFinishLaunching(_: Notification) {
         // The system's app-centric launch panel is swallowed by the suppressed
         // DocumentGroup scene (like every other no-document launch path), so
         // it is kept off and `presentLaunchOpenPanel()` provides the
@@ -32,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Launching (and Dock-clicking) with no open documents shows the open
     /// panel, Pages-style; document creation lives behind its New Document
     /// button rather than opening the template chooser uninvited.
-    func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
+    func applicationShouldOpenUntitledFile(_: NSApplication) -> Bool {
         presentLaunchOpenPanel()
         return false
     }
@@ -43,7 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// panel here unless this launch is opening or restoring something. The
     /// delay lets documents double-clicked in Finder create their windows
     /// first.
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         DispatchQueue.main.asyncAfter(deadline: .now() + Constants.launchSettleDelay) {
             let hasContent = NSApp.windows.contains(where: \.isVisible)
                 || !NSDocumentController.shared.documents.isEmpty
@@ -53,7 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(
-        _ sender: NSApplication, hasVisibleWindows: Bool
+        _: NSApplication, hasVisibleWindows: Bool,
     ) -> Bool {
         guard !hasVisibleWindows else { return true }
         presentLaunchOpenPanel()
@@ -65,7 +65,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// chooser-or-blank policy as ⌘N instead of creating a bare untitled
     /// document. Direct calls to `NSDocumentController.newDocument(_:)` (the
     /// blank-document path) are unaffected.
-    @objc func newDocument(_ sender: Any?) {
+    @objc
+    func newDocument(_: Any?) {
         TemplateChooserController.shared.newDocument()
     }
 
@@ -97,7 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard response == .OK else { return }
             for url in panel.urls {
                 NSDocumentController.shared.openDocument(
-                    withContentsOf: url, display: true
+                    withContentsOf: url, display: true,
                 ) { _, _, _ in }
             }
         }
@@ -110,38 +111,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let button = NSButton(
             title: "New Document",
             target: self,
-            action: #selector(newDocumentFromLaunchPanel(_:))
+            action: #selector(newDocumentFromLaunchPanel(_:)),
         )
         button.sizeToFit()
 
         let container = NSView(frame: NSRect(
             x: 0, y: 0,
             width: 400,
-            height: button.frame.height + 2 * Constants.accessoryPadding
+            height: button.frame.height + 2 * Constants.accessoryPadding,
         ))
         container.autoresizingMask = [.width]
         button.setFrameOrigin(NSPoint(
-            x: Constants.accessoryPadding, y: Constants.accessoryPadding
+            x: Constants.accessoryPadding, y: Constants.accessoryPadding,
         ))
         button.autoresizingMask = [.maxXMargin]
         container.addSubview(button)
         return container
     }
 
-    @objc private func newDocumentFromLaunchPanel(_ sender: Any?) {
+    @objc
+    private func newDocumentFromLaunchPanel(_ sender: Any?) {
         launchOpenPanel?.cancel(sender)
         TemplateChooserController.shared.newDocument()
     }
 
     // MARK: - Dock Menu
 
-    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+    func applicationDockMenu(_: NSApplication) -> NSMenu? {
         let menu = NSMenu()
 
         let newDocument = NSMenuItem(
             title: "New Document",
             action: #selector(newDocumentFollowingPolicy(_:)),
-            keyEquivalent: ""
+            keyEquivalent: "",
         )
         newDocument.target = self
         menu.addItem(newDocument)
@@ -197,20 +199,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let item = NSMenuItem(
             title: entry.name,
             action: #selector(newDocumentFromTemplate(_:)),
-            keyEquivalent: ""
+            keyEquivalent: "",
         )
         item.target = self
         item.representedObject = entry
         return item
     }
 
-    @objc func newDocumentFromTemplate(_ sender: NSMenuItem) {
+    @objc
+    func newDocumentFromTemplate(_ sender: NSMenuItem) {
         guard let entry = sender.representedObject as? TemplateEntry else { return }
         TemplateChooserController.shared.createDocument(from: entry)
     }
 
     /// Dock menu "New Document": same chooser-or-blank policy as ⌘N.
-    @objc func newDocumentFollowingPolicy(_ sender: NSMenuItem) {
+    @objc
+    func newDocumentFollowingPolicy(_: NSMenuItem) {
         TemplateChooserController.shared.newDocument()
     }
 
@@ -220,7 +224,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let item = NSMenuItem(
             title: FileManager.default.displayName(atPath: url.path),
             action: #selector(openRecentDocument(_:)),
-            keyEquivalent: ""
+            keyEquivalent: "",
         )
         item.target = self
         item.representedObject = url
@@ -232,10 +236,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return item
     }
 
-    @objc func openRecentDocument(_ sender: NSMenuItem) {
+    @objc
+    func openRecentDocument(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         NSDocumentController.shared.openDocument(
-            withContentsOf: url, display: true
+            withContentsOf: url, display: true,
         ) { _, _, _ in }
     }
 }

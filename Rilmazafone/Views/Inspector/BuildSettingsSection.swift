@@ -33,8 +33,8 @@ struct BuildSettingsSection: View {
                     "Code Sign",
                     isOn: Binding(
                         get: { document.codeSign.enabled },
-                        set: { document.setCodeSignEnabled($0, undoManager: undoManager) }
-                    )
+                        set: { document.setCodeSignEnabled($0, undoManager: undoManager) },
+                    ),
                 )
                 .toggleStyle(.switch)
                 .disabled(signingIdentities.isEmpty && hasCheckedIdentities)
@@ -76,7 +76,7 @@ struct BuildSettingsSection: View {
         Section("Volume Icon") {
             Picker("Type", selection: Binding(
                 get: { document.volumeIcon.type },
-                set: { document.setVolumeIconType($0, undoManager: undoManager) }
+                set: { document.setVolumeIconType($0, undoManager: undoManager) },
             )) {
                 Text("Auto-compose").tag(VolumeIconType.composed)
                 Text("Custom").tag(VolumeIconType.custom)
@@ -143,7 +143,7 @@ struct BuildSettingsSection: View {
         .fileImporter(
             isPresented: $isVolumeIconPickerPresented,
             allowedContentTypes: [.png, .jpeg, .tiff, .icns],
-            allowsMultipleSelection: false
+            allowsMultipleSelection: false,
         ) { result in
             if case let .success(urls) = result, let url = urls.first {
                 do {
@@ -163,9 +163,9 @@ struct BuildSettingsSection: View {
             set: {
                 document.setCodeSignIdentity(
                     $0,
-                    undoManager: undoManager
+                    undoManager: undoManager,
                 )
-            }
+            },
         )
     }
 
@@ -185,4 +185,3 @@ struct BuildSettingsSection: View {
         return NSImage(data: icnsData)
     }
 }
-

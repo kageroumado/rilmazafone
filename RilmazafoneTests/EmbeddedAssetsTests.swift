@@ -22,8 +22,8 @@ struct EmbeddedAssetsTests {
 
     // MARK: - Naming
 
-    @Test("Asset names are unique per item and keep the file extension")
-    func assetNaming() {
+    @Test
+    func `Asset names are unique per item and keep the file extension`() {
         let id = UUID()
         let fileName = EmbeddedAssets.assetName(itemID: id, label: "Read Me.pdf", kind: .file)
         #expect(fileName.hasSuffix("Read Me.pdf"))
@@ -39,8 +39,8 @@ struct EmbeddedAssetsTests {
 
     // MARK: - File Payloads
 
-    @Test("File payload round-trips under the cap")
-    func filePayloadUnderCap() throws {
+    @Test
+    func `File payload round-trips under the cap`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -51,8 +51,8 @@ struct EmbeddedAssetsTests {
         #expect(payload == Data("# Hello".utf8))
     }
 
-    @Test("File payload is nil over the cap")
-    func filePayloadOverCap() throws {
+    @Test
+    func `File payload is nil over the cap`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -63,8 +63,8 @@ struct EmbeddedAssetsTests {
         #expect(try EmbeddedAssets.payload(for: source, kind: .file) == nil)
     }
 
-    @Test("App kinds never produce a payload")
-    func appPayloadIsNil() throws {
+    @Test
+    func `App kinds never produce a payload`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
         #expect(try EmbeddedAssets.payload(for: dir, kind: .app) == nil)
@@ -72,8 +72,8 @@ struct EmbeddedAssetsTests {
 
     // MARK: - Folder Payloads
 
-    @Test("Folder payload archives and extracts a directory tree")
-    func folderPayloadRoundTrip() throws {
+    @Test
+    func `Folder payload archives and extracts a directory tree`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -92,14 +92,14 @@ struct EmbeddedAssetsTests {
 
         let top = try String(contentsOf: extracted.appending(path: "top.txt"), encoding: .utf8)
         let deep = try String(
-            contentsOf: extracted.appending(path: "guides/nested.txt"), encoding: .utf8
+            contentsOf: extracted.appending(path: "guides/nested.txt"), encoding: .utf8,
         )
         #expect(top == "top")
         #expect(deep == "nested")
     }
 
-    @Test("Folder payload is nil when contents exceed the cap")
-    func folderPayloadOverCap() throws {
+    @Test
+    func `Folder payload is nil when contents exceed the cap`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -114,8 +114,8 @@ struct EmbeddedAssetsTests {
 
     // MARK: - Materialization
 
-    @Test("Materialize resolves file payloads and extracts folder payloads")
-    func materializeItems() throws {
+    @Test
+    func `Materialize resolves file payloads and extracts folder payloads`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -125,7 +125,7 @@ struct EmbeddedAssetsTests {
 
         var fileItem = CanvasItem(kind: .file, label: "readme.md", position: .zero)
         let fileAsset = EmbeddedAssets.assetName(
-            itemID: fileItem.id, label: fileItem.label, kind: .file
+            itemID: fileItem.id, label: fileItem.label, kind: .file,
         )
         fileItem.assetName = fileAsset
         try write("payload", to: assetsDir.appending(path: fileAsset))
@@ -135,20 +135,20 @@ struct EmbeddedAssetsTests {
         try write("inside", to: folderSource.appending(path: "inside.txt"))
         var folderItem = CanvasItem(kind: .folder, label: "Docs", position: .zero)
         let folderAsset = EmbeddedAssets.assetName(
-            itemID: folderItem.id, label: folderItem.label, kind: .folder
+            itemID: folderItem.id, label: folderItem.label, kind: .folder,
         )
         folderItem.assetName = folderAsset
         let folderPayload = try #require(try EmbeddedAssets.payload(for: folderSource, kind: .folder))
         try folderPayload.write(to: assetsDir.appending(path: folderAsset))
 
         let external = CanvasItem(
-            kind: .file, label: "ext.txt", sourcePath: "/tmp/ext.txt", position: .zero
+            kind: .file, label: "ext.txt", sourcePath: "/tmp/ext.txt", position: .zero,
         )
 
         let materialized = try EmbeddedAssets.materialize(
             items: [fileItem, folderItem, external],
             assetsDirectory: assetsDir,
-            stagingDirectory: staging
+            stagingDirectory: staging,
         )
 
         let file = materialized[0]
@@ -161,15 +161,15 @@ struct EmbeddedAssetsTests {
         let folderPath = try #require(folder.sourcePath)
         let inside = try String(
             contentsOf: URL(fileURLWithPath: folderPath).appending(path: "inside.txt"),
-            encoding: .utf8
+            encoding: .utf8,
         )
         #expect(inside == "inside")
 
         #expect(materialized[2] == external)
     }
 
-    @Test("Materialize throws for a missing payload")
-    func materializeMissingPayload() throws {
+    @Test
+    func `Materialize throws for a missing payload`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -180,15 +180,15 @@ struct EmbeddedAssetsTests {
             _ = try EmbeddedAssets.materialize(
                 items: [item],
                 assetsDirectory: dir,
-                stagingDirectory: dir.appending(path: "staging")
+                stagingDirectory: dir.appending(path: "staging"),
             )
         }
     }
 
     // MARK: - Template Embedding Pass
 
-    @Test("embedItems embeds a reachable small file and strips its reference")
-    func embedItemsSmallFile() throws {
+    @Test
+    func `embedItems embeds a reachable small file and strips its reference`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -196,7 +196,7 @@ struct EmbeddedAssetsTests {
         try write("MIT", to: source)
         let item = CanvasItem(
             kind: .file, label: "License.txt",
-            sourcePath: source.path, position: CGPoint(x: 40, y: 60)
+            sourcePath: source.path, position: CGPoint(x: 40, y: 60),
         )
 
         let result = TemplateSnapshot.embedItems([item], documentURL: nil)
@@ -209,8 +209,8 @@ struct EmbeddedAssetsTests {
         #expect(result.payloads[assetName] == Data("MIT".utf8))
     }
 
-    @Test("embedItems converts over-cap and unreachable sources to typed slots")
-    func embedItemsPlaceholders() throws {
+    @Test
+    func `embedItems converts over-cap and unreachable sources to typed slots`() throws {
         let dir = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -218,13 +218,13 @@ struct EmbeddedAssetsTests {
         try Data(count: EmbeddedAssets.sizeCap + 1).write(to: bigSource)
         var big = CanvasItem(
             kind: .file, label: "huge.bin",
-            sourcePath: bigSource.path, position: CGPoint(x: 10, y: 20)
+            sourcePath: bigSource.path, position: CGPoint(x: 10, y: 20),
         )
         big.background = ItemBackground()
 
         let missing = CanvasItem(
             kind: .folder, label: "Ghost",
-            sourcePath: dir.appending(path: "ghost").path, position: .zero
+            sourcePath: dir.appending(path: "ghost").path, position: .zero,
         )
 
         let result = TemplateSnapshot.embedItems([big, missing], documentURL: nil)
@@ -243,17 +243,17 @@ struct EmbeddedAssetsTests {
         #expect(result.payloads.isEmpty)
     }
 
-    @Test("embedItems passes through symlinks, placeholders, and embedded items")
-    func embedItemsPassThrough() {
+    @Test
+    func `embedItems passes through symlinks, placeholders, and embedded items`() {
         let symlink = CanvasItem(
             kind: .file, label: "link", sourcePath: "/tmp/target",
-            position: .zero, linkType: .symlink
+            position: .zero, linkType: .symlink,
         )
         let slot = CanvasItem.filePlaceholder(position: .zero)
         var alreadyEmbedded = CanvasItem(kind: .file, label: "done.txt", position: .zero)
         alreadyEmbedded.assetName = "item-12345678-done.txt"
         let applications = CanvasItem(
-            kind: .applicationsSymlink, label: "Applications", position: .zero
+            kind: .applicationsSymlink, label: "Applications", position: .zero,
         )
 
         let items = [symlink, slot, alreadyEmbedded, applications]
@@ -262,18 +262,18 @@ struct EmbeddedAssetsTests {
         #expect(result.payloads.isEmpty)
     }
 
-    @Test("requiresSource is false for embedded items")
-    func embeddedItemsRequireNoSource() {
+    @Test
+    func `requiresSource is false for embedded items`() {
         var item = CanvasItem(kind: .file, label: "readme.md", position: .zero)
         item.assetName = "item-12345678-readme.md"
         #expect(!item.requiresSource)
         #expect(item.isEmbedded)
     }
 
-    @Test("CanvasItem decoding tolerates documents without assetName")
-    func decodingBackwardCompatible() throws {
+    @Test
+    func `CanvasItem decoding tolerates documents without assetName`() throws {
         let legacy = CanvasItem(
-            kind: .file, label: "old.txt", sourcePath: "/tmp/old.txt", position: .zero
+            kind: .file, label: "old.txt", sourcePath: "/tmp/old.txt", position: .zero,
         )
         let data = try JSONEncoder().encode(legacy)
         let decoded = try JSONDecoder().decode(CanvasItem.self, from: data)

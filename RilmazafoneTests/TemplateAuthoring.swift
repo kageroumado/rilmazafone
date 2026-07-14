@@ -18,18 +18,18 @@ import UniformTypeIdentifiers
 ///     -only-testing:RilmazafoneTests/TemplateAuthoring
 @Suite(
     "Template authoring",
-    .enabled(if: ProcessInfo.processInfo.environment["GENERATE_TEMPLATES"] == "1")
+    .enabled(if: ProcessInfo.processInfo.environment["GENERATE_TEMPLATES"] == "1"),
 )
 struct TemplateAuthoring {
     typealias RGBColor = Rilmazafone.RGBColor
 
-    static let templatesDir: URL = URL(fileURLWithPath: #filePath)
+    static let templatesDir: URL = .init(fileURLWithPath: #filePath)
         .deletingLastPathComponent()
         .deletingLastPathComponent()
         .appending(path: "Rilmazafone/Resources/Templates")
 
-    @Test("generate raster-backed templates and report legibility")
-    func generate() throws {
+    @Test
+    func `generate raster-backed templates and report legibility`() throws {
         try writePinstripes()
         try write("Snow Leopard", snowLeopard())
         try write("Cosmos", cosmos())
@@ -69,14 +69,14 @@ struct TemplateAuthoring {
 
         let scale: CGFloat = 2
         guard let composite = CompositeRenderer.renderAnalysisComposite(
-            configuration: config, layerImages: layerImages, scale: scale
+            configuration: config, layerImages: layerImages, scale: scale,
         ) else { return }
 
         let w = composite.width, h = composite.height
         guard let ctx = CGContext(
             data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
             space: CGColorSpace(name: CGColorSpace.sRGB)!,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
         ) else { return }
         ctx.draw(composite, in: CGRect(x: 0, y: 0, width: w, height: h))
         ctx.scaleBy(x: scale, y: scale)
@@ -94,7 +94,7 @@ struct TemplateAuthoring {
             let iconRect = CGRect(
                 x: item.position.x - iconSize / 2,
                 y: canvasH - iconCenterTop - iconSize / 2,
-                width: iconSize, height: iconSize
+                width: iconSize, height: iconSize,
             )
             drawTile(for: item, in: iconRect)
 
@@ -245,7 +245,7 @@ struct TemplateAuthoring {
             cornerRadius: 22, padding: padding, blurRadius: 30, blurFeather: 0,
             blendMode: .normal,
             shadow: shadow(opacity: 0.42, radius: 12, y: 7),
-            bevel: BevelConfiguration(enabled: true, depth: 4, lightAngle: 125, intensity: 0.35)
+            bevel: BevelConfiguration(enabled: true, depth: 4, lightAngle: 125, intensity: 0.35),
         )
     }
 
@@ -255,7 +255,7 @@ struct TemplateAuthoring {
             cornerRadius: 20, padding: padding, blurRadius: 34, blurFeather: 0,
             blendMode: .normal,
             shadow: shadow(opacity: 0.5, radius: 16, y: 8),
-            bevel: BevelConfiguration(enabled: true, depth: 4, lightAngle: 120, intensity: 0.3)
+            bevel: BevelConfiguration(enabled: true, depth: 4, lightAngle: 120, intensity: 0.3),
         )
     }
 
@@ -277,7 +277,7 @@ struct TemplateAuthoring {
             imageName: imageName,
             label: label,
             position: CGPoint(x: window.width / 2, y: window.height / 2),
-            scale: 1.0
+            scale: 1.0,
         )
     }
 
@@ -287,7 +287,7 @@ struct TemplateAuthoring {
             symbolName: "arrow.right",
             pointSize: 34,
             weight: .semibold,
-            color: color
+            color: color,
         )
     }
 
@@ -304,7 +304,7 @@ struct TemplateAuthoring {
         guard let ctx = CGContext(
             data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
             space: CGColorSpace(name: CGColorSpace.sRGB)!,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
         ) else { throw AuthoringError.context }
 
         ctx.setFillColor(CGColor(srgbRed: 0.905, green: 0.925, blue: 0.955, alpha: 1))
@@ -325,7 +325,7 @@ struct TemplateAuthoring {
         try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
         let out = assets.appending(path: "aqua-pinstripes.png")
         guard let dest = CGImageDestinationCreateWithURL(
-            out as CFURL, UTType.png.identifier as CFString, 1, nil
+            out as CFURL, UTType.png.identifier as CFString, 1, nil,
         ) else { throw AuthoringError.context }
         CGImageDestinationAddImage(dest, image, nil)
         guard CGImageDestinationFinalize(dest) else { throw AuthoringError.context }
@@ -362,19 +362,19 @@ struct TemplateAuthoring {
         }
 
         let warnings = LabelContrastAnalyzer.analyze(
-            input: LegibilityAnalysisInput(configuration: config, layerImages: layerImages)
+            input: LegibilityAnalysisInput(configuration: config, layerImages: layerImages),
         )
 
         print("REPORT \(name): \(warnings.isEmpty ? "OK (0 warnings)" : "❌ \(warnings.count) warnings")")
 
         guard let composite = CompositeRenderer.renderAnalysisComposite(
-            configuration: config, layerImages: layerImages, scale: 2
+            configuration: config, layerImages: layerImages, scale: 2,
         ), let buffer = LabelContrastAnalyzer.PixelBuffer(normalizing: composite) else { return }
         let scale = CGFloat(composite.width) / config.window.width
 
         for item in config.items {
             let rect = LabelContrastAnalyzer.labelRect(
-                position: item.position, iconSize: config.iconSize, textSize: config.textSize
+                position: item.position, iconSize: config.iconSize, textSize: config.textSize,
             )
             let pr = rect.applying(CGAffineTransform(scaleX: scale, y: scale)).integral
             guard let s = buffer.luminanceStatistics(in: pr) else { continue }
@@ -385,7 +385,7 @@ struct TemplateAuthoring {
             let flagD = rDark < LabelContrastAnalyzer.effectiveThreshold(stddev: s.dark.stddev) ? " DARK<thr" : ""
             print(String(
                 format: "   %-14@ L=%.3f sd=%.3f thr=%.2f | light %.2f dark %.2f%@%@",
-                item.label as NSString, s.light.mean, s.light.stddev, thr, rLight, rDark, flagL as NSString, flagD as NSString
+                item.label as NSString, s.light.mean, s.light.stddev, thr, rLight, rDark, flagL as NSString, flagD as NSString,
             ))
         }
     }

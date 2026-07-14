@@ -42,7 +42,7 @@ struct LegibilityWarningChip: View {
 
             Text(
                 "Finder colors labels black in Light Mode and white in Dark Mode, "
-                    + "but a DMG background never changes with appearance."
+                    + "but a DMG background never changes with appearance.",
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -67,7 +67,7 @@ struct LegibilityWarningChip: View {
                     }
                     .controlSize(.small)
                     .help(
-                        "Add a glass panel behind this item's label to restore contrast. Undoable."
+                        "Add a glass panel behind this item's label to restore contrast. Undoable.",
                     )
                 }
             }
@@ -76,7 +76,7 @@ struct LegibilityWarningChip: View {
 
             Text(
                 "Fixes: add a glass or solid panel behind the label, "
-                    + "reposition the item, or adjust the background."
+                    + "reposition the item, or adjust the background.",
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -121,7 +121,7 @@ struct LegibilityWarningChip: View {
             enabled: true,
             color: color,
             opacity: RemediationPanel.opacity,
-            blurRadius: RemediationPanel.blurRadius
+            blurRadius: RemediationPanel.blurRadius,
         )
         document.setItemBackground(item.id, to: panel, undoManager: undoManager)
     }

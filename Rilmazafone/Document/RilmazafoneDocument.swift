@@ -104,16 +104,36 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     // dependency on `rest` alone instead of the whole reassembled
     // `configuration`. Mutations go through the undo-aware setters below.
 
-    var volumeName: String { rest.volumeName }
-    var window: WindowConfiguration { rest.window }
-    var iconSize: CGFloat { rest.iconSize }
-    var textSize: CGFloat { rest.textSize }
-    var gridSpacing: CGFloat { rest.gridSpacing }
-    var isGridSpacingAuto: Bool { rest.isGridSpacingAuto }
-    var hideExtensions: Bool { rest.hideExtensions }
-    var volumeIcon: VolumeIconConfiguration { rest.volumeIcon }
-    var dmgFormat: DMGImageFormat { rest.dmgFormat }
-    var filesystem: DMGFilesystem { rest.filesystem }
+    var volumeName: String {
+        rest.volumeName
+    }
+    var window: WindowConfiguration {
+        rest.window
+    }
+    var iconSize: CGFloat {
+        rest.iconSize
+    }
+    var textSize: CGFloat {
+        rest.textSize
+    }
+    var gridSpacing: CGFloat {
+        rest.gridSpacing
+    }
+    var isGridSpacingAuto: Bool {
+        rest.isGridSpacingAuto
+    }
+    var hideExtensions: Bool {
+        rest.hideExtensions
+    }
+    var volumeIcon: VolumeIconConfiguration {
+        rest.volumeIcon
+    }
+    var dmgFormat: DMGImageFormat {
+        rest.dmgFormat
+    }
+    var filesystem: DMGFilesystem {
+        rest.filesystem
+    }
 
     /// The code-signing slice of `rest`. Settable so mutators in other files
     /// (placeholder filling) can write it without access to the private `rest`.
@@ -136,7 +156,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     /// remainder, upholding the `rest` invariant. Used by the `configuration`
     /// setter and the inits (which assign stored properties directly).
     private nonisolated static func split(
-        _ full: DMGConfiguration
+        _ full: DMGConfiguration,
     ) -> ConfigurationSlices {
         var rest = full
         rest.items = []
@@ -148,7 +168,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
             background: full.background,
             textLayers: full.textLayers,
             sfSymbolLayers: full.sfSymbolLayers,
-            rest: rest
+            rest: rest,
         )
     }
 
@@ -217,7 +237,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
 
         var decoded = try JSONDecoder().decode(
             DMGConfiguration.self,
-            from: manifestData
+            from: manifestData,
         )
         decoded.expandAbbreviatedPaths()
         let slices = Self.split(decoded)
@@ -243,13 +263,13 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
         portable.abbreviatePaths()
         return Snapshot(
             configuration: portable,
-            assetsWrapper: assetsWrapper
+            assetsWrapper: assetsWrapper,
         )
     }
 
     func fileWrapper(
         snapshot: Snapshot,
-        configuration _: WriteConfiguration
+        configuration _: WriteConfiguration,
     ) throws -> FileWrapper {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -259,12 +279,12 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
 
         directory.addRegularFile(
             withContents: manifestData,
-            preferredFilename: "document.json"
+            preferredFilename: "document.json",
         )
 
         if let assets = snapshot.assetsWrapper {
             let assetsCopy = FileWrapper(
-                directoryWithFileWrappers: assets.fileWrappers ?? [:]
+                directoryWithFileWrappers: assets.fileWrappers ?? [:],
             )
             assetsCopy.preferredFilename = "Assets"
             directory.addFileWrapper(assetsCopy)
@@ -278,7 +298,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     func withUndo(
         _ undoManager: UndoManager?,
         _ actionName: String,
-        _ handler: @escaping @MainActor @Sendable (RilmazafoneDocument, UndoManager?) -> Void
+        _ handler: @escaping @MainActor @Sendable (RilmazafoneDocument, UndoManager?) -> Void,
     ) {
         undoManager?.registerUndo(withTarget: self) { doc in
             // NSUndoManager fires document undo actions on the main thread;
@@ -410,7 +430,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
         guard let authority else { return }
 
         guard let identity = DMGBuilder.findMatchingKeychainIdentity(
-            authority: authority
+            authority: authority,
         ) else { return }
 
         setCodeSignEnabled(true, undoManager: undoManager)
@@ -545,7 +565,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
         let missing = Set(
             items
                 .filter { !SourceAccess.isSourceAvailable(item: $0, documentURL: fileURL) }
-                .map(\.id)
+                .map(\.id),
         )
         if missing != missingSourceIDs {
             missingSourceIDs = missing
@@ -560,7 +580,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
                 guard item.requiresSource,
                       let bookmark = item.sourceBookmark,
                       let reconciliation = SourceAccess.reconcile(
-                          bookmark: bookmark, documentURL: fileURL
+                          bookmark: bookmark, documentURL: fileURL,
                       )
                 else { continue }
 
@@ -618,7 +638,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
 
         let noun = flaggedCount == 1 ? "label" : "labels"
         let modes = Set(legibilityWarnings.map(\.mode))
-        let suffix: String = if modes == [.dark] {
+        let suffix = if modes == [.dark] {
             "in Dark Mode"
         } else if modes == [.light] {
             "in Light Mode"

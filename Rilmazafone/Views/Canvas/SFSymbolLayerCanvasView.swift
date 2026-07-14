@@ -30,7 +30,7 @@ struct SFSymbolLayerCanvasView: View, Equatable {
             }
             .position(
                 x: layer.position.x * zoom + dragOffset.width,
-                y: layer.position.y * zoom + dragOffset.height
+                y: layer.position.y * zoom + dragOffset.height,
             )
             .gesture(dragGesture)
             .onTapGesture {
@@ -42,7 +42,7 @@ struct SFSymbolLayerCanvasView: View, Equatable {
         Color(
             red: layer.color.red,
             green: layer.color.green,
-            blue: layer.color.blue
+            blue: layer.color.blue,
         )
     }
 
@@ -58,7 +58,7 @@ struct SFSymbolLayerCanvasView: View, Equatable {
                 let snapped = onDragChanged(CGPoint(x: rawX, y: rawY))
                 dragOffset = CGSize(
                     width: (snapped.x - layer.position.x) * zoom,
-                    height: (snapped.y - layer.position.y) * zoom
+                    height: (snapped.y - layer.position.y) * zoom,
                 )
             }
             .onEnded { value in

@@ -61,7 +61,7 @@ private struct BuildingContent: View {
             }
             .frame(width: 48, height: 48)
             .accessibilityLabel(
-                "Build progress, step \(progress.stepIndex) of \(progress.totalSteps), \(progress.currentStep)"
+                "Build progress, step \(progress.stepIndex) of \(progress.totalSteps), \(progress.currentStep)",
             )
 
             VStack(spacing: 6) {

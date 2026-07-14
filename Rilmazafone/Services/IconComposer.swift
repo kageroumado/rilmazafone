@@ -118,7 +118,7 @@ nonisolated enum IconComposer {
         // Fallback: any .icns in Resources
         if let contents = try? FileManager.default.contentsOfDirectory(
             at: resourceURL,
-            includingPropertiesForKeys: nil
+            includingPropertiesForKeys: nil,
         ) {
             return contents.first { $0.pathExtension == "icns" }
         }
@@ -158,7 +158,7 @@ nonisolated enum IconComposer {
             do {
                 let composed = try composeVariant(
                     appIcon: appImage,
-                    diskIcon: diskImage
+                    diskIcon: diskImage,
                 )
 
                 let pngData = try pngData(from: composed)
@@ -178,11 +178,11 @@ nonisolated enum IconComposer {
     /// Overlays the app icon onto a base disk icon.
     static func overlay(
         appIcon: CGImage,
-        onto diskIcon: CGImage
+        onto diskIcon: CGImage,
     ) throws -> CGImage {
         let diskSize = CGSize(
             width: CGFloat(diskIcon.width),
-            height: CGFloat(diskIcon.height)
+            height: CGFloat(diskIcon.height),
         )
 
         guard let context = rgbaContext(size: diskSize) else {
@@ -202,8 +202,8 @@ nonisolated enum IconComposer {
             appIcon,
             in: CGRect(
                 origin: CGPoint(x: x, y: y),
-                size: CGSize(width: appIcon.width, height: appIcon.height)
-            )
+                size: CGSize(width: appIcon.width, height: appIcon.height),
+            ),
         )
 
         guard let result = context.makeImage() else {
@@ -217,12 +217,12 @@ nonisolated enum IconComposer {
 
     private static func composeVariant(
         appIcon: CGImage,
-        diskIcon: CGImage
+        diskIcon: CGImage,
     ) throws -> CGImage {
         // Resize to fit inside the disk icon
         let targetSize = CGSize(
             width: (Double(diskIcon.width) / Layout.widthResizeFactor).rounded(),
-            height: (Double(diskIcon.height) / Layout.heightResizeFactor).rounded()
+            height: (Double(diskIcon.height) / Layout.heightResizeFactor).rounded(),
         )
 
         guard let resized = resize(appIcon, to: targetSize) else {
@@ -304,7 +304,7 @@ nonisolated enum IconComposer {
             isPlanar: false,
             colorSpaceName: .deviceRGB,
             bytesPerRow: 0,
-            bitsPerPixel: 0
+            bitsPerPixel: 0,
         ) else { return nil }
 
         rep.size = size
@@ -315,7 +315,7 @@ nonisolated enum IconComposer {
             in: NSRect(origin: .zero, size: size),
             from: .zero,
             operation: .copy,
-            fraction: 1.0
+            fraction: 1.0,
         )
         NSGraphicsContext.restoreGraphicsState()
 
@@ -346,7 +346,7 @@ nonisolated enum IconComposer {
             mutableData as CFMutableData,
             UTType.png.identifier as CFString,
             1,
-            nil
+            nil,
         ) else {
             throw ComposerError.compositeFailed
         }
@@ -375,7 +375,7 @@ nonisolated enum IconComposer {
             bytesPerRow: 0,
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue
-                | CGImageAlphaInfo.premultipliedFirst.rawValue
+                | CGImageAlphaInfo.premultipliedFirst.rawValue,
         )
     }
 }

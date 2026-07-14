@@ -77,13 +77,13 @@ nonisolated enum EmbeddedAssets {
     private static func directoryFitsCap(_ url: URL) -> Bool {
         guard let enumerator = FileManager.default.enumerator(
             at: url,
-            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey]
+            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
         ) else { return false }
 
         var total = 0
         for case let entry as URL in enumerator {
             guard let values = try? entry.resourceValues(
-                forKeys: [.fileSizeKey, .isRegularFileKey]
+                forKeys: [.fileSizeKey, .isRegularFileKey],
             ), values.isRegularFile == true else { continue }
             total += values.fileSize ?? 0
             if total > sizeCap { return false }
@@ -101,7 +101,7 @@ nonisolated enum EmbeddedAssets {
     static func materialize(
         items: [CanvasItem],
         assetsDirectory: URL,
-        stagingDirectory: URL
+        stagingDirectory: URL,
     ) throws -> [CanvasItem] {
         try items.map { item in
             guard let assetName = item.assetName,
@@ -142,17 +142,17 @@ nonisolated enum EmbeddedAssets {
                   path: FilePath(tempArchive.path),
                   mode: .writeOnly,
                   options: [.create, .truncate],
-                  permissions: FilePermissions(rawValue: 0o644)
+                  permissions: FilePermissions(rawValue: 0o644),
               ),
               let compressStream = ArchiveByteStream.compressionStream(
-                  using: .lzfse, writingTo: writeStream
+                  using: .lzfse, writingTo: writeStream,
               ),
               let encodeStream = ArchiveStream.encodeStream(writingTo: compressStream)
         else { throw EmbedError.archiveFailed("could not open archive streams") }
 
         do {
             try encodeStream.writeDirectoryContents(
-                archiveFrom: FilePath(directory.path), keySet: keySet
+                archiveFrom: FilePath(directory.path), keySet: keySet,
             )
         } catch {
             try? encodeStream.close()
@@ -170,20 +170,20 @@ nonisolated enum EmbeddedAssets {
     /// Extracts an Apple Archive payload into `destination`, creating it.
     static func extractArchive(at archiveURL: URL, to destination: URL) throws {
         try FileManager.default.createDirectory(
-            at: destination, withIntermediateDirectories: true
+            at: destination, withIntermediateDirectories: true,
         )
 
         guard let readStream = ArchiveByteStream.fileStream(
             path: FilePath(archiveURL.path),
             mode: .readOnly,
             options: [],
-            permissions: FilePermissions(rawValue: 0o644)
+            permissions: FilePermissions(rawValue: 0o644),
         ),
             let decompressStream = ArchiveByteStream.decompressionStream(readingFrom: readStream),
             let decodeStream = ArchiveStream.decodeStream(readingFrom: decompressStream),
             let extractStream = ArchiveStream.extractStream(
                 extractingTo: FilePath(destination.path),
-                flags: [.ignoreOperationNotPermitted]
+                flags: [.ignoreOperationNotPermitted],
             )
         else { throw EmbedError.archiveFailed("could not open extraction streams") }
 

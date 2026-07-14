@@ -58,7 +58,7 @@ nonisolated enum CanvasBackdropRenderer {
         from backdrop: CGImage,
         backdropPointSize: CGSize,
         rect: CGRect,
-        blurRadius: CGFloat
+        blurRadius: CGFloat,
     ) -> CGImage? {
         guard backdropPointSize.width > 0, backdropPointSize.height > 0,
               rect.width > 0, rect.height > 0
@@ -70,7 +70,7 @@ nonisolated enum CanvasBackdropRenderer {
             x: rect.minX * scale,
             y: flippedMinY * scale,
             width: rect.width * scale,
-            height: rect.height * scale
+            height: rect.height * scale,
         ).integral
 
         let blur = CIFilter.gaussianBlur()
@@ -191,7 +191,7 @@ struct CanvasBackdropBlurView: View {
                 from: request.backdrop.image,
                 backdropPointSize: request.backdrop.pointSize,
                 rect: request.rect,
-                blurRadius: request.blurRadius
+                blurRadius: request.blurRadius,
             )
         }.value
 

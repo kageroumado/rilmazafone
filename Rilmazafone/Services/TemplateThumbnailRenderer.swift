@@ -31,14 +31,14 @@ nonisolated enum TemplateThumbnailRenderer {
     static func render(
         configuration: DMGConfiguration,
         assetsDirectory: URL,
-        itemIcons: [UUID: CGImage]
+        itemIcons: [UUID: CGImage],
     ) async -> CGImage? {
         let width = configuration.window.width
         let height = configuration.window.height
         guard width > 0, height > 0,
               let context = CompositeRenderer.makeBitmapContext(
                   pixelsWide: Int((width * Metrics.scale).rounded()),
-                  pixelsHigh: Int((height * Metrics.scale).rounded())
+                  pixelsHigh: Int((height * Metrics.scale).rounded()),
               )
         else { return nil }
         context.scaleBy(x: Metrics.scale, y: Metrics.scale)
@@ -50,13 +50,13 @@ nonisolated enum TemplateThumbnailRenderer {
 
         if let background = CompositeRenderer.renderBackground(
             configuration: configuration,
-            assetsDirectory: assetsDirectory
+            assetsDirectory: assetsDirectory,
         ) {
             background.draw(
                 in: CGRect(x: 0, y: 0, width: width, height: height),
                 from: .zero,
                 operation: .sourceOver,
-                fraction: 1.0
+                fraction: 1.0,
             )
         }
 
@@ -64,7 +64,7 @@ nonisolated enum TemplateThumbnailRenderer {
             let rect = iconRect(
                 for: item,
                 iconSize: configuration.iconSize,
-                canvasHeight: height
+                canvasHeight: height,
             )
             if let icon = itemIcons[item.id] {
                 context.draw(icon, in: rect)
@@ -82,7 +82,7 @@ nonisolated enum TemplateThumbnailRenderer {
     static func labelPill(
         for item: CanvasItem,
         iconSize: CGFloat,
-        textSize: CGFloat
+        textSize: CGFloat,
     ) -> TemplateEntry.LabelPill {
         let contentHeight = iconSize
             + Metrics.iconCellPadding * 2
@@ -95,15 +95,17 @@ nonisolated enum TemplateThumbnailRenderer {
             + Metrics.textGap
         let height = textSize + Metrics.pillVerticalPadding
         let width = min(
-            max(CGFloat(item.label.count) * textSize * Metrics.pillCharacterWidthFactor,
-                Metrics.pillMinimumWidth),
-            iconSize + Metrics.iconCellPadding * 4
+            max(
+                CGFloat(item.label.count) * textSize * Metrics.pillCharacterWidthFactor,
+                Metrics.pillMinimumWidth,
+            ),
+            iconSize + Metrics.iconCellPadding * 4,
         )
         return TemplateEntry.LabelPill(
             x: item.position.x,
             y: labelTop + height / 2,
             width: width,
-            height: height
+            height: height,
         )
     }
 
@@ -113,7 +115,7 @@ nonisolated enum TemplateThumbnailRenderer {
     private static func iconRect(
         for item: CanvasItem,
         iconSize: CGFloat,
-        canvasHeight: CGFloat
+        canvasHeight: CGFloat,
     ) -> CGRect {
         let contentHeight = iconSize
             + Metrics.iconCellPadding * 2
@@ -127,7 +129,7 @@ nonisolated enum TemplateThumbnailRenderer {
             x: item.position.x - iconSize / 2,
             y: canvasHeight - iconCenterYTopDown - iconSize / 2,
             width: iconSize,
-            height: iconSize
+            height: iconSize,
         )
     }
 
@@ -137,13 +139,13 @@ nonisolated enum TemplateThumbnailRenderer {
         let cornerRadius = rect.width * Metrics.placeholderCornerRadiusRatio
         let strokeRect = rect.insetBy(
             dx: Metrics.placeholderLineWidth / 2,
-            dy: Metrics.placeholderLineWidth / 2
+            dy: Metrics.placeholderLineWidth / 2,
         )
 
         context.saveGState()
         context.setStrokeColor(CGColor(
             gray: Metrics.placeholderStrokeGray,
-            alpha: Metrics.placeholderStrokeAlpha
+            alpha: Metrics.placeholderStrokeAlpha,
         ))
         context.setLineWidth(Metrics.placeholderLineWidth)
         context.setLineDash(phase: 0, lengths: Metrics.placeholderDash)
@@ -151,14 +153,14 @@ nonisolated enum TemplateThumbnailRenderer {
             roundedRect: strokeRect,
             cornerWidth: cornerRadius,
             cornerHeight: cornerRadius,
-            transform: nil
+            transform: nil,
         ))
         context.strokePath()
         context.restoreGState()
 
         guard let symbol = NSImage(
             systemSymbolName: glyphName,
-            accessibilityDescription: nil
+            accessibilityDescription: nil,
         ) else { return }
 
         let inset = rect.width * Metrics.placeholderSymbolInsetRatio
@@ -171,7 +173,7 @@ nonisolated enum TemplateThumbnailRenderer {
         context.setBlendMode(.sourceAtop)
         context.setFillColor(CGColor(
             gray: Metrics.placeholderSymbolGray,
-            alpha: Metrics.placeholderSymbolAlpha
+            alpha: Metrics.placeholderSymbolAlpha,
         ))
         context.fill(symbolRect)
         context.endTransparencyLayer()
@@ -186,7 +188,7 @@ nonisolated enum TemplateThumbnailRenderer {
             x: bounds.midX - fitted.width / 2,
             y: bounds.midY - fitted.height / 2,
             width: fitted.width,
-            height: fitted.height
+            height: fitted.height,
         )
     }
 }

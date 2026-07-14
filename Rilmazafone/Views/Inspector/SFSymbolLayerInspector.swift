@@ -32,7 +32,7 @@ struct SFSymbolLayerInspector: View {
                             document.updateSFSymbolLayerStyle(
                                 layer.id,
                                 with: { $0.symbolName = name },
-                                undoManager: undoManager
+                                undoManager: undoManager,
                             )
                         } label: {
                             Image(systemName: name)
@@ -81,7 +81,7 @@ struct SFSymbolLayerInspector: View {
             ColorPicker(
                 "Color",
                 selection: colorBinding,
-                supportsOpacity: false
+                supportsOpacity: false,
             )
 
             Button("Remove Symbol Layer", role: .destructive) {
@@ -107,14 +107,14 @@ struct SFSymbolLayerInspector: View {
     private var xBinding: Binding<Double> {
         Binding(
             get: { round(layer.position.x) },
-            set: { document.moveSFSymbolLayer(layer.id, to: CGPoint(x: $0, y: layer.position.y), undoManager: undoManager) }
+            set: { document.moveSFSymbolLayer(layer.id, to: CGPoint(x: $0, y: layer.position.y), undoManager: undoManager) },
         )
     }
 
     private var yBinding: Binding<Double> {
         Binding(
             get: { round(layer.position.y) },
-            set: { document.moveSFSymbolLayer(layer.id, to: CGPoint(x: layer.position.x, y: $0), undoManager: undoManager) }
+            set: { document.moveSFSymbolLayer(layer.id, to: CGPoint(x: layer.position.x, y: $0), undoManager: undoManager) },
         )
     }
 
@@ -132,7 +132,7 @@ struct SFSymbolLayerInspector: View {
             set: { newColor in
                 guard let rgb = RGBColor(swiftUIColor: newColor) else { return }
                 updateStyle { $0.color = rgb }
-            }
+            },
         )
     }
 }

@@ -36,8 +36,8 @@ struct TemplateChooserView: View {
     let onCancel: () -> Void
 
     @State private var sizeChoice: WindowSizeChoice = .templateDefault
-    @State private var customWidth: Double = Double(WindowSizePreset.standard.width)
-    @State private var customHeight: Double = Double(WindowSizePreset.standard.height)
+    @State private var customWidth: Double = .init(WindowSizePreset.standard.width)
+    @State private var customHeight: Double = .init(WindowSizePreset.standard.height)
     @AppStorage(NewDocumentPolicy.showsChooserDefaultsKey) private var showsChooser = true
 
     private enum Layout {
@@ -96,9 +96,9 @@ struct TemplateChooserView: View {
             LazyVGrid(
                 columns: [GridItem(
                     .adaptive(minimum: Layout.tileWidth),
-                    spacing: Layout.gridSpacing
+                    spacing: Layout.gridSpacing,
                 )],
-                spacing: Layout.gridSpacing
+                spacing: Layout.gridSpacing,
             ) {
                 TemplateTile(
                     title: "Blank",
@@ -106,7 +106,7 @@ struct TemplateChooserView: View {
                     registry: registry,
                     isSelected: state.selection == .blank,
                     onSelect: { state.selection = .blank },
-                    onCreate: { createSelection(.blank) }
+                    onCreate: { createSelection(.blank) },
                 )
                 ForEach(registry.bundled) { entry in
                     tile(for: entry)
@@ -128,7 +128,7 @@ struct TemplateChooserView: View {
             registry: registry,
             isSelected: state.selection == .template(entry),
             onSelect: { state.selection = .template(entry) },
-            onCreate: { createSelection(.template(entry)) }
+            onCreate: { createSelection(.template(entry)) },
         )
         if entry.isBuiltIn {
             tile
@@ -156,7 +156,7 @@ struct TemplateChooserView: View {
             title: "Rename Template",
             informativeText: "Enter a new name for \u{201C}\(entry.name)\u{201D}.",
             defaultName: entry.name,
-            confirmTitle: "Rename"
+            confirmTitle: "Rename",
         ), name != entry.name else { return }
 
         do {
@@ -273,7 +273,7 @@ struct TemplateChooserView: View {
     private var dontShowAgainBinding: Binding<Bool> {
         Binding(
             get: { !showsChooser },
-            set: { showsChooser = !$0 }
+            set: { showsChooser = !$0 },
         )
     }
 
@@ -289,11 +289,11 @@ struct TemplateChooserView: View {
         case .large: WindowSizePreset.large
         case .custom: CGSize(
                 width: customWidth.clamped(
-                    to: WindowSizePreset.minimumWidth ... WindowSizePreset.maximumWidth
+                    to: WindowSizePreset.minimumWidth ... WindowSizePreset.maximumWidth,
                 ),
                 height: customHeight.clamped(
-                    to: WindowSizePreset.minimumHeight ... WindowSizePreset.maximumHeight
-                )
+                    to: WindowSizePreset.minimumHeight ... WindowSizePreset.maximumHeight,
+                ),
             )
         }
     }
@@ -364,7 +364,7 @@ private struct TemplateTile: View {
         MiniFinderWindow(
             image: thumbnail,
             windowSize: entry?.windowSize ?? TemplateRegistry.blankWindowSize,
-            labelPills: entry?.labelPills ?? []
+            labelPills: entry?.labelPills ?? [],
         )
     }
 }
@@ -408,7 +408,7 @@ private struct MiniFinderWindow: View {
         GeometryReader { geometry in
             let scale = min(
                 geometry.size.width / windowSize.width,
-                geometry.size.height / (windowSize.height + Chrome.titleBarHeight)
+                geometry.size.height / (windowSize.height + Chrome.titleBarHeight),
             )
 
             VStack(spacing: 0) {
@@ -436,7 +436,7 @@ private struct MiniFinderWindow: View {
                         .fill(color)
                         .frame(
                             width: Chrome.lightDiameter * scale,
-                            height: Chrome.lightDiameter * scale
+                            height: Chrome.lightDiameter * scale,
                         )
                 }
             }
@@ -444,7 +444,7 @@ private struct MiniFinderWindow: View {
         }
         .frame(
             width: windowSize.width * scale,
-            height: Chrome.titleBarHeight * scale
+            height: Chrome.titleBarHeight * scale,
         )
     }
 
@@ -452,7 +452,7 @@ private struct MiniFinderWindow: View {
     private func content(scale: CGFloat) -> some View {
         let size = CGSize(
             width: windowSize.width * scale,
-            height: windowSize.height * scale
+            height: windowSize.height * scale,
         )
         Group {
             if let image {
@@ -471,7 +471,7 @@ private struct MiniFinderWindow: View {
                     .frame(width: pill.width * scale, height: pill.height * scale)
                     .offset(
                         x: (pill.x - pill.width / 2) * scale,
-                        y: (pill.y - pill.height / 2) * scale
+                        y: (pill.y - pill.height / 2) * scale,
                     )
             }
         }

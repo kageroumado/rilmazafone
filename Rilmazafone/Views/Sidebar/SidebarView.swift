@@ -62,7 +62,7 @@ struct SidebarView: View {
                     document.moveItemInList(
                         from: source,
                         to: destination,
-                        undoManager: undoManager
+                        undoManager: undoManager,
                     )
                 }
                 .onDelete { offsets in
@@ -86,7 +86,7 @@ struct SidebarView: View {
         .fileImporter(
             isPresented: $isFileImporterPresented,
             allowedContentTypes: fileImporterKind.contentTypes,
-            allowsMultipleSelection: fileImporterKind == .backgroundImage
+            allowsMultipleSelection: fileImporterKind == .backgroundImage,
         ) { result in
             handleFileImport(result)
         }
@@ -177,7 +177,7 @@ struct SidebarView: View {
             Button("Show in Finder") {
                 NSWorkspace.shared.selectFile(
                     path,
-                    inFileViewerRootedAtPath: ""
+                    inFileViewerRootedAtPath: "",
                 )
             }
         }
@@ -243,7 +243,7 @@ struct SidebarView: View {
             await document.handleDrop(
                 urls: urls,
                 defaultPosition: defaultPosition(),
-                undoManager: undoManager
+                undoManager: undoManager,
             )
         }
     }
@@ -262,7 +262,7 @@ struct SidebarView: View {
                     await document.addApp(
                         from: url,
                         at: CGPoint(x: appX, y: centerY),
-                        undoManager: undoManager
+                        undoManager: undoManager,
                     )
                 }
             }
@@ -291,8 +291,8 @@ struct SidebarView: View {
             label: "Applications",
             position: CGPoint(
                 x: width * 2 / 3,
-                y: height / 2
-            )
+                y: height / 2,
+            ),
         )
         document.addItem(item, undoManager: undoManager)
     }
@@ -300,7 +300,7 @@ struct SidebarView: View {
     private func defaultPosition() -> CGPoint {
         CGPoint(
             x: document.window.width / 2,
-            y: document.window.height / 2
+            y: document.window.height / 2,
         )
     }
 }

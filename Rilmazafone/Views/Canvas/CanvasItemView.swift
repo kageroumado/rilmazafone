@@ -96,11 +96,11 @@ struct CanvasItemView: View, Equatable {
         .shadow(
             color: .black.opacity(isDragging ? 0.15 : 0),
             radius: isDragging ? 8 : 0,
-            y: isDragging ? 4 : 0
+            y: isDragging ? 4 : 0,
         )
         .position(
             x: item.position.x * zoom + dragOffset.width,
-            y: item.position.y * zoom + dragOffset.height
+            y: item.position.y * zoom + dragOffset.height,
         )
         .gesture(dragGesture)
         .onTapGesture {
@@ -144,7 +144,7 @@ struct CanvasItemView: View, Equatable {
         Image(systemName: "textformat.abc")
             .font(.system(
                 size: max(Self.legibilityBadgeTextSize * zoom, Self.legibilityBadgeMinimumTextSize),
-                weight: .bold
+                weight: .bold,
             ))
             .foregroundStyle(.white)
             .padding(max(Self.legibilityBadgePadding * zoom, 2))
@@ -201,8 +201,8 @@ struct CanvasItemView: View, Equatable {
                 Color.secondary.opacity(0.6),
                 style: StrokeStyle(
                     lineWidth: max(2 * zoom, 1),
-                    dash: [6 * zoom, 4 * zoom]
-                )
+                    dash: [6 * zoom, 4 * zoom],
+                ),
             )
             .overlay {
                 Image(systemName: item.placeholderGlyphName)
@@ -265,7 +265,7 @@ struct CanvasItemView: View, Equatable {
                 let snapped = onDragChanged(CGPoint(x: rawX, y: rawY))
                 dragOffset = CGSize(
                     width: (snapped.x - item.position.x) * zoom,
-                    height: (snapped.y - item.position.y) * zoom
+                    height: (snapped.y - item.position.y) * zoom,
                 )
             }
             .onEnded { value in

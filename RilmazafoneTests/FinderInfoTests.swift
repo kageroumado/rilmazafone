@@ -6,8 +6,8 @@ import Testing
 struct FinderInfoTests {
     // MARK: - Pure Core
 
-    @Test("Custom icon flag set in empty FinderInfo")
-    func flagInEmptyInfo() {
+    @Test
+    func `Custom icon flag set in empty FinderInfo`() {
         let info = FinderInfo.settingCustomIconFlag(in: nil)
         #expect(info.count == 32)
         #expect(info[8] == 0x04)
@@ -18,8 +18,8 @@ struct FinderInfoTests {
         }
     }
 
-    @Test("Existing nonzero bytes preserved")
-    func preservesExistingBytes() {
+    @Test
+    func `Existing nonzero bytes preserved`() {
         var existing = Data(count: 32)
         existing[0] = 0xAB // OSType 'type' field
         existing[4] = 0xCD // OSType 'creator' field
@@ -36,8 +36,8 @@ struct FinderInfoTests {
         #expect(info[9] == 0x00)
     }
 
-    @Test("Existing flags OR-ed, not overwritten")
-    func orsExistingFlags() {
+    @Test
+    func `Existing flags OR-ed, not overwritten`() {
         var existing = Data(count: 32)
         // kIsInvisible (0x4000) already set in the big-endian flags field.
         existing[8] = 0x40
@@ -49,30 +49,30 @@ struct FinderInfoTests {
         #expect(info[9] == 0x00)
     }
 
-    @Test("Idempotent")
+    @Test
     func idempotent() {
         let once = FinderInfo.settingCustomIconFlag(in: nil)
         let twice = FinderInfo.settingCustomIconFlag(in: once)
         #expect(once == twice)
     }
 
-    @Test("Output is always exactly 32 bytes")
-    func alwaysThirtyTwoBytes() {
+    @Test
+    func `Output is always exactly 32 bytes`() {
         #expect(FinderInfo.settingCustomIconFlag(in: nil).count == 32)
         #expect(FinderInfo.settingCustomIconFlag(in: Data(count: 4)).count == 32)
         #expect(FinderInfo.settingCustomIconFlag(in: Data(count: 32)).count == 32)
         #expect(FinderInfo.settingCustomIconFlag(in: Data(count: 64)).count == 32)
     }
 
-    @Test("Flag bytes are big-endian at offsets 8-9")
-    func bigEndianFlag() {
+    @Test
+    func `Flag bytes are big-endian at offsets 8-9`() {
         let info = FinderInfo.settingCustomIconFlag(in: nil)
         let flags = UInt16(info[8]) << 8 | UInt16(info[9])
         #expect(flags == 0x0400)
     }
 
-    @Test("Longer-than-32-byte input truncated to attribute length")
-    func truncatesOverlongInput() {
+    @Test
+    func `Longer-than-32-byte input truncated to attribute length`() {
         var overlong = Data(count: 64)
         overlong[40] = 0xFF // beyond the FinderInfo attribute
         let info = FinderInfo.settingCustomIconFlag(in: overlong)
@@ -81,8 +81,8 @@ struct FinderInfoTests {
 
     // MARK: - xattr Round-trip
 
-    @Test("xattr round-trip on a temp directory")
-    func xattrRoundTrip() throws {
+    @Test
+    func `xattr round-trip on a temp directory`() throws {
         let dir = FileManager.default.temporaryDirectory
             .appending(path: "rilmazafone-finderinfo-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -103,8 +103,8 @@ struct FinderInfoTests {
         #expect(reread == read)
     }
 
-    @Test("xattr round-trip preserves pre-existing FinderInfo bytes")
-    func xattrPreservesExisting() throws {
+    @Test
+    func `xattr round-trip preserves pre-existing FinderInfo bytes`() throws {
         let dir = FileManager.default.temporaryDirectory
             .appending(path: "rilmazafone-finderinfo-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -125,8 +125,8 @@ struct FinderInfoTests {
         #expect(read[8] == 0x04)
     }
 
-    @Test("setInvisible marks a file hidden")
-    func setInvisibleHidesFile() throws {
+    @Test
+    func `setInvisible marks a file hidden`() throws {
         let file = FileManager.default.temporaryDirectory
             .appending(path: "rilmazafone-hidden-\(UUID().uuidString).icns")
         try Data("icon".utf8).write(to: file)

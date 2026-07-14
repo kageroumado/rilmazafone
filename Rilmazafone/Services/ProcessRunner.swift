@@ -2,13 +2,13 @@ import Foundation
 
 /// Shared utility for running external processes asynchronously with structured concurrency.
 nonisolated enum ProcessRunner {
-    nonisolated struct ProcessResult: Sendable {
+    nonisolated struct ProcessResult {
         let stdout: Data
         let stderr: Data
         let exitCode: Int32
     }
 
-    nonisolated struct ProcessError: Error, LocalizedError, Sendable {
+    nonisolated struct ProcessError: Error, LocalizedError {
         let executable: String
         let arguments: [String]
         let exitCode: Int32
@@ -25,7 +25,7 @@ nonisolated enum ProcessRunner {
     static func run(
         _ executable: String,
         arguments: [String] = [],
-        currentDirectory: URL? = nil
+        currentDirectory: URL? = nil,
     ) async throws -> ProcessResult {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
@@ -78,13 +78,13 @@ nonisolated enum ProcessRunner {
                         executable: executable,
                         arguments: arguments,
                         exitCode: exitCode,
-                        stderr: stderrString
+                        stderr: stderrString,
                     ))
                 } else {
                     continuation.resume(returning: ProcessResult(
                         stdout: stdoutData,
                         stderr: stderrData,
-                        exitCode: exitCode
+                        exitCode: exitCode,
                     ))
                 }
             }
@@ -101,12 +101,12 @@ nonisolated enum ProcessRunner {
     static func runString(
         _ executable: String,
         arguments: [String] = [],
-        currentDirectory: URL? = nil
+        currentDirectory: URL? = nil,
     ) async throws -> String {
         let result = try await run(
             executable,
             arguments: arguments,
-            currentDirectory: currentDirectory
+            currentDirectory: currentDirectory,
         )
         return String(data: result.stdout, encoding: .utf8)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

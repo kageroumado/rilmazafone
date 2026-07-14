@@ -50,7 +50,7 @@ struct DocumentContentView: View {
                 selectedItemID: $selectedItemID,
                 zoom: $zoom,
                 isFitToWindow: $isFitToWindow,
-                prefersDarkAppearance: prefersDarkAppearance
+                prefersDarkAppearance: prefersDarkAppearance,
             )
             .toolbar {
                 CanvasToolbar(
@@ -58,8 +58,8 @@ struct DocumentContentView: View {
                     isFitToWindow: $isFitToWindow,
                     prefersDarkAppearance: Binding(
                         get: { prefersDarkAppearance },
-                        set: { appearanceOverride = $0 }
-                    )
+                        set: { appearanceOverride = $0 },
+                    ),
                 )
             }
         }
@@ -72,7 +72,7 @@ struct DocumentContentView: View {
         }
         .sheet(isPresented: Binding(
             get: { buildManager.isShowingSheet },
-            set: { if !$0 { buildManager.reset() } }
+            set: { if !$0 { buildManager.reset() } },
         )) {
             BuildSheet()
         }
@@ -142,7 +142,7 @@ struct DocumentContentView: View {
 
         let input = LegibilityAnalysisInput(
             configuration: document.configuration,
-            layerImages: document.backgroundImages
+            layerImages: document.backgroundImages,
         )
         let warnings = await Task.detached(name: "Label Legibility Analysis", priority: .utility) {
             LabelContrastAnalyzer.analyze(input: input)
@@ -159,7 +159,7 @@ struct DocumentContentView: View {
         let unfilledSlots = document.items.filter(\.isPlaceholder).map(\.label)
         guard unfilledSlots.isEmpty else {
             buildManager.reportError(
-                ValidationError.unfilledPlaceholder(unfilledSlots).localizedDescription
+                ValidationError.unfilledPlaceholder(unfilledSlots).localizedDescription,
             )
             return
         }
@@ -169,7 +169,7 @@ struct DocumentContentView: View {
             .map(\.label)
         guard missingLabels.isEmpty else {
             buildManager.reportError(
-                ValidationError.missingSources(missingLabels).localizedDescription
+                ValidationError.missingSources(missingLabels).localizedDescription,
             )
             return
         }
@@ -186,7 +186,7 @@ struct DocumentContentView: View {
                 configuration: document.configuration,
                 assetsDirectory: assetsDir,
                 outputURL: url,
-                documentURL: document.fileURL
+                documentURL: document.fileURL,
             )
         } catch {
             buildManager.reportError(error.localizedDescription)

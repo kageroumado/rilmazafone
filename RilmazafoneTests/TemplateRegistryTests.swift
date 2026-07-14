@@ -23,7 +23,7 @@ private enum TemplateFixtures {
         includesPlaceholder: Bool = true,
         items: [CanvasItem]? = nil,
         background: BackgroundConfiguration? = nil,
-        assets: [String: Data] = [:]
+        assets: [String: Data] = [:],
     ) throws -> URL {
         var configuration = DMGConfiguration()
         configuration.volumeName = name
@@ -37,7 +37,7 @@ private enum TemplateFixtures {
                 CanvasItem(
                     kind: .applicationsSymlink,
                     label: "Applications",
-                    position: CGPoint(x: 480, y: 190)
+                    position: CGPoint(x: 480, y: 190),
                 ),
             ]
         }
@@ -52,7 +52,7 @@ private enum TemplateFixtures {
         if !assets.isEmpty {
             let assetsDirectory = url.appending(path: "Assets")
             try FileManager.default.createDirectory(
-                at: assetsDirectory, withIntermediateDirectories: true
+                at: assetsDirectory, withIntermediateDirectories: true,
             )
             for (filename, data) in assets {
                 try data.write(to: assetsDirectory.appending(path: filename))
@@ -68,7 +68,7 @@ private func makeRegistry(bundled: URL?, user: URL) -> TemplateRegistry {
         bundledDirectory: bundled,
         userDirectory: user,
         watchesUserDirectory: false,
-        prewarmsThumbnails: false
+        prewarmsThumbnails: false,
     )
 }
 
@@ -77,8 +77,8 @@ private func makeRegistry(bundled: URL?, user: URL) -> TemplateRegistry {
 @MainActor
 @Suite("Template Registry")
 struct TemplateRegistryTests {
-    @Test("Scans bundled and user directories into name-sorted entries")
-    func scansAndSorts() throws {
+    @Test
+    func `Scans bundled and user directories into name-sorted entries`() throws {
         let bundledDir = try TemplateFixtures.makeDirectory()
         let userDir = try TemplateFixtures.makeDirectory()
         defer {
@@ -93,13 +93,16 @@ struct TemplateRegistryTests {
         let registry = makeRegistry(bundled: bundledDir, user: userDir)
 
         #expect(registry.bundled.map(\.name) == ["Alpha", "Zeta"])
+        // Key-path-as-function inside #expect expands into a throwing context
+        // and fails to compile, so keep the closure form here.
+        // swiftformat:disable:next preferKeyPath
         #expect(registry.bundled.allSatisfy { $0.isBuiltIn })
         #expect(registry.user.map(\.name) == ["Mine"])
         #expect(registry.user.allSatisfy { !$0.isBuiltIn })
     }
 
-    @Test("An absent bundled directory yields an empty bundled list")
-    func absentBundledDirectory() throws {
+    @Test
+    func `An absent bundled directory yields an empty bundled list`() throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
@@ -111,13 +114,13 @@ struct TemplateRegistryTests {
         #expect(registry.user.isEmpty)
     }
 
-    @Test("Entries parse the template's window size from its configuration")
-    func parsesWindowSize() throws {
+    @Test
+    func `Entries parse the template's window size from its configuration`() throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
         try TemplateFixtures.writeTemplate(
-            named: "Wide", in: userDir, windowSize: CGSize(width: 800, height: 500)
+            named: "Wide", in: userDir, windowSize: CGSize(width: 800, height: 500),
         )
         let registry = makeRegistry(bundled: nil, user: userDir)
 
@@ -125,8 +128,8 @@ struct TemplateRegistryTests {
         #expect(entry.windowSize == CGSize(width: 800, height: 500))
     }
 
-    @Test("refresh() picks up added and removed templates")
-    func refreshTracksChanges() throws {
+    @Test
+    func `refresh() picks up added and removed templates`() throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
@@ -142,15 +145,15 @@ struct TemplateRegistryTests {
         #expect(registry.user.isEmpty)
     }
 
-    @Test("Non-template entries and packages without a manifest are ignored")
-    func ignoresStrays() throws {
+    @Test
+    func `Non-template entries and packages without a manifest are ignored`() throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
         try Data("stray".utf8).write(to: userDir.appending(path: "notes.txt"))
         try FileManager.default.createDirectory(
             at: userDir.appending(path: "Broken.dmgtemplate"),
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
         )
         try TemplateFixtures.writeTemplate(named: "Valid", in: userDir)
 
@@ -158,8 +161,8 @@ struct TemplateRegistryTests {
         #expect(registry.user.map(\.name) == ["Valid"])
     }
 
-    @Test("The directory watcher refreshes the user list without an explicit refresh")
-    func watcherRefreshes() async throws {
+    @Test
+    func `The directory watcher refreshes the user list without an explicit refresh`() async throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
@@ -167,7 +170,7 @@ struct TemplateRegistryTests {
             bundledDirectory: nil,
             userDirectory: userDir,
             watchesUserDirectory: true,
-            prewarmsThumbnails: false
+            prewarmsThumbnails: false,
         )
         #expect(registry.user.isEmpty)
 
@@ -186,8 +189,8 @@ struct TemplateRegistryTests {
 
     // MARK: User Template Management
 
-    @Test("saveUserTemplate writes a readable package and lists it")
-    func saveUserTemplate() throws {
+    @Test
+    func `saveUserTemplate writes a readable package and lists it`() throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
@@ -201,7 +204,7 @@ struct TemplateRegistryTests {
         let entry = try registry.saveUserTemplate(
             named: "My Design",
             configuration: configuration,
-            assets: ["background.png": payload]
+            assets: ["background.png": payload],
         )
 
         #expect(registry.user.contains(entry))
@@ -213,8 +216,8 @@ struct TemplateRegistryTests {
         #expect(TemplateInstantiator.assets(ofTemplateAt: entry.url) == ["background.png": payload])
     }
 
-    @Test("saveUserTemplate uniques a taken name")
-    func saveUniquesName() throws {
+    @Test
+    func `saveUserTemplate uniques a taken name`() throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
@@ -226,8 +229,8 @@ struct TemplateRegistryTests {
         #expect(registry.user.count == 2)
     }
 
-    @Test("renameUserTemplate moves the package and updates the list")
-    func renameUserTemplate() throws {
+    @Test
+    func `renameUserTemplate moves the package and updates the list`() throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
@@ -241,8 +244,8 @@ struct TemplateRegistryTests {
         #expect(!FileManager.default.fileExists(atPath: original.url.path))
     }
 
-    @Test("deleteUserTemplate moves the package to the Trash")
-    func deleteUserTemplate() throws {
+    @Test
+    func `deleteUserTemplate moves the package to the Trash`() throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
@@ -257,8 +260,8 @@ struct TemplateRegistryTests {
 
     // MARK: Thumbnails
 
-    @Test("Thumbnails render at the template's window size and are cached")
-    func thumbnailRendersAndCaches() async throws {
+    @Test
+    func `Thumbnails render at the template's window size and are cached`() async throws {
         let userDir = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: userDir) }
 
@@ -269,7 +272,7 @@ struct TemplateRegistryTests {
             named: "Pretty",
             in: userDir,
             windowSize: CGSize(width: 500, height: 340),
-            background: background
+            background: background,
         )
 
         let registry = makeRegistry(bundled: nil, user: userDir)
@@ -287,13 +290,13 @@ struct TemplateRegistryTests {
 
 @Suite("Template Instantiation")
 struct TemplateInstantiatorTests {
-    @Test("Instantiation keeps the template's window size when no override is chosen")
-    func keepsTemplateDefaultSize() throws {
+    @Test
+    func `Instantiation keeps the template's window size when no override is chosen`() throws {
         let directory = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let url = try TemplateFixtures.writeTemplate(
-            named: "Sized", in: directory, windowSize: CGSize(width: 800, height: 500)
+            named: "Sized", in: directory, windowSize: CGSize(width: 800, height: 500),
         )
         let result = try TemplateInstantiator.instantiate(templateAt: url, windowSizeOverride: nil)
 
@@ -301,17 +304,17 @@ struct TemplateInstantiatorTests {
         #expect(result.configuration.window.height == 500)
     }
 
-    @Test("A window-size override replaces the template's size and keeps the placeholder")
-    func overrideAppliesAndPlaceholderSurvives() throws {
+    @Test
+    func `A window-size override replaces the template's size and keeps the placeholder`() throws {
         let directory = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let url = try TemplateFixtures.writeTemplate(
-            named: "Overridden", in: directory, windowSize: CGSize(width: 800, height: 500)
+            named: "Overridden", in: directory, windowSize: CGSize(width: 800, height: 500),
         )
         let result = try TemplateInstantiator.instantiate(
             templateAt: url,
-            windowSizeOverride: CGSize(width: 500, height: 340)
+            windowSizeOverride: CGSize(width: 500, height: 340),
         )
 
         #expect(result.configuration.window.width == 500)
@@ -324,22 +327,22 @@ struct TemplateInstantiatorTests {
         #expect(result.configuration.items.contains { $0.kind == .applicationsSymlink })
     }
 
-    @Test("Instantiation loads asset payloads keyed by filename")
-    func loadsAssets() throws {
+    @Test
+    func `Instantiation loads asset payloads keyed by filename`() throws {
         let directory = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let payload = Data("image-bytes".utf8)
         let url = try TemplateFixtures.writeTemplate(
-            named: "WithAssets", in: directory, assets: ["background.png": payload]
+            named: "WithAssets", in: directory, assets: ["background.png": payload],
         )
         let result = try TemplateInstantiator.instantiate(templateAt: url, windowSizeOverride: nil)
 
         #expect(result.assets == ["background.png": payload])
     }
 
-    @Test("Abbreviated home paths are expanded on load")
-    func expandsAbbreviatedPaths() throws {
+    @Test
+    func `Abbreviated home paths are expanded on load`() throws {
         let directory = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -347,7 +350,7 @@ struct TemplateInstantiatorTests {
             kind: .app,
             label: "Tool.app",
             sourcePath: "~/Applications/Tool.app",
-            position: .zero
+            position: .zero,
         )
         let url = try TemplateFixtures.writeTemplate(named: "Homey", in: directory, items: [item])
 
@@ -356,8 +359,8 @@ struct TemplateInstantiatorTests {
         #expect(configuration.items[0].sourcePath == home + "/Applications/Tool.app")
     }
 
-    @Test("A package without document.json throws unreadableTemplate")
-    func unreadableTemplateThrows() throws {
+    @Test
+    func `A package without document.json throws unreadableTemplate`() throws {
         let directory = try TemplateFixtures.makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -374,8 +377,8 @@ struct TemplateInstantiatorTests {
         }
     }
 
-    @Test("A blank result carries the chosen window size and no items")
-    func blankResult() {
+    @Test
+    func `A blank result carries the chosen window size and no items`() {
         let result = TemplateInstantiator.blank(windowSize: CGSize(width: 800, height: 500))
         #expect(result.configuration.window.width == 800)
         #expect(result.configuration.window.height == 500)
@@ -389,27 +392,26 @@ struct TemplateInstantiatorTests {
 @Suite("New Document Policy")
 struct NewDocumentPolicyTests {
     @Test(
-        "The decision function honors the preference and the explicit request",
         arguments: [
             (showsChooser: true, explicit: false, expected: NewDocumentPolicy.Action.showChooser),
             (showsChooser: false, explicit: false, expected: .createBlankDocument),
             (showsChooser: false, explicit: true, expected: .showChooser),
             (showsChooser: true, explicit: true, expected: .showChooser),
-        ]
+        ],
     )
-    func decision(
-        _ combination: (showsChooser: Bool, explicit: Bool, expected: NewDocumentPolicy.Action)
+    func `The decision function honors the preference and the explicit request`(
+        _ combination: (showsChooser: Bool, explicit: Bool, expected: NewDocumentPolicy.Action),
     ) {
         #expect(
             NewDocumentPolicy.action(
                 showsChooser: combination.showsChooser,
-                isExplicitChooserRequest: combination.explicit
-            ) == combination.expected
+                isExplicitChooserRequest: combination.explicit,
+            ) == combination.expected,
         )
     }
 
-    @Test("The preference defaults to showing the chooser and round-trips")
-    func preferenceRoundTrip() throws {
+    @Test
+    func `The preference defaults to showing the chooser and round-trips`() throws {
         let suiteName = "NewDocumentPolicyTests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -429,8 +431,8 @@ struct NewDocumentPolicyTests {
 @MainActor
 @Suite("Dock template submenu")
 struct DockTemplateMenuTests {
-    @Test("Dock menu grows a New from Template submenu when the registry has entries")
-    func dockSubmenuListsRegistryEntries() throws {
+    @Test
+    func `Dock menu grows a New from Template submenu when the registry has entries`() throws {
         // The Dock menu reads the shared registry, whose contents depend on
         // the environment; assert the structure matches it either way.
         let delegate = AppDelegate()

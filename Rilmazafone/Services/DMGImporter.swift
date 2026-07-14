@@ -25,7 +25,7 @@ nonisolated enum DMGImporter {
     // MARK: - Result
 
     /// Everything harvested from a mounted DMG, ready to populate a document.
-    struct Result: Sendable {
+    struct Result {
         /// The reconstructed configuration (items, window, view settings,
         /// background, volume icon).
         var configuration: DMGConfiguration
@@ -93,7 +93,7 @@ nonisolated enum DMGImporter {
             mountPoint = try await DMGBuilder.attachReadOnly(stagedDMG)
         } catch let error as ProcessRunner.ProcessError {
             throw ImportError.attachFailed(
-                error.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+                error.stderr.trimmingCharacters(in: .whitespacesAndNewlines),
             )
         }
         defer { try? FileManager.default.removeItem(at: mountPoint) }
@@ -146,18 +146,18 @@ nonisolated enum DMGImporter {
         var items = try classifyRootItems(
             at: mountPoint,
             excludingDirectory: background?.rootDirectoryName,
-            assets: &assets
+            assets: &assets,
         )
         assignPositions(to: &items, dsStore: dsStore, window: configuration.window)
         configuration.items = items
         try Task.checkCancellation()
 
         if let iconData = try? Data(
-            contentsOf: mountPoint.appending(path: ".VolumeIcon.icns")
+            contentsOf: mountPoint.appending(path: ".VolumeIcon.icns"),
         ) {
             configuration.volumeIcon = VolumeIconConfiguration(
                 type: .custom,
-                sourceIconName: Defaults.volumeIconAssetName
+                sourceIconName: Defaults.volumeIconAssetName,
             )
             assets[Defaults.volumeIconAssetName] = iconData
         }
@@ -165,7 +165,7 @@ nonisolated enum DMGImporter {
         return Result(
             configuration: configuration,
             assets: assets,
-            itemIcons: harvestAppIcons(for: configuration.items, mountPoint: mountPoint)
+            itemIcons: harvestAppIcons(for: configuration.items, mountPoint: mountPoint),
         )
     }
 
@@ -185,7 +185,7 @@ nonisolated enum DMGImporter {
     /// yields `nil` — the import proceeds with default layout.
     private static func readDSStore(at mountPoint: URL) -> DSStoreReader.Contents? {
         guard let data = try? Data(
-            contentsOf: mountPoint.appending(path: ".DS_Store")
+            contentsOf: mountPoint.appending(path: ".DS_Store"),
         ) else { return nil }
         return try? DSStoreReader.read(data)
     }
@@ -194,21 +194,21 @@ nonisolated enum DMGImporter {
     /// inverting the Finder conventions ``DSStoreWriter`` applied on write.
     private static func applyViewSettings(
         _ dsStore: DSStoreReader.Contents?,
-        to configuration: inout DMGConfiguration
+        to configuration: inout DMGConfiguration,
     ) {
         guard let dsStore else { return }
 
         if let bounds = dsStore.windowBounds {
             configuration.window.width = max(
-                bounds.width.rounded(), Defaults.minimumWindowWidth
+                bounds.width.rounded(), Defaults.minimumWindowWidth,
             )
             configuration.window.height = max(
                 (bounds.height - DSStoreWriter.finderTitleBarHeight).rounded(),
-                Defaults.minimumWindowHeight
+                Defaults.minimumWindowHeight,
             )
             configuration.windowPosition = WindowPosition(
                 x: Int(bounds.origin.x),
-                y: Int(bounds.origin.y)
+                y: Int(bounds.origin.y),
             )
         }
         if let iconSize = dsStore.iconSize {
@@ -240,7 +240,7 @@ nonisolated enum DMGImporter {
     /// build-machine volume paths that no longer exist.
     private static func resolveBackground(
         dsStore: DSStoreReader.Contents?,
-        mountPoint: URL
+        mountPoint: URL,
     ) -> ResolvedBackground? {
         guard dsStore?.backgroundKind == .image else { return nil }
 
@@ -262,7 +262,7 @@ nonisolated enum DMGImporter {
         return ResolvedBackground(
             data: data,
             fileName: imageURL.lastPathComponent,
-            rootDirectoryName: components.count > 1 ? components.first : nil
+            rootDirectoryName: components.count > 1 ? components.first : nil,
         )
     }
 
@@ -272,7 +272,7 @@ nonisolated enum DMGImporter {
         _ background: ResolvedBackground?,
         dsStore: DSStoreReader.Contents?,
         to configuration: inout DMGConfiguration,
-        assets: inout [String: Data]
+        assets: inout [String: Data],
     ) {
         if let background {
             let layerID = UUID()
@@ -287,8 +287,8 @@ nonisolated enum DMGImporter {
                     label: background.fileName,
                     position: CGPoint(
                         x: configuration.window.width / 2,
-                        y: configuration.window.height / 2
-                    )
+                        y: configuration.window.height / 2,
+                    ),
                 ),
             ]
             assets[imageName] = background.data
@@ -313,11 +313,11 @@ nonisolated enum DMGImporter {
     private static func classifyRootItems(
         at mountPoint: URL,
         excludingDirectory backgroundDirectory: String?,
-        assets: inout [String: Data]
+        assets: inout [String: Data],
     ) throws -> [CanvasItem] {
         let entries = try FileManager.default.contentsOfDirectory(
             at: mountPoint,
-            includingPropertiesForKeys: [.isSymbolicLinkKey, .isDirectoryKey]
+            includingPropertiesForKeys: [.isSymbolicLinkKey, .isDirectoryKey],
         ).sorted { $0.lastPathComponent < $1.lastPathComponent }
 
         var items: [CanvasItem] = []
@@ -327,7 +327,7 @@ nonisolated enum DMGImporter {
             if let backgroundDirectory, name == backgroundDirectory { continue }
 
             let values = try? entry.resourceValues(
-                forKeys: [.isSymbolicLinkKey, .isDirectoryKey]
+                forKeys: [.isSymbolicLinkKey, .isDirectoryKey],
             )
             if values?.isSymbolicLink == true {
                 items.append(symlinkItem(at: entry, name: name))
@@ -340,7 +340,7 @@ nonisolated enum DMGImporter {
             } else {
                 let kind: CanvasItemKind = values?.isDirectory == true ? .folder : .file
                 items.append(contentItem(
-                    at: entry, kind: kind, name: name, assets: &assets
+                    at: entry, kind: kind, name: name, assets: &assets,
                 ))
             }
         }
@@ -353,12 +353,12 @@ nonisolated enum DMGImporter {
         at entry: URL,
         kind: CanvasItemKind,
         name: String,
-        assets: inout [String: Data]
+        assets: inout [String: Data],
     ) -> CanvasItem {
         var item = CanvasItem(kind: kind, label: name, position: .zero)
         if let payload = try? EmbeddedAssets.payload(for: entry, kind: kind) {
             let assetName = EmbeddedAssets.assetName(
-                itemID: item.id, label: name, kind: kind
+                itemID: item.id, label: name, kind: kind,
             )
             item.assetName = assetName
             assets[assetName] = payload
@@ -386,7 +386,7 @@ nonisolated enum DMGImporter {
             label: name,
             sourcePath: normalized.isEmpty ? nil : normalized,
             position: .zero,
-            linkType: .symlink
+            linkType: .symlink,
         )
     }
 
@@ -398,14 +398,14 @@ nonisolated enum DMGImporter {
     private static func assignPositions(
         to items: inout [CanvasItem],
         dsStore: DSStoreReader.Contents?,
-        window: WindowConfiguration
+        window: WindowConfiguration,
     ) {
         var unplaced: [Int] = []
         for index in items.indices {
             if let raw = dsStore?.iconPositions[items[index].label] {
                 items[index].position = CGPoint(
                     x: raw.x,
-                    y: raw.y + DSStoreWriter.finderContentInset
+                    y: raw.y + DSStoreWriter.finderContentInset,
                 )
             } else {
                 unplaced.append(index)
@@ -426,7 +426,7 @@ nonisolated enum DMGImporter {
     /// so the canvas can show real icons for missing-source items.
     private static func harvestAppIcons(
         for items: [CanvasItem],
-        mountPoint: URL
+        mountPoint: URL,
     ) -> [UUID: Data] {
         var icons: [UUID: Data] = [:]
         for item in items where item.kind == .app {

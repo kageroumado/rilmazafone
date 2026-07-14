@@ -84,7 +84,7 @@ struct GradientEditor: View {
             .map { stop in
                 Gradient.Stop(
                     color: Color(red: stop.color.red, green: stop.color.green, blue: stop.color.blue),
-                    location: stop.location
+                    location: stop.location,
                 )
             }
 
@@ -94,11 +94,11 @@ struct GradientEditor: View {
                 let radians = gradient.angle * .pi / 180
                 let start = UnitPoint(
                     x: 0.5 + cos(radians + .pi) * 0.5,
-                    y: 0.5 + sin(radians + .pi) * 0.5
+                    y: 0.5 + sin(radians + .pi) * 0.5,
                 )
                 let end = UnitPoint(
                     x: 0.5 + cos(radians) * 0.5,
-                    y: 0.5 + sin(radians) * 0.5
+                    y: 0.5 + sin(radians) * 0.5,
                 )
                 RoundedRectangle(cornerRadius: 6)
                     .fill(LinearGradient(stops: stops, startPoint: start, endPoint: end))
@@ -108,7 +108,7 @@ struct GradientEditor: View {
                         stops: stops,
                         center: UnitPoint(x: gradient.centerX, y: gradient.centerY),
                         startRadius: gradient.startRadius * 100,
-                        endRadius: gradient.endRadius * 100
+                        endRadius: gradient.endRadius * 100,
                     ))
             }
         }
@@ -128,7 +128,7 @@ struct GradientEditor: View {
     private var typeBinding: Binding<GradientType> {
         Binding(
             get: { gradient.type },
-            set: { newType in update { $0.type = newType } }
+            set: { newType in update { $0.type = newType } },
         )
     }
 
@@ -145,7 +145,7 @@ struct GradientEditor: View {
                         grad.stops[0].color = rgb
                     }
                 }
-            }
+            },
         )
     }
 
@@ -162,42 +162,42 @@ struct GradientEditor: View {
                         grad.stops[1].color = rgb
                     }
                 }
-            }
+            },
         )
     }
 
     private var angleBinding: Binding<Double> {
         Binding(
             get: { gradient.angle },
-            set: { val in update { $0.angle = val } }
+            set: { val in update { $0.angle = val } },
         )
     }
 
     private var centerXBinding: Binding<Double> {
         Binding(
             get: { gradient.centerX },
-            set: { val in update { $0.centerX = min(max(val, 0), 1) } }
+            set: { val in update { $0.centerX = min(max(val, 0), 1) } },
         )
     }
 
     private var centerYBinding: Binding<Double> {
         Binding(
             get: { gradient.centerY },
-            set: { val in update { $0.centerY = min(max(val, 0), 1) } }
+            set: { val in update { $0.centerY = min(max(val, 0), 1) } },
         )
     }
 
     private var startRadiusBinding: Binding<Double> {
         Binding(
             get: { gradient.startRadius },
-            set: { val in update { $0.startRadius = val } }
+            set: { val in update { $0.startRadius = val } },
         )
     }
 
     private var endRadiusBinding: Binding<Double> {
         Binding(
             get: { gradient.endRadius },
-            set: { val in update { $0.endRadius = val } }
+            set: { val in update { $0.endRadius = val } },
         )
     }
 }

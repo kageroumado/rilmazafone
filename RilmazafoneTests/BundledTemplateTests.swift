@@ -20,7 +20,7 @@ enum BundledTemplates {
     static let urls: [URL] = {
         let contents = (try? FileManager.default.contentsOfDirectory(
             at: templatesDirectory,
-            includingPropertiesForKeys: nil
+            includingPropertiesForKeys: nil,
         )) ?? []
         return contents
             .filter { $0.pathExtension == "dmgtemplate" }
@@ -58,13 +58,13 @@ enum BundledTemplates {
     static func meanLabelLuminance(
         image: CGImage,
         configuration: DMGConfiguration,
-        item: CanvasItem
+        item: CanvasItem,
     ) -> Double? {
         let labelRect = CGRect(
             x: item.position.x - configuration.iconSize / 2,
             y: item.position.y + configuration.iconSize / 2 - 2,
             width: configuration.iconSize,
-            height: 2 * (configuration.textSize + 4)
+            height: 2 * (configuration.textSize + 4),
         ).integral
         guard let cropped = image.cropping(to: labelRect),
               let data = cropped.dataProvider?.data as Data?
@@ -80,7 +80,7 @@ enum BundledTemplates {
                 total += relativeLuminance(
                     red: Double(data[offset]) / 255,
                     green: Double(data[offset + 1]) / 255,
-                    blue: Double(data[offset + 2]) / 255
+                    blue: Double(data[offset + 2]) / 255,
                 )
                 count += 1
             }
@@ -93,7 +93,7 @@ enum BundledTemplates {
     /// item panels) — the same pixels the baked DMG background ships.
     static func composite1x(configuration: DMGConfiguration, assetsDirectory: URL) -> CGImage? {
         guard let image = CompositeRenderer.renderBackground(
-            configuration: configuration, assetsDirectory: assetsDirectory
+            configuration: configuration, assetsDirectory: assetsDirectory,
         ) else { return nil }
         let rep = image.representations
             .compactMap { $0 as? NSBitmapImageRep }
@@ -111,8 +111,8 @@ enum BundledTemplates {
 
 @Suite("Bundled templates")
 struct BundledTemplateTests {
-    @Test("all required templates are bundled")
-    func requiredTemplatesPresent() {
+    @Test
+    func `all required templates are bundled`() {
         let names = BundledTemplates.urls.map { $0.deletingPathExtension().lastPathComponent }
         for required in BundledTemplates.requiredNames {
             #expect(names.contains(required), "missing bundled template \(required)")
@@ -121,8 +121,8 @@ struct BundledTemplateTests {
 
     // MARK: - 1. Document read path
 
-    @Test("loads through the document read path", arguments: BundledTemplates.urls)
-    func loadsThroughReadPath(url: URL) throws {
+    @Test(arguments: BundledTemplates.urls)
+    func `loads through the document read path`(url: URL) throws {
         let config = try BundledTemplates.load(url)
 
         // Every template ships at least one placeholder slot (always an app slot),
@@ -157,7 +157,7 @@ struct BundledTemplateTests {
                 let asset = assets.appending(path: layer.imageName)
                 #expect(
                     FileManager.default.fileExists(atPath: asset.path),
-                    "missing asset \(layer.imageName) for \(url.lastPathComponent)"
+                    "missing asset \(layer.imageName) for \(url.lastPathComponent)",
                 )
             }
         } else {
@@ -167,9 +167,10 @@ struct BundledTemplateTests {
 
     // MARK: - 2. Open budget
 
-    @Test("decodes and renders a thumbnail composite within the open budget",
-          arguments: BundledTemplates.urls)
-    func opensWithinBudget(url: URL) throws {
+    @Test(
+        arguments: BundledTemplates.urls,
+    )
+    func `decodes and renders a thumbnail composite within the open budget`(url: URL) throws {
         // Warm CompositeRenderer's static CI context once so the measurement reflects
         // steady-state opens (the chooser/app process is warm), not one-time setup.
         var warmup = DMGConfiguration()
@@ -185,7 +186,7 @@ struct BundledTemplateTests {
             var config = try JSONDecoder().decode(DMGConfiguration.self, from: data)
             config.expandAbbreviatedPaths()
             let thumbnail = CompositeRenderer.renderPanelBackdrop(
-                configuration: config, layerImages: [:], scale: 0.25
+                configuration: config, layerImages: [:], scale: 0.25,
             )
             #expect(thumbnail != nil)
         }
@@ -201,8 +202,8 @@ struct BundledTemplateTests {
     /// (< 0.35 — white labels read). Items with an enabled panel are exempt: the panel
     /// itself is the remediation the analyzer will suggest, and it repaints the label
     /// region deliberately. This is a smoke check, not the real analyzer.
-    @Test("label regions avoid the mid-luminance zone", arguments: BundledTemplates.urls)
-    func labelRegionsAreLegible(url: URL) throws {
+    @Test(arguments: BundledTemplates.urls)
+    func `label regions avoid the mid-luminance zone`(url: URL) throws {
         let config = try BundledTemplates.load(url)
         let assets = try BundledTemplates.makeTempDirectory("legibility")
         defer { try? FileManager.default.removeItem(at: assets) }
@@ -211,12 +212,12 @@ struct BundledTemplateTests {
         let composite = try #require(renderedComposite)
         for item in config.items where item.background?.enabled != true {
             let measured = BundledTemplates.meanLabelLuminance(
-                image: composite, configuration: config, item: item
+                image: composite, configuration: config, item: item,
             )
             let luminance = try #require(measured)
             #expect(
                 luminance > 0.65 || luminance < 0.35,
-                "\(url.lastPathComponent) / \(item.label): label-region luminance \(luminance) is in the dangerous mid-zone"
+                "\(url.lastPathComponent) / \(item.label): label-region luminance \(luminance) is in the dangerous mid-zone",
             )
         }
     }
@@ -228,10 +229,11 @@ struct BundledTemplateTests {
 struct BundledTemplateBuildTests {
     private static let fillerApp = "/System/Applications/Calculator.app"
 
-    @Test("builds a mountable DMG after filling every placeholder",
-          .timeLimit(.minutes(2)),
-          arguments: BundledTemplates.urls)
-    func buildsValidDMG(url: URL) async throws {
+    @Test(
+        .timeLimit(.minutes(2)),
+        arguments: BundledTemplates.urls,
+    )
+    func `builds a mountable DMG after filling every placeholder`(url: URL) async throws {
         var config = try BundledTemplates.load(url)
 
         let fm = FileManager.default
@@ -247,7 +249,7 @@ struct BundledTemplateBuildTests {
 
         // Fill every placeholder by kind, as fillPlaceholder would. Track the
         // resulting item labels so the mount can verify each landed on the volume.
-        var expectedNames: [String] = ["Applications"]
+        var expectedNames = ["Applications"]
         for index in config.items.indices where config.items[index].isPlaceholder {
             let source: URL = switch config.items[index].kind {
             case .app: URL(fileURLWithPath: Self.fillerApp)
@@ -285,7 +287,7 @@ struct BundledTemplateBuildTests {
         try await DMGBuildPipeline.build(
             configuration: config,
             assetsDirectory: assets,
-            outputURL: output
+            outputURL: output,
         ) { _ in }
 
         #expect(fm.fileExists(atPath: output.path))
@@ -300,7 +302,7 @@ struct BundledTemplateBuildTests {
                 "attach", output.path,
                 "-noautoopen", "-nobrowse", "-noverify",
                 "-mountpoint", mountPoint.path,
-            ]
+            ],
         )
         attach.waitUntilExit()
         #expect(attach.terminationStatus == 0)
@@ -308,7 +310,7 @@ struct BundledTemplateBuildTests {
         defer {
             let detach = try? Process.run(
                 URL(fileURLWithPath: "/usr/bin/hdiutil"),
-                arguments: ["detach", mountPoint.path, "-force"]
+                arguments: ["detach", mountPoint.path, "-force"],
             )
             detach?.waitUntilExit()
             #expect(detach?.terminationStatus == 0, "volume failed to detach cleanly")
@@ -319,14 +321,14 @@ struct BundledTemplateBuildTests {
         for name in expectedNames {
             #expect(
                 fm.fileExists(atPath: mountPoint.appending(path: name).path),
-                "\(url.lastPathComponent): expected \(name) on the volume"
+                "\(url.lastPathComponent): expected \(name) on the volume",
             )
         }
         #expect(fm.fileExists(atPath: mountPoint.appending(path: ".DS_Store").path))
         // Every bundled template has a composite background (gradient, text, symbols,
         // or panels), so the baked background must be on the volume.
         #expect(fm.fileExists(
-            atPath: mountPoint.appending(path: ".background/background.tiff").path
+            atPath: mountPoint.appending(path: ".background/background.tiff").path,
         ))
     }
 }

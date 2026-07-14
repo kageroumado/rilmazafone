@@ -17,7 +17,7 @@ struct BackgroundSection: View {
                     if newType == .gradient, document.background.gradient == nil {
                         document.setGradientConfiguration(to: GradientConfiguration(), undoManager: undoManager)
                     }
-                }
+                },
             )) {
                 Text("None").tag(BackgroundType.none)
                 Text("Color").tag(BackgroundType.color)
@@ -34,7 +34,7 @@ struct BackgroundSection: View {
                 ColorPicker(
                     "Color",
                     selection: colorBinding,
-                    supportsOpacity: false
+                    supportsOpacity: false,
                 )
 
             case .gradient:
@@ -70,7 +70,7 @@ struct BackgroundSection: View {
         .fileImporter(
             isPresented: $isImagePickerPresented,
             allowedContentTypes: [.png, .jpeg, .tiff],
-            allowsMultipleSelection: true
+            allowsMultipleSelection: true,
         ) { result in
             if case let .success(urls) = result {
                 for url in urls {
@@ -95,7 +95,7 @@ struct BackgroundSection: View {
                     || abs(newRGB.green - old.green) > 0.001
                     || abs(newRGB.blue - old.blue) > 0.001 else { return }
                 document.setBackgroundColor(newRGB, undoManager: undoManager)
-            }
+            },
         )
     }
 }
