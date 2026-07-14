@@ -282,15 +282,8 @@ nonisolated enum LabelContrastAnalyzer {
             let width = composite.width
             let height = composite.height
             guard width > 0, height > 0,
-                  let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
-                  let context = CGContext(
-                      data: nil,
-                      width: width,
-                      height: height,
-                      bitsPerComponent: 8,
-                      bytesPerRow: 0,
-                      space: colorSpace,
-                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                  let context = CompositeRenderer.makeBitmapContext(
+                      pixelsWide: width, pixelsHigh: height
                   )
             else { return nil }
 

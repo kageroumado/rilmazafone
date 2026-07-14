@@ -4,8 +4,9 @@ import CoreImage.CIFilterBuiltins
 
 nonisolated enum CompositeRenderer {
     /// Fixed sRGB color space used for every offscreen bitmap and CoreImage pass, so
-    /// output does not depend on the display or working-space defaults.
-    private static let sRGB = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+    /// output does not depend on the display or working-space defaults. Shared by the
+    /// other deterministic renderers (thumbnails, legibility analysis, glass preview).
+    static let sRGB = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
 
     /// Software CoreImage renderer with fixed sRGB working/output spaces. The software
     /// path guarantees byte-identical filter output (blur, bloom, gradients, masks)
@@ -18,8 +19,9 @@ nonisolated enum CompositeRenderer {
 
     /// Creates a premultiplied-RGBA8 bitmap context of an explicit pixel size in the fixed
     /// sRGB color space — the deterministic replacement for `NSImage.lockFocus`, whose
-    /// backing scale otherwise follows the build machine's display.
-    private static func makeBitmapContext(pixelsWide: Int, pixelsHigh: Int) -> CGContext? {
+    /// backing scale otherwise follows the build machine's display. Shared by the other
+    /// deterministic renderers so every offscreen pass agrees on format and color space.
+    static func makeBitmapContext(pixelsWide: Int, pixelsHigh: Int) -> CGContext? {
         CGContext(
             data: nil,
             width: max(pixelsWide, 1),
@@ -160,22 +162,12 @@ nonisolated enum CompositeRenderer {
         layerImages: [UUID: NSImage],
         scale: CGFloat
     ) -> CGImage? {
-        let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
-        guard pointSize.width > 0, pointSize.height > 0 else { return nil }
-
-        let pixelsWide = Int((pointSize.width * scale).rounded())
-        let pixelsHigh = Int((pointSize.height * scale).rounded())
-        guard let context = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh) else { return nil }
-        context.scaleBy(x: scale, y: scale)
-
-        let nsContext = NSGraphicsContext(cgContext: context, flipped: false)
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = nsContext
-        defer { NSGraphicsContext.restoreGraphicsState() }
-
-        renderBeneathPanels(into: context, configuration: configuration) { layerImages[$0.id] }
-
-        return context.makeImage()
+        compositeImage(
+            configuration: configuration,
+            layerImages: layerImages,
+            scale: scale,
+            includePanels: false
+        )
     }
 
     // MARK: - Analysis Composite
@@ -192,6 +184,23 @@ nonisolated enum CompositeRenderer {
         layerImages: [UUID: NSImage],
         scale: CGFloat
     ) -> CGImage? {
+        compositeImage(
+            configuration: configuration,
+            layerImages: layerImages,
+            scale: scale,
+            includePanels: true
+        )
+    }
+
+    /// Renders the composite from in-memory layer images into a fresh `scale`× bitmap.
+    /// `renderBeneathPanels` always runs; `includePanels` adds the baked item panels on
+    /// top, which is the only difference between the backdrop and analysis composites.
+    private static func compositeImage(
+        configuration: DMGConfiguration,
+        layerImages: [UUID: NSImage],
+        scale: CGFloat,
+        includePanels: Bool
+    ) -> CGImage? {
         let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
         guard pointSize.width > 0, pointSize.height > 0 else { return nil }
 
@@ -206,13 +215,15 @@ nonisolated enum CompositeRenderer {
         defer { NSGraphicsContext.restoreGraphicsState() }
 
         renderBeneathPanels(into: context, configuration: configuration) { layerImages[$0.id] }
-        renderItemBackgrounds(
-            items: configuration.items,
-            iconSize: configuration.iconSize,
-            in: context,
-            canvasHeight: configuration.window.height,
-            scale: scale
-        )
+        if includePanels {
+            renderItemBackgrounds(
+                items: configuration.items,
+                iconSize: configuration.iconSize,
+                in: context,
+                canvasHeight: configuration.window.height,
+                scale: scale
+            )
+        }
 
         return context.makeImage()
     }

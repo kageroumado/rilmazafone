@@ -282,7 +282,7 @@ nonisolated enum DMGBuilder {
     /// Lists the common names of keychain identities capable of code signing —
     /// the set `security find-identity -v -p codesigning` reports.
     static func listSigningIdentities() -> [String] {
-        signingIdentities().map(\.name)
+        signingIdentities()
     }
 
     /// Extracts the signing authority from a signed app bundle.
@@ -343,18 +343,12 @@ nonisolated enum DMGBuilder {
 
     // MARK: - Identity Discovery
 
-    /// A keychain identity capable of code signing, paired with its display name.
-    private struct SigningIdentity {
-        let name: String
-        let identity: SecIdentity
-    }
-
-    /// Queries the keychain for identities whose leaf certificate is valid for code
-    /// signing, reproducing the filter applied by
+    /// Queries the keychain for the common names of identities whose leaf certificate
+    /// is valid for code signing, reproducing the filter applied by
     /// `security find-identity -v -p codesigning`: the id-kp-codeSigning EKU
     /// plus the `-v` validity evaluation, so expired, revoked, and untrusted
     /// identities are never listed, matched, or auto-selected.
-    private static func signingIdentities() -> [SigningIdentity] {
+    private static func signingIdentities() -> [String] {
         let query: [String: Any] = [
             kSecClass as String: kSecClassIdentity,
             kSecMatchLimit as String: kSecMatchLimitAll,
@@ -373,10 +367,9 @@ nonisolated enum DMGBuilder {
             guard SecIdentityCopyCertificate(identity, &certificate) == errSecSuccess,
                   let certificate,
                   canSignCode(certificate),
-                  isTrustedForCodeSigning(certificate),
-                  let name = commonName(of: certificate)
+                  isTrustedForCodeSigning(certificate)
             else { return nil }
-            return SigningIdentity(name: name, identity: identity)
+            return commonName(of: certificate)
         }
     }
 

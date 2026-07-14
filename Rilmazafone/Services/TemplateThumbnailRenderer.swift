@@ -25,8 +25,6 @@ nonisolated enum TemplateThumbnailRenderer {
         static let pillMinimumWidth: CGFloat = 28
     }
 
-    private static let sRGB = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-
     /// Renders the thumbnail at 2x pixel density off the caller's executor and
     /// returns it as a `CGImage` sized `windowSize × 2`.
     @concurrent
@@ -38,14 +36,9 @@ nonisolated enum TemplateThumbnailRenderer {
         let width = configuration.window.width
         let height = configuration.window.height
         guard width > 0, height > 0,
-              let context = CGContext(
-                  data: nil,
-                  width: max(Int((width * Metrics.scale).rounded()), 1),
-                  height: max(Int((height * Metrics.scale).rounded()), 1),
-                  bitsPerComponent: 8,
-                  bytesPerRow: 0,
-                  space: sRGB,
-                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+              let context = CompositeRenderer.makeBitmapContext(
+                  pixelsWide: Int((width * Metrics.scale).rounded()),
+                  pixelsHigh: Int((height * Metrics.scale).rounded())
               )
         else { return nil }
         context.scaleBy(x: Metrics.scale, y: Metrics.scale)

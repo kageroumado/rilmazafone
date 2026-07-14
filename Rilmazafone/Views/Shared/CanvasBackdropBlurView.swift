@@ -32,14 +32,12 @@ nonisolated struct CanvasBackdrop: Equatable, @unchecked Sendable {
 /// Public-API blur core for the live glass preview: crops the composited canvas
 /// backdrop under a panel rect and Gaussian-blurs it with clamped edges.
 nonisolated enum CanvasBackdropRenderer {
-    private static let sRGB = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-
     /// GPU-backed CoreImage context for the interactive preview. Deliberately separate
     /// from `CompositeRenderer`'s software context: the live path favors latency, while
-    /// the build path favors byte-determinism.
+    /// the build path favors byte-determinism. Both share the fixed sRGB working space.
     private static let ciContext = CIContext(options: [
-        .workingColorSpace: sRGB,
-        .outputColorSpace: sRGB,
+        .workingColorSpace: CompositeRenderer.sRGB,
+        .outputColorSpace: CompositeRenderer.sRGB,
     ])
 
     /// Crops `backdrop` under `rect` and applies a Gaussian blur.
