@@ -4,12 +4,23 @@ import SwiftUI
 struct CanvasItemRow: View {
     let item: CanvasItem
 
+    @Environment(RilmazafoneDocument.self) private var document
     @State private var cachedIcon: NSImage?
 
     var body: some View {
         Label {
-            Text(item.label)
-                .lineLimit(1)
+            HStack(spacing: 4) {
+                Text(item.label)
+                    .lineLimit(1)
+
+                if isSourceMissing {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10))
+                        .symbolRenderingMode(.multicolor)
+                        .help("Source file is missing. Right-click and choose Locate\u{2026} to relink.")
+                        .accessibilityLabel("Source file missing")
+                }
+            }
         } icon: {
             Group {
                 if let nsImage = cachedIcon {
@@ -33,8 +44,8 @@ struct CanvasItemRow: View {
                 }
             }
         }
-        .task(id: item.sourcePath) {
-            cachedIcon = Self.resolveIcon(for: item)
+        .task(id: item.iconCacheKey(isSourceMissing: isSourceMissing)) {
+            cachedIcon = CanvasItem.resolveIcon(for: item, documentURL: document.fileURL)
         }
         .accessibilityLabel("\(item.label), \(item.kind.displayName)")
     }
@@ -43,8 +54,8 @@ struct CanvasItemRow: View {
         item.kind != .applicationsSymlink && item.linkType == .symlink
     }
 
-    private static func resolveIcon(for item: CanvasItem) -> NSImage? {
-        CanvasItem.resolveIcon(for: item)
+    private var isSourceMissing: Bool {
+        document.missingSourceIDs.contains(item.id)
     }
 
     private var fallbackIconName: String {

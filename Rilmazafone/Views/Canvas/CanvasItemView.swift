@@ -23,6 +23,9 @@ struct CanvasItemView: View, Equatable {
             && lhs.hideExtensions == rhs.hideExtensions
     }
 
+    @Environment(RilmazafoneDocument.self) private var document
+    @Environment(\.undoManager) private var undoManager
+
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging = false
     @State private var cachedIcon: NSImage?
@@ -33,16 +36,26 @@ struct CanvasItemView: View, Equatable {
     private var maxLabelWidth: CGFloat {
         (iconSize + 40) * zoom
     }
+    private var isSourceMissing: Bool {
+        document.missingSourceIDs.contains(item.id)
+    }
 
     /// Finder draws icon in a cell with 10px padding, then text 4px below.
     /// The iloc position is the center of the combined icon cell + text area.
     private static let iconCellPadding: CGFloat = 10
     private static let textGap: CGFloat = 4
+    private static let missingBadgeSize: CGFloat = 22
+    private static let missingBadgeMinimumSize: CGFloat = 12
 
     var body: some View {
         VStack(spacing: Self.textGap * zoom) {
             iconImage
                 .frame(width: displayIconSize, height: displayIconSize)
+                .overlay(alignment: .bottomTrailing) {
+                    if isSourceMissing {
+                        missingSourceBadge
+                    }
+                }
                 .padding(Self.iconCellPadding * zoom)
 
             Text(displayLabel)
@@ -75,11 +88,36 @@ struct CanvasItemView: View, Equatable {
         .onTapGesture {
             onSelect()
         }
-        .task(id: item.sourcePath) {
-            cachedIcon = Self.resolveIcon(for: item)
+        .contextMenu {
+            if item.requiresSource {
+                Button("Locate\u{2026}") {
+                    relinkSource()
+                }
+            }
+        }
+        .task(id: item.iconCacheKey(isSourceMissing: isSourceMissing)) {
+            cachedIcon = CanvasItem.resolveIcon(for: item, documentURL: document.fileURL)
         }
         .accessibilityLabel("\(item.label), position \(Int(item.position.x)), \(Int(item.position.y))")
         .accessibilityAddTraits(.isButton)
+    }
+
+    // MARK: - Missing Source
+
+    private var missingSourceBadge: some View {
+        Image(systemName: "exclamationmark.triangle.fill")
+            .font(.system(size: max(Self.missingBadgeSize * zoom, Self.missingBadgeMinimumSize)))
+            .symbolRenderingMode(.multicolor)
+            .shadow(color: .black.opacity(0.35), radius: 1, y: 1)
+            .help("Source file is missing. Right-click and choose Locate\u{2026} to relink.")
+            .accessibilityLabel("Source file missing")
+    }
+
+    private func relinkSource() {
+        guard let url = SourceLocatePanel.present(for: item) else { return }
+        Task {
+            await document.relinkItem(item.id, to: url, undoManager: undoManager)
+        }
     }
 
     // MARK: - Display Label
@@ -103,10 +141,6 @@ struct CanvasItemView: View, Equatable {
         } else {
             genericIcon
         }
-    }
-
-    static func resolveIcon(for item: CanvasItem) -> NSImage? {
-        CanvasItem.resolveIcon(for: item)
     }
 
     @ViewBuilder

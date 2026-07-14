@@ -163,6 +163,16 @@ struct SidebarView: View {
             isRenaming = true
         }
 
+        if item.requiresSource {
+            Button("Locate\u{2026}") {
+                if let url = SourceLocatePanel.present(for: item) {
+                    Task {
+                        await document.relinkItem(item.id, to: url, undoManager: undoManager)
+                    }
+                }
+            }
+        }
+
         if let path = item.sourcePath {
             Button("Show in Finder") {
                 NSWorkspace.shared.selectFile(
@@ -258,13 +268,7 @@ struct SidebarView: View {
             }
         case .file:
             if let url = urls.first {
-                let item = CanvasItem(
-                    kind: url.hasDirectoryPath ? .folder : .file,
-                    label: url.lastPathComponent,
-                    sourcePath: url.path,
-                    position: defaultPosition()
-                )
-                document.addItem(item, undoManager: undoManager)
+                document.addFileItem(from: url, at: defaultPosition(), undoManager: undoManager)
             }
         case .backgroundImage:
             for url in urls {

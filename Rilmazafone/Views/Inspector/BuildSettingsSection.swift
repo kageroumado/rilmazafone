@@ -120,14 +120,17 @@ struct BuildSettingsSection: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    .task(id: path) {
-                        cachedAppIcon = NSWorkspace.shared.icon(forFile: path)
-                        let modDate = (try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date) ?? .distantPast
-                        if let cached = Self.composedPreviewCache, cached.path == path, cached.modified == modDate {
-                            composedIconPreview = cached.image
-                        } else if let preview = await generateComposedPreview(appPath: path) {
-                            Self.composedPreviewCache = (path, modDate, preview)
-                            composedIconPreview = preview
+                    .task(id: app.iconCacheKey(isSourceMissing: false)) {
+                        await SourceAccess.withScope(item: app, documentURL: document.fileURL) { url in
+                            guard let url else { return }
+                            cachedAppIcon = NSWorkspace.shared.icon(forFile: url.path)
+                            let modDate = (try? FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date) ?? .distantPast
+                            if let cached = Self.composedPreviewCache, cached.path == path, cached.modified == modDate {
+                                composedIconPreview = cached.image
+                            } else if let preview = await generateComposedPreview(appPath: url.path) {
+                                Self.composedPreviewCache = (path, modDate, preview)
+                                composedIconPreview = preview
+                            }
                         }
                     }
                 } else {

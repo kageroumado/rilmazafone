@@ -21,6 +21,18 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     var volumeIconImage: NSImage?
     var appIconImage: NSImage?
 
+    /// IDs of items whose copy-source is currently unreachable. Runtime state,
+    /// never persisted; recomputed on open, add, remove, relink, and before builds.
+    var missingSourceIDs: Set<UUID> = []
+
+    /// The document's on-disk URL, fed in by the hosting view.
+    ///
+    /// `ReferenceFileDocument` exposes no URL in its read or write configurations,
+    /// so `DocumentContentView` forwards `\.documentConfiguration`'s `fileURL` via
+    /// ``documentFileURLDidChange(_:)`` — on open, after the first save of an
+    /// untitled document, and after Save As or a move.
+    @ObservationIgnored private(set) var fileURL: URL?
+
     // MARK: - File Wrappers
 
     @ObservationIgnored var assetsWrapper: FileWrapper?
@@ -220,13 +232,17 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
         }
     }
 
-    /// Checks if the app at the given path is code signed, and if the signing
+    /// Checks if the item's app bundle is code signed, and if the signing
     /// identity exists in the user's keychain. Enables code signing with that
     /// identity if found, otherwise leaves it disabled.
-    func configureCodeSigning(forAppAt appPath: String, undoManager: UndoManager?) async {
-        guard let authority = DMGBuilder.signingAuthority(
-            of: URL(fileURLWithPath: appPath)
-        ) else { return }
+    ///
+    /// Reads the bundle's signature under security scope so it works for
+    /// bookmark-backed sources in the sandboxed build.
+    func configureCodeSigning(for item: CanvasItem, undoManager: UndoManager?) async {
+        let authority = SourceAccess.withScope(item: item, documentURL: fileURL) { url in
+            url.flatMap { DMGBuilder.signingAuthority(of: $0) }
+        }
+        guard let authority else { return }
 
         guard let identity = DMGBuilder.findMatchingKeychainIdentity(
             authority: authority
@@ -339,6 +355,64 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
 
         return tempDir
     }
+
+    // MARK: - Source Bookmarks & Availability
+
+    /// Records the document's on-disk URL and reconciles item sources against it.
+    ///
+    /// Called by the hosting view whenever `\.documentConfiguration`'s `fileURL`
+    /// changes (including initially). In the App Store build this is where item
+    /// bookmarks are resolved: paths are refreshed from resolved bookmarks (the
+    /// bookmark wins under sandbox), stale bookmarks are re-created, and bookmarks
+    /// created app-scoped while the document was untitled are upgraded to document
+    /// scope now that a document URL exists. Any bookmark change marks the document
+    /// dirty so the upgrade persists on the next (auto)save.
+    func documentFileURLDidChange(_ url: URL?) {
+        fileURL = url
+        #if APPSTORE
+            reconcileSourceBookmarks()
+        #endif
+        refreshSourceStates()
+    }
+
+    /// Recomputes ``missingSourceIDs`` from the items' current on-disk state.
+    func refreshSourceStates() {
+        let missing = Set(
+            configuration.items
+                .filter { !SourceAccess.isSourceAvailable(item: $0, documentURL: fileURL) }
+                .map(\.id)
+        )
+        if missing != missingSourceIDs {
+            missingSourceIDs = missing
+        }
+    }
+
+    #if APPSTORE
+        private func reconcileSourceBookmarks() {
+            var didChange = false
+            for index in configuration.items.indices {
+                let item = configuration.items[index]
+                guard item.requiresSource,
+                      let bookmark = item.sourceBookmark,
+                      let reconciliation = SourceAccess.reconcile(
+                          bookmark: bookmark, documentURL: fileURL
+                      )
+                else { continue }
+
+                if let refreshed = reconciliation.refreshedBookmark {
+                    configuration.items[index].sourceBookmark = refreshed
+                    didChange = true
+                }
+                if configuration.items[index].sourcePath != reconciliation.url.path {
+                    configuration.items[index].sourcePath = reconciliation.url.path
+                    didChange = true
+                }
+            }
+            if didChange {
+                objectWillChange.send()
+            }
+        }
+    #endif
 
     // MARK: - Queries
 

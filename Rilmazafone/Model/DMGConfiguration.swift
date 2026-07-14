@@ -407,15 +407,20 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
     var kind: CanvasItemKind
     var label: String
     var sourcePath: String?
+    /// Security-scoped bookmark to the source, used by the sandboxed App Store
+    /// build to regain access across launches. The GitHub build never creates
+    /// one but round-trips the data losslessly.
+    var sourceBookmark: Data?
     var position: CGPoint
     var linkType: ItemLinkType = .copy
     var background: ItemBackground?
 
-    init(id: UUID = UUID(), kind: CanvasItemKind, label: String, sourcePath: String? = nil, position: CGPoint, linkType: ItemLinkType = .copy, background: ItemBackground? = nil) {
+    init(id: UUID = UUID(), kind: CanvasItemKind, label: String, sourcePath: String? = nil, sourceBookmark: Data? = nil, position: CGPoint, linkType: ItemLinkType = .copy, background: ItemBackground? = nil) {
         self.id = id
         self.kind = kind
         self.label = label
         self.sourcePath = sourcePath
+        self.sourceBookmark = sourceBookmark
         self.position = position
         self.linkType = linkType
         self.background = background
@@ -427,9 +432,17 @@ nonisolated struct CanvasItem: Codable, Hashable, Identifiable, Sendable {
         self.kind = try container.decode(CanvasItemKind.self, forKey: .kind)
         self.label = try container.decode(String.self, forKey: .label)
         self.sourcePath = try container.decodeIfPresent(String.self, forKey: .sourcePath)
+        self.sourceBookmark = try container.decodeIfPresent(Data.self, forKey: .sourceBookmark)
         self.position = try container.decode(CGPoint.self, forKey: .position)
         self.linkType = try container.decodeIfPresent(ItemLinkType.self, forKey: .linkType) ?? .copy
         self.background = try container.decodeIfPresent(ItemBackground.self, forKey: .background)
+    }
+
+    /// Whether this item copies a filesystem source into the DMG and therefore
+    /// needs a reachable source. The Applications symlink and symlink-type items
+    /// only store a target path string.
+    var requiresSource: Bool {
+        kind != .applicationsSymlink && linkType == .copy
     }
 }
 
@@ -582,17 +595,37 @@ extension CanvasItem {
     }()
 
     /// Resolves the filesystem icon for a canvas item.
-    /// For apps/files/folders, returns the icon from the source path.
+    /// For apps/files/folders, returns the icon from the source path, holding
+    /// security-scoped access to the source in the sandboxed build.
     /// For the Applications symlink, returns the cached symlink icon.
-    static func resolveIcon(for item: CanvasItem) -> NSImage? {
+    static func resolveIcon(for item: CanvasItem, documentURL: URL? = nil) -> NSImage? {
         switch item.kind {
         case .applicationsSymlink:
             return applicationsSymlinkIcon
         case .app, .file, .folder:
-            guard let path = item.sourcePath,
-                  FileManager.default.fileExists(atPath: path) else { return nil }
-            return NSWorkspace.shared.icon(forFile: path)
+            return SourceAccess.withScope(item: item, documentURL: documentURL) { url in
+                guard let url,
+                      FileManager.default.fileExists(atPath: url.path) else { return nil }
+                return NSWorkspace.shared.icon(forFile: url.path)
+            }
         }
+    }
+
+    /// Equatable key views use with `.task(id:)` to reload a cached source icon
+    /// when the item's source reference or its availability changes.
+    struct IconCacheKey: Equatable {
+        let sourcePath: String?
+        let sourceBookmark: Data?
+        let isSourceMissing: Bool
+    }
+
+    /// The icon-reload key for this item given its current availability state.
+    func iconCacheKey(isSourceMissing: Bool) -> IconCacheKey {
+        IconCacheKey(
+            sourcePath: sourcePath,
+            sourceBookmark: sourceBookmark,
+            isSourceMissing: isSourceMissing
+        )
     }
 }
 

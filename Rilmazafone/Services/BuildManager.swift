@@ -6,6 +6,7 @@ import Observation
 
 nonisolated enum ValidationError: Error, LocalizedError {
     case missingSourceFile(String)
+    case missingSources([String])
     case volumeNameEmpty
     case volumeNameTooLong(Int)
     case duplicateLabels([String])
@@ -14,6 +15,9 @@ nonisolated enum ValidationError: Error, LocalizedError {
         switch self {
         case let .missingSourceFile(path):
             "Source file not found: \(path)"
+        case let .missingSources(labels):
+            "Missing source files for: \(labels.joined(separator: ", ")). "
+                + "Use Locate\u{2026} in an item's context menu to relink."
         case .volumeNameEmpty:
             "Volume name cannot be empty."
         case let .volumeNameTooLong(count):
@@ -66,7 +70,8 @@ final class BuildManager {
     func build(
         configuration: DMGConfiguration,
         assetsDirectory: URL,
-        outputURL: URL
+        outputURL: URL,
+        documentURL: URL? = nil
     ) {
         buildTask = Task.detached { [weak self] in
             guard let self else { return }
@@ -75,6 +80,7 @@ final class BuildManager {
                     configuration: configuration,
                     assetsDirectory: assetsDirectory,
                     outputURL: outputURL,
+                    documentURL: documentURL,
                     progress: { [weak self] progress in
                         await self?.applyProgress(progress)
                     }

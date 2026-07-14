@@ -14,6 +14,7 @@ enum InspectorTab: Hashable {
 struct DocumentContentView: View {
     @Environment(RilmazafoneDocument.self) private var document
     @Environment(\.undoManager) private var undoManager
+    @Environment(\.documentConfiguration) private var documentConfiguration
     @State private var buildManager = BuildManager()
     @State private var selectedItemID: UUID?
     @State private var isInspectorPresented = true
@@ -56,6 +57,9 @@ struct DocumentContentView: View {
         }
         .environment(buildManager)
         .frame(minWidth: 900, minHeight: 600)
+        .onChange(of: documentConfiguration?.fileURL, initial: true) { _, newURL in
+            document.documentFileURLDidChange(newURL)
+        }
         .onDeleteCommand {
             if let id = selectedItemID {
                 if document.backgroundLayer(for: id) != nil {
@@ -73,6 +77,17 @@ struct DocumentContentView: View {
     }
 
     private func startBuild() {
+        document.refreshSourceStates()
+        let missingLabels = document.configuration.items
+            .filter { document.missingSourceIDs.contains($0.id) }
+            .map(\.label)
+        guard missingLabels.isEmpty else {
+            buildManager.reportError(
+                ValidationError.missingSources(missingLabels).localizedDescription
+            )
+            return
+        }
+
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType("com.apple.disk-image") ?? .data]
         panel.nameFieldStringValue = "\(document.configuration.volumeName).dmg"
@@ -84,7 +99,8 @@ struct DocumentContentView: View {
             buildManager.build(
                 configuration: document.configuration,
                 assetsDirectory: assetsDir,
-                outputURL: url
+                outputURL: url,
+                documentURL: document.fileURL
             )
         } catch {
             buildManager.reportError(error.localizedDescription)

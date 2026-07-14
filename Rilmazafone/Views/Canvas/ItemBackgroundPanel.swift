@@ -5,12 +5,14 @@ struct ItemBackgroundPanel: View, Equatable {
     let bg: ItemBackground
     let currentZoom: CGFloat
     let iconSize: CGFloat
+    let backdrop: CanvasBackdrop?
 
     nonisolated static func == (lhs: ItemBackgroundPanel, rhs: ItemBackgroundPanel) -> Bool {
         lhs.item == rhs.item
             && lhs.bg == rhs.bg
             && lhs.currentZoom == rhs.currentZoom
             && lhs.iconSize == rhs.iconSize
+            && lhs.backdrop == rhs.backdrop
     }
 
     @State private var bevelImage: NSImage?
@@ -53,6 +55,34 @@ struct ItemBackgroundPanel: View, Equatable {
         )
     }
 
+    /// Panel rect in canvas points (top-left origin), the crop the public glass
+    /// preview blurs out of the composited backdrop.
+    private var panelRect: CGRect {
+        let side = contentHeight + bg.padding * 2
+        return CGRect(
+            x: item.position.x - side / 2,
+            y: item.position.y - side / 2,
+            width: side,
+            height: side
+        )
+    }
+
+    /// The unmasked blur layer: the public CIGaussianBlur preview in the App Store
+    /// build, the private CABackdropLayer path in the GitHub build (unless
+    /// `GlassPreview.usesPublicPath` is forced on for A/B comparison).
+    @ViewBuilder
+    private var blurSource: some View {
+        #if APPSTORE
+        CanvasBackdropBlurView(backdrop: backdrop, rect: panelRect, blurRadius: bg.blurRadius)
+        #else
+        if GlassPreview.usesPublicPath {
+            CanvasBackdropBlurView(backdrop: backdrop, rect: panelRect, blurRadius: bg.blurRadius)
+        } else {
+            BackdropBlurView(blurRadius: bg.blurRadius * currentZoom)
+        }
+        #endif
+    }
+
     private var bevelFingerprint: Int {
         var hasher = Hasher()
         hasher.combine(bg.bevel)
@@ -65,15 +95,9 @@ struct ItemBackgroundPanel: View, Equatable {
         ZStack {
             if bg.enabled {
                 if bg.blurRadius > 0 {
-                    #if APPSTORE
-                    // TODO(1.1): swap in the public CanvasBackdropBlurView (CIGaussianBlur)
-                    // preview. The App Store target excludes BackdropBlurView.swift (private
-                    // CABackdropLayer/CAFilter), so it shows a neutral material stand-in until
-                    // the public preview lands.
                     if bg.blurFeather > 0 {
                         let featherPx = bgSide * bg.blurFeather * 0.5
-                        Rectangle()
-                            .fill(.ultraThinMaterial)
+                        blurSource
                             .mask {
                                 RoundedRectangle(cornerRadius: max(cr - featherPx, 0))
                                     .fill(.white)
@@ -81,23 +105,8 @@ struct ItemBackgroundPanel: View, Equatable {
                                     .blur(radius: featherPx)
                             }
                     } else {
-                        Rectangle()
-                            .fill(.ultraThinMaterial)
+                        blurSource
                     }
-                    #else
-                    if bg.blurFeather > 0 {
-                        let featherPx = bgSide * bg.blurFeather * 0.5
-                        BackdropBlurView(blurRadius: bg.blurRadius * currentZoom)
-                            .mask {
-                                RoundedRectangle(cornerRadius: max(cr - featherPx, 0))
-                                    .fill(.white)
-                                    .padding(featherPx)
-                                    .blur(radius: featherPx)
-                            }
-                    } else {
-                        BackdropBlurView(blurRadius: bg.blurRadius * currentZoom)
-                    }
-                    #endif
                 }
 
                 RoundedRectangle(cornerRadius: cr)

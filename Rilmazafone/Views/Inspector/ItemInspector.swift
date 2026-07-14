@@ -96,7 +96,7 @@ struct ItemInspector: View {
                                     .truncationMode(.middle)
                                     .help(path)
 
-                                if !FileManager.default.fileExists(atPath: path) {
+                                if isSourceMissing {
                                     Label("File not found", systemImage: "exclamationmark.triangle.fill")
                                         .font(.caption)
                                         .foregroundStyle(.orange)
@@ -106,8 +106,8 @@ struct ItemInspector: View {
                                     .foregroundStyle(.tertiary)
                             }
 
-                            Button("Choose\u{2026}") {
-                                chooseSourcePath()
+                            Button(isSourceMissing ? "Locate\u{2026}" : "Choose\u{2026}") {
+                                relinkSource()
                             }
                             .controlSize(.small)
                         }
@@ -115,8 +115,8 @@ struct ItemInspector: View {
                 }
             }
         }
-        .task(id: item.sourcePath) {
-            cachedIcon = Self.resolveIcon(for: item)
+        .task(id: item.iconCacheKey(isSourceMissing: isSourceMissing)) {
+            cachedIcon = CanvasItem.resolveIcon(for: item, documentURL: document.fileURL)
         }
 
         Section("Effects") {
@@ -256,18 +256,15 @@ struct ItemInspector: View {
         return path
     }
 
-    private func chooseSourcePath() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = item.kind != .folder
-        panel.canChooseDirectories = item.kind == .folder || item.kind == .app
-        panel.allowsMultipleSelection = false
+    private var isSourceMissing: Bool {
+        document.missingSourceIDs.contains(item.id)
+    }
 
-        if item.kind == .app {
-            panel.allowedContentTypes = [.applicationBundle]
+    private func relinkSource() {
+        guard let url = SourceLocatePanel.present(for: item) else { return }
+        Task {
+            await document.relinkItem(item.id, to: url, undoManager: undoManager)
         }
-
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        document.setItemSourcePath(item.id, to: url.path, undoManager: undoManager)
     }
 
     // MARK: - Icon
@@ -283,10 +280,6 @@ struct ItemInspector: View {
                 .font(.title2)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    static func resolveIcon(for item: CanvasItem) -> NSImage? {
-        CanvasItem.resolveIcon(for: item)
     }
 
     // MARK: - Bindings

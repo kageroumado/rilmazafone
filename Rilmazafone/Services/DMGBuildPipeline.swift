@@ -63,14 +63,17 @@ nonisolated enum DMGBuildPipeline {
         configuration: DMGConfiguration,
         assetsDirectory: URL,
         outputURL: URL,
+        documentURL: URL? = nil,
         progress: @Sendable (Progress) async -> Void
     ) async throws {
         let total = Constants.totalSteps
         let fileManager = FileManager.default
 
+        try validateSources(configuration: configuration, documentURL: documentURL)
+
         // Step 1: Estimate disk image size
         await progress(Progress(step: "Calculating size\u{2026}", stepIndex: 1, totalSteps: total))
-        let sizeEstimate = try estimateSize(for: configuration)
+        let sizeEstimate = try estimateSize(for: configuration, documentURL: documentURL)
         try Task.checkCancellation()
 
         // Step 2: Create writable DMG
@@ -101,10 +104,9 @@ nonisolated enum DMGBuildPipeline {
             let validItems = configuration.items.filter { item in
                 if item.kind == .applicationsSymlink { return true }
                 if item.linkType == .symlink, let target = item.sourcePath, !target.isEmpty { return true }
-                if let path = item.sourcePath, FileManager.default.fileExists(atPath: path) { return true }
-                return false
+                return item.requiresSource
             }
-            try DMGBuilder.copyItems(validItems, to: mountPoint)
+            try DMGBuilder.copyItems(validItems, to: mountPoint, documentURL: documentURL)
             try Task.checkCancellation()
 
             // Step 5: Set up background and .DS_Store
@@ -133,7 +135,8 @@ nonisolated enum DMGBuildPipeline {
             volumeIconData = try await applyVolumeIcon(
                 configuration: configuration,
                 assetsDirectory: assetsDirectory,
-                mountPoint: mountPoint
+                mountPoint: mountPoint,
+                documentURL: documentURL
             )
             try Task.checkCancellation()
 
@@ -246,21 +249,26 @@ nonisolated enum DMGBuildPipeline {
     private static func applyVolumeIcon(
         configuration: DMGConfiguration,
         assetsDirectory: URL,
-        mountPoint: URL
+        mountPoint: URL,
+        documentURL: URL?
     ) async throws -> Data? {
         switch configuration.volumeIcon.type {
         case .composed:
-            guard let app = configuration.items.first(where: { $0.kind == .app }),
-                  let appPath = app.sourcePath,
-                  let iconPath = IconComposer.resolveAppIconURL(appPath: appPath),
-                  FileManager.default.fileExists(atPath: iconPath.path)
-            else { return nil }
-            do {
-                let composedICNS = try await IconComposer.compose(appIconURL: iconPath)
-                try await DMGBuilder.setVolumeIcon(icnsData: composedICNS, mountPoint: mountPoint)
-                return composedICNS
-            } catch {
-                return nil // Icon composition is optional
+            guard let app = configuration.items.first(where: { $0.kind == .app }) else { return nil }
+            // The security scope must span icon extraction, which reads inside
+            // the app bundle, not just URL resolution.
+            return await SourceAccess.withScope(item: app, documentURL: documentURL) { appURL in
+                guard let appURL,
+                      let iconPath = IconComposer.resolveAppIconURL(appPath: appURL.path),
+                      FileManager.default.fileExists(atPath: iconPath.path)
+                else { return nil }
+                do {
+                    let composedICNS = try await IconComposer.compose(appIconURL: iconPath)
+                    try await DMGBuilder.setVolumeIcon(icnsData: composedICNS, mountPoint: mountPoint)
+                    return composedICNS
+                } catch {
+                    return nil // Icon composition is optional
+                }
             }
 
         case .custom:
@@ -276,20 +284,35 @@ nonisolated enum DMGBuildPipeline {
         }
     }
 
+    // MARK: - Validation
+
+    /// Validates that every item that copies a source into the DMG has a currently
+    /// reachable source, throwing `ValidationError.missingSources` listing the
+    /// offending item labels. Run before the build starts so a missing source
+    /// surfaces as one clear error instead of a mid-build failure.
+    static func validateSources(configuration: DMGConfiguration, documentURL: URL?) throws {
+        let missing = configuration.items
+            .filter { !SourceAccess.isSourceAvailable(item: $0, documentURL: documentURL) }
+            .map(\.label)
+        guard missing.isEmpty else {
+            throw ValidationError.missingSources(missing)
+        }
+    }
+
     // MARK: - Size Estimation
 
     /// Estimates the writable image size (as an `hdiutil` size string, e.g. `"128m"`)
     /// from the total allocated size of the configuration's source items.
-    static func estimateSize(for configuration: DMGConfiguration) throws -> String {
+    static func estimateSize(for configuration: DMGConfiguration, documentURL: URL? = nil) throws -> String {
         var totalBytes = Constants.baseOverheadBytes
 
         for item in configuration.items {
             guard item.kind != .applicationsSymlink else { continue }
-            guard let path = item.sourcePath else { continue }
+            guard item.sourcePath != nil || item.sourceBookmark != nil else { continue }
 
-            let url = URL(fileURLWithPath: path)
-            if let size = try? FileManager.default.allocatedSizeOfDirectory(at: url) {
-                totalBytes += size
+            totalBytes += SourceAccess.withScope(item: item, documentURL: documentURL) { url in
+                guard let url else { return 0 }
+                return (try? FileManager.default.allocatedSizeOfDirectory(at: url)) ?? 0
             }
         }
 

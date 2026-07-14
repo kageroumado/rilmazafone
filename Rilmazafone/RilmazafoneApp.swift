@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RilmazafoneApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     var body: some Scene {
         DocumentGroup(newDocument: { RilmazafoneDocument() }) { file in
             DocumentContentView()

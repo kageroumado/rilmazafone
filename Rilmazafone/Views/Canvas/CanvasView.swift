@@ -20,6 +20,7 @@ struct CanvasView: View {
     @State private var isFileImporterPresented = false
     @State private var titleBarIcon: NSImage?
     @State private var activeGuides = AlignmentGuides.none
+    @State private var panelBackdrop: CanvasBackdrop?
 
     var body: some View {
         GeometryReader { geometry in
@@ -106,6 +107,62 @@ struct CanvasView: View {
         .task(id: firstAppSourcePath) {
             titleBarIcon = await generateTitleBarIcon()
         }
+        .task(id: panelBackdropGeneration) {
+            refreshPanelBackdrop()
+        }
+    }
+
+    // MARK: - Panel Backdrop (public glass preview)
+
+    /// Fingerprint of every background-affecting input to the panel backdrop composite
+    /// (base background, image layers and their loaded images, text, symbols, window
+    /// size), or `nil` when no panel needs the public glass preview. Item positions are
+    /// deliberately excluded so drag-moves never re-composite.
+    private var panelBackdropGeneration: Int? {
+        guard GlassPreview.usesPublicPath,
+              document.configuration.items.contains(where: { item in
+                  guard let bg = item.background else { return false }
+                  return bg.enabled && bg.blurRadius > 0
+              })
+        else { return nil }
+
+        var hasher = Hasher()
+        hasher.combine(document.configuration.window)
+        hasher.combine(document.configuration.background)
+        hasher.combine(document.configuration.textLayers)
+        hasher.combine(document.configuration.sfSymbolLayers)
+        hasher.combine(Set(document.backgroundImages.keys))
+        return hasher.finalize()
+    }
+
+    /// Re-composites the shared unblurred backdrop for the current generation. Runs
+    /// only on background-affecting edits; panels re-crop and re-blur the cached image
+    /// on their own.
+    private func refreshPanelBackdrop() {
+        guard let generation = panelBackdropGeneration else {
+            panelBackdrop = nil
+            return
+        }
+        guard panelBackdrop?.generation != generation else { return }
+
+        let configuration = document.configuration
+        guard let image = CompositeRenderer.renderPanelBackdrop(
+            configuration: configuration,
+            layerImages: document.backgroundImages,
+            scale: 2
+        ) else {
+            panelBackdrop = nil
+            return
+        }
+
+        panelBackdrop = CanvasBackdrop(
+            image: image,
+            pointSize: CGSize(
+                width: configuration.window.width,
+                height: configuration.window.height
+            ),
+            generation: generation
+        )
     }
 
     // MARK: - Subviews
@@ -339,7 +396,8 @@ struct CanvasView: View {
                 item: item,
                 bg: item.background!,
                 currentZoom: currentZoom,
-                iconSize: iconSize
+                iconSize: iconSize,
+                backdrop: panelBackdrop
             )
         }
     }
@@ -476,11 +534,16 @@ struct CanvasView: View {
     }
 
     private func generateTitleBarIcon() async -> NSImage? {
-        guard let appPath = firstAppSourcePath,
-              let iconURL = IconComposer.resolveAppIconURL(appPath: appPath),
-              let icnsData = try? await IconComposer.compose(appIconURL: iconURL)
-        else { return nil }
-        return NSImage(data: icnsData)
+        guard let app = document.configuration.items.first(where: { $0.kind == .app }) else {
+            return nil
+        }
+        return await SourceAccess.withScope(item: app, documentURL: document.fileURL) { url in
+            guard let url,
+                  let iconURL = IconComposer.resolveAppIconURL(appPath: url.path),
+                  let icnsData = try? await IconComposer.compose(appIconURL: iconURL)
+            else { return nil }
+            return NSImage(data: icnsData)
+        }
     }
 
     // MARK: - Computed

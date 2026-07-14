@@ -99,9 +99,6 @@ nonisolated enum CompositeRenderer {
         assetsDirectory: URL,
         scale: CGFloat
     ) {
-        let width = configuration.window.width
-        let height = configuration.window.height
-
         // Bridge AppKit drawing (NSImage / NSAttributedString / NSBezierPath) onto this
         // CGContext. `flipped: false` keeps the y-up geometry the layer math assumes.
         let nsContext = NSGraphicsContext(cgContext: context, flipped: false)
@@ -109,6 +106,28 @@ nonisolated enum CompositeRenderer {
         NSGraphicsContext.current = nsContext
         defer { NSGraphicsContext.restoreGraphicsState() }
 
+        renderBeneathPanels(into: context, configuration: configuration) { layer in
+            NSImage(contentsOf: assetsDirectory.appending(path: layer.imageName))
+        }
+        renderItemBackgrounds(
+            items: configuration.items,
+            iconSize: configuration.iconSize,
+            in: context,
+            canvasHeight: configuration.window.height,
+            scale: scale
+        )
+    }
+
+    /// Draws everything composited *beneath* item panels — base background, image
+    /// layers, text layers, and SF symbols — in the exact order `renderComposite` uses,
+    /// so panel blurs (baked and live preview) read from identical content.
+    private static func renderBeneathPanels(
+        into context: CGContext,
+        configuration: DMGConfiguration,
+        imageProvider: (BackgroundLayer) -> NSImage?
+    ) {
+        let width = configuration.window.width
+        let height = configuration.window.height
         let fullRect = CGRect(x: 0, y: 0, width: width, height: height)
 
         renderBaseBackground(context: context, configuration: configuration, rect: fullRect)
@@ -117,21 +136,46 @@ nonisolated enum CompositeRenderer {
             renderImageLayers(
                 context: context,
                 layers: configuration.background.layers,
-                assetsDirectory: assetsDirectory,
                 canvasWidth: width,
-                canvasHeight: height
+                canvasHeight: height,
+                imageProvider: imageProvider
             )
         }
 
         renderTextLayers(configuration.textLayers, in: context, canvasHeight: height)
         renderSFSymbolLayers(configuration.sfSymbolLayers, in: context, canvasHeight: height)
-        renderItemBackgrounds(
-            items: configuration.items,
-            iconSize: configuration.iconSize,
-            in: context,
-            canvasHeight: height,
-            scale: scale
-        )
+    }
+
+    // MARK: - Panel Backdrop (live preview)
+
+    /// Renders the composite that sits beneath item panels at `scale`× pixel density,
+    /// sourcing layer images from memory instead of an on-disk assets directory.
+    ///
+    /// This is the image the public glass preview (`CanvasBackdropBlurView`) crops and
+    /// blurs. The panels themselves are deliberately excluded: in the built DMG each
+    /// panel's blur reads only the content composited before `renderItemBackgrounds`,
+    /// so blurring this backdrop matches what the baked background shows.
+    static func renderPanelBackdrop(
+        configuration: DMGConfiguration,
+        layerImages: [UUID: NSImage],
+        scale: CGFloat
+    ) -> CGImage? {
+        let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
+        guard pointSize.width > 0, pointSize.height > 0 else { return nil }
+
+        let pixelsWide = Int((pointSize.width * scale).rounded())
+        let pixelsHigh = Int((pointSize.height * scale).rounded())
+        guard let context = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh) else { return nil }
+        context.scaleBy(x: scale, y: scale)
+
+        let nsContext = NSGraphicsContext(cgContext: context, flipped: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = nsContext
+        defer { NSGraphicsContext.restoreGraphicsState() }
+
+        renderBeneathPanels(into: context, configuration: configuration) { layerImages[$0.id] }
+
+        return context.makeImage()
     }
 
     // MARK: - Base Background
@@ -164,13 +208,12 @@ nonisolated enum CompositeRenderer {
     private static func renderImageLayers(
         context _: CGContext,
         layers: [BackgroundLayer],
-        assetsDirectory: URL,
         canvasWidth: CGFloat,
-        canvasHeight: CGFloat
+        canvasHeight: CGFloat,
+        imageProvider: (BackgroundLayer) -> NSImage?
     ) {
         for layer in layers {
-            let imageURL = assetsDirectory.appending(path: layer.imageName)
-            guard let layerImage = NSImage(contentsOf: imageURL) else { continue }
+            guard let layerImage = imageProvider(layer) else { continue }
 
             let imageSize = layerImage.size
             let displayWidth = canvasWidth * layer.scale

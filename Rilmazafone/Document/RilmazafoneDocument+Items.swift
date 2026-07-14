@@ -7,13 +7,45 @@ extension RilmazafoneDocument {
     // MARK: - Item Properties
 
     func setItemSourcePath(_ id: UUID, to newPath: String?, undoManager: UndoManager?) {
+        setItemSource(id, path: newPath, bookmark: nil, actionName: "Change Source Path", undoManager: undoManager)
+    }
+
+    /// Sets an item's source path and security bookmark together, refreshing
+    /// availability state. All source mutations funnel through here so undo
+    /// restores both halves atomically.
+    func setItemSource(
+        _ id: UUID,
+        path: String?,
+        bookmark: Data?,
+        actionName: String = "Change Source",
+        undoManager: UndoManager?
+    ) {
         guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
         let oldPath = configuration.items[index].sourcePath
-        configuration.items[index].sourcePath = newPath
+        let oldBookmark = configuration.items[index].sourceBookmark
+        configuration.items[index].sourcePath = path
+        configuration.items[index].sourceBookmark = bookmark
+        refreshSourceStates()
         objectWillChange.send()
-        withUndo(undoManager, "Change Source Path") { doc, um in
-            doc.setItemSourcePath(id, to: oldPath, undoManager: um)
+        withUndo(undoManager, actionName) { doc, um in
+            doc.setItemSource(id, path: oldPath, bookmark: oldBookmark, actionName: actionName, undoManager: um)
         }
+    }
+
+    /// Relinks an item to a freshly user-selected source URL: refreshes the path,
+    /// re-creates the security bookmark (App Store build), recomputes availability,
+    /// and re-runs signing detection for app items. Undoable as a single action.
+    func relinkItem(_ id: UUID, to url: URL, undoManager: UndoManager?) async {
+        setItemSource(
+            id,
+            path: url.path,
+            bookmark: SourceAccess.makeBookmark(for: url, documentURL: fileURL),
+            actionName: "Relink Item",
+            undoManager: undoManager
+        )
+        guard let item = configuration.items.first(where: { $0.id == id }),
+              item.kind == .app else { return }
+        await configureCodeSigning(for: item, undoManager: undoManager)
     }
 
     func setItemLinkType(_ id: UUID, to newType: ItemLinkType, undoManager: UndoManager?) {
@@ -68,6 +100,7 @@ extension RilmazafoneDocument {
 
     func addItem(_ item: CanvasItem, undoManager: UndoManager?) {
         configuration.items.append(item)
+        refreshSourceStates()
         objectWillChange.send()
         withUndo(undoManager, "Add \(item.label)") { doc, um in
             doc.removeItem(item.id, undoManager: um)
@@ -77,9 +110,11 @@ extension RilmazafoneDocument {
     func removeItem(_ id: UUID, undoManager: UndoManager?) {
         guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
         let removed = configuration.items.remove(at: index)
+        refreshSourceStates()
         objectWillChange.send()
         withUndo(undoManager, "Remove \(removed.label)") { doc, um in
             doc.configuration.items.insert(removed, at: min(index, doc.configuration.items.count))
+            doc.refreshSourceStates()
             doc.objectWillChange.send()
             doc.withUndo(um, "Add \(removed.label)") { doc, um in
                 doc.removeItem(id, undoManager: um)
@@ -297,6 +332,7 @@ extension RilmazafoneDocument {
             kind: .app,
             label: url.lastPathComponent,
             sourcePath: url.path,
+            sourceBookmark: SourceAccess.makeBookmark(for: url, documentURL: fileURL),
             position: position
         )
         addItem(item, undoManager: undoManager)
@@ -323,8 +359,21 @@ extension RilmazafoneDocument {
             let arrowX = round((appX + symlinkX) / 2)
             addSFSymbolLayer(at: CGPoint(x: arrowX, y: centerY), undoManager: undoManager)
 
-            await configureCodeSigning(forAppAt: url.path, undoManager: undoManager)
+            await configureCodeSigning(for: item, undoManager: undoManager)
         }
+    }
+
+    /// Adds a file or folder item sourced from a user-selected URL, creating its
+    /// security bookmark in the App Store build.
+    func addFileItem(from url: URL, at position: CGPoint, undoManager: UndoManager?) {
+        let item = CanvasItem(
+            kind: url.hasDirectoryPath ? .folder : .file,
+            label: url.lastPathComponent,
+            sourcePath: url.path,
+            sourceBookmark: SourceAccess.makeBookmark(for: url, documentURL: fileURL),
+            position: position
+        )
+        addItem(item, undoManager: undoManager)
     }
 
     func handleDrop(urls: [URL], defaultPosition: CGPoint, undoManager: UndoManager?) async {
@@ -338,13 +387,7 @@ extension RilmazafoneDocument {
             } else if ["png", "jpg", "jpeg", "tiff"].contains(ext) {
                 try? importBackgroundImage(from: url, undoManager: undoManager)
             } else {
-                let item = CanvasItem(
-                    kind: url.hasDirectoryPath ? .folder : .file,
-                    label: url.lastPathComponent,
-                    sourcePath: url.path,
-                    position: defaultPosition
-                )
-                addItem(item, undoManager: undoManager)
+                addFileItem(from: url, at: defaultPosition, undoManager: undoManager)
             }
         }
     }

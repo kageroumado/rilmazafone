@@ -137,10 +137,12 @@ nonisolated enum DMGBuilder {
 
     // MARK: - Content Operations
 
-    /// Copies source items into the mounted DMG volume.
+    /// Copies source items into the mounted DMG volume, holding security-scoped
+    /// access to each copy item's source for the duration of its copy.
     static func copyItems(
         _ items: [CanvasItem],
-        to mountPoint: URL
+        to mountPoint: URL,
+        documentURL: URL? = nil
     ) throws {
         let fileManager = FileManager.default
         for item in items {
@@ -162,13 +164,15 @@ nonisolated enum DMGBuilder {
                         withDestinationPath: target
                     )
                 } else {
-                    guard let sourcePath = item.sourcePath else { continue }
-                    let source = URL(fileURLWithPath: sourcePath)
-                    guard fileManager.fileExists(atPath: source.path) else {
-                        throw ValidationError.missingSourceFile(sourcePath)
+                    // The scope must span the entire copy of the item, not just
+                    // URL resolution.
+                    try SourceAccess.withScope(item: item, documentURL: documentURL) { source in
+                        guard let source, fileManager.fileExists(atPath: source.path) else {
+                            throw ValidationError.missingSourceFile(item.sourcePath ?? item.label)
+                        }
+                        // copyItem preserves symlinks inside .app bundles.
+                        try fileManager.copyItem(at: source, to: destination)
                     }
-                    // copyItem preserves symlinks inside .app bundles.
-                    try fileManager.copyItem(at: source, to: destination)
                 }
             }
         }
