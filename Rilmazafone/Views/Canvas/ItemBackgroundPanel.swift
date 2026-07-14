@@ -67,20 +67,10 @@ struct ItemBackgroundPanel: View, Equatable {
         )
     }
 
-    /// The unmasked blur layer: the public CIGaussianBlur preview in the App Store
-    /// build, the private CABackdropLayer path in the GitHub build (unless
-    /// `GlassPreview.usesPublicPath` is forced on for A/B comparison).
-    @ViewBuilder
+    /// The unmasked blur layer: crops the composited canvas background under the
+    /// panel and blurs it with `CIGaussianBlur`, matching the built DMG's baked panel.
     private var blurSource: some View {
-        #if APPSTORE
         CanvasBackdropBlurView(backdrop: backdrop, rect: panelRect, blurRadius: bg.blurRadius)
-        #else
-        if GlassPreview.usesPublicPath {
-            CanvasBackdropBlurView(backdrop: backdrop, rect: panelRect, blurRadius: bg.blurRadius)
-        } else {
-            BackdropBlurView(blurRadius: bg.blurRadius * currentZoom)
-        }
-        #endif
     }
 
     private var bevelFingerprint: Int {

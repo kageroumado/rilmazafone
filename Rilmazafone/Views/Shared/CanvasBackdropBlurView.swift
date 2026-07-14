@@ -3,26 +3,6 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 
-// MARK: - Glass Preview Selection
-
-/// Selects which glass-preview implementation the canvas uses.
-enum GlassPreview {
-    /// Whether the public `CIGaussianBlur` path is active.
-    ///
-    /// Always `true` in the App Store build. In the GitHub build the private
-    /// `CABackdropLayer` path is the default, and
-    /// `defaults write glass.kagerou.rilmazafone ForcePublicGlassPreview -bool YES`
-    /// forces the public path for A/B comparison (takes effect on the next canvas
-    /// update or relaunch).
-    static var usesPublicPath: Bool {
-        #if APPSTORE
-        true
-        #else
-        UserDefaults.standard.bool(forKey: "ForcePublicGlassPreview")
-        #endif
-    }
-}
-
 // MARK: - Canvas Backdrop
 
 /// The composited, unblurred canvas content beneath item panels, tagged with the

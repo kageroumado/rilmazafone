@@ -116,11 +116,10 @@ struct CanvasView: View {
 
     /// Fingerprint of every background-affecting input to the panel backdrop composite
     /// (base background, image layers and their loaded images, text, symbols, window
-    /// size), or `nil` when no panel needs the public glass preview. Item positions are
+    /// size), or `nil` when no panel needs the glass preview. Item positions are
     /// deliberately excluded so drag-moves never re-composite.
     private var panelBackdropGeneration: Int? {
-        guard GlassPreview.usesPublicPath,
-              document.configuration.items.contains(where: { item in
+        guard document.configuration.items.contains(where: { item in
                   guard let bg = item.background else { return false }
                   return bg.enabled && bg.blurRadius > 0
               })
