@@ -75,7 +75,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
     )
 
     private enum Layout {
-        static let windowSize = NSSize(width: 700, height: 560)
+        static let windowSize = NSSize(width: 700, height: 540)
     }
 
     private var window: NSWindow?

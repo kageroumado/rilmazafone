@@ -42,14 +42,17 @@ struct TemplateChooserView: View {
 
     private enum Layout {
         static let windowWidth: CGFloat = 700
-        static let windowHeight: CGFloat = 560
-        static let gridSpacing: CGFloat = 24
+        static let windowHeight: CGFloat = 540
+        static let gridSpacing: CGFloat = 16
         static let gridPadding: CGFloat = 24
+        /// The grid's vertical inset — tighter than the horizontal one so the
+        /// header, rows, and footer read as one column of content.
+        static let gridVerticalPadding: CGFloat = 14
         static let tileWidth: CGFloat = 196
         static let customFieldWidth: CGFloat = 52
         /// Clears the traffic lights overlaying the full-size content view.
-        static let headerTopPadding: CGFloat = 40
-        static let headerBottomPadding: CGFloat = 8
+        static let headerTopPadding: CGFloat = 32
+        static let headerBottomPadding: CGFloat = 4
     }
 
     var body: some View {
@@ -79,7 +82,7 @@ struct TemplateChooserView: View {
     /// title bar is transparent with a hidden title.
     private var header: some View {
         Text("Choose a Template")
-            .font(.system(size: 26, weight: .bold))
+            .font(.system(size: 22, weight: .bold))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, Layout.gridPadding)
             .padding(.top, Layout.headerTopPadding)
@@ -112,7 +115,8 @@ struct TemplateChooserView: View {
                     tile(for: entry)
                 }
             }
-            .padding(Layout.gridPadding)
+            .padding(.horizontal, Layout.gridPadding)
+            .padding(.vertical, Layout.gridVerticalPadding)
         }
     }
 
@@ -196,7 +200,7 @@ struct TemplateChooserView: View {
     // MARK: Footer
 
     private var footer: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             HStack(spacing: 12) {
                 Toggle("Don't show this dialog again", isOn: dontShowAgainBinding)
                     .controlSize(.small)
@@ -225,7 +229,7 @@ struct TemplateChooserView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
     }
 
     @ViewBuilder
