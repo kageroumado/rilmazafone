@@ -27,6 +27,42 @@ struct LayerEffectsSection: View {
             vignetteGroup
             bloomGroup
         }
+        .onChange(of: expansionKey) { old, new in
+            if old.layerID != new.layerID {
+                // Selection switched while this Form stayed alive: re-seed
+                // the disclosure state for the new layer without animating.
+                variableBlurExpanded = new.variableBlur
+                colorAdjustmentsExpanded = new.colorAdjustments
+                vignetteExpanded = new.vignette
+                bloomExpanded = new.bloom
+            } else {
+                if old.variableBlur != new.variableBlur { withAnimation { variableBlurExpanded = new.variableBlur } }
+                if old.colorAdjustments != new.colorAdjustments { withAnimation { colorAdjustmentsExpanded = new.colorAdjustments } }
+                if old.vignette != new.vignette { withAnimation { vignetteExpanded = new.vignette } }
+                if old.bloom != new.bloom { withAnimation { bloomExpanded = new.bloom } }
+            }
+        }
+    }
+
+    /// One equatable fingerprint for everything that drives disclosure-group
+    /// expansion, so a single handler can tell a selection switch (re-seed,
+    /// no animation) apart from an effect toggle (animate).
+    private struct EffectExpansionKey: Equatable {
+        let layerID: UUID
+        let variableBlur: Bool
+        let colorAdjustments: Bool
+        let vignette: Bool
+        let bloom: Bool
+    }
+
+    private var expansionKey: EffectExpansionKey {
+        EffectExpansionKey(
+            layerID: layer.id,
+            variableBlur: layer.variableBlur != nil,
+            colorAdjustments: layer.colorAdjustments != nil,
+            vignette: layer.vignette != nil,
+            bloom: layer.bloom != nil
+        )
     }
 
     // MARK: - Blur
@@ -65,9 +101,6 @@ struct LayerEffectsSection: View {
             } label: {
                 Toggle("Variable", isOn: variableBlurEnabledBinding)
                     .toggleStyle(.switch)
-            }
-            .onChange(of: isVariableOn) { _, enabled in
-                withAnimation { variableBlurExpanded = enabled }
             }
         }
     }
@@ -161,9 +194,6 @@ struct LayerEffectsSection: View {
             Toggle("Color Adjustments", isOn: colorAdjustmentsEnabledBinding)
                 .toggleStyle(.switch)
         }
-        .onChange(of: isOn) { _, enabled in
-            withAnimation { colorAdjustmentsExpanded = enabled }
-        }
     }
 
     // MARK: - Vignette
@@ -183,9 +213,6 @@ struct LayerEffectsSection: View {
             Toggle("Vignette", isOn: vignetteEnabledBinding)
                 .toggleStyle(.switch)
         }
-        .onChange(of: isOn) { _, enabled in
-            withAnimation { vignetteExpanded = enabled }
-        }
     }
 
     // MARK: - Bloom
@@ -204,9 +231,6 @@ struct LayerEffectsSection: View {
         } label: {
             Toggle("Bloom", isOn: bloomEnabledBinding)
                 .toggleStyle(.switch)
-        }
-        .onChange(of: isOn) { _, enabled in
-            withAnimation { bloomExpanded = enabled }
         }
     }
 

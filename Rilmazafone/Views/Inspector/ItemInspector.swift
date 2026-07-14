@@ -19,6 +19,25 @@ struct ItemInspector: View {
         _bevelExpanded = State(initialValue: item.background?.bevel?.enabled ?? false)
     }
 
+    /// One equatable fingerprint for everything that drives disclosure-group
+    /// expansion, so a single handler can tell a selection switch (re-seed,
+    /// no animation) apart from an effect toggle (animate).
+    private struct EffectExpansionKey: Equatable {
+        let itemID: UUID
+        let background: Bool
+        let shadow: Bool
+        let bevel: Bool
+    }
+
+    private var expansionKey: EffectExpansionKey {
+        EffectExpansionKey(
+            itemID: item.id,
+            background: item.background?.enabled ?? false,
+            shadow: item.background?.shadow?.enabled ?? false,
+            bevel: item.background?.bevel?.enabled ?? false
+        )
+    }
+
     private var windowWidth: CGFloat {
         document.configuration.window.width
     }
@@ -152,6 +171,19 @@ struct ItemInspector: View {
                 .controlSize(.small)
             }
         }
+        .onChange(of: expansionKey) { old, new in
+            if old.itemID != new.itemID {
+                // Selection switched while this Form stayed alive: re-seed
+                // the disclosure state for the new item without animating.
+                backgroundExpanded = new.background
+                shadowExpanded = new.shadow
+                bevelExpanded = new.bevel
+            } else {
+                if old.background != new.background { withAnimation { backgroundExpanded = new.background } }
+                if old.shadow != new.shadow { withAnimation { shadowExpanded = new.shadow } }
+                if old.bevel != new.bevel { withAnimation { bevelExpanded = new.bevel } }
+            }
+        }
     }
 
     // MARK: - Background Group
@@ -188,9 +220,6 @@ struct ItemInspector: View {
         } label: {
             Toggle("Background", isOn: backgroundEnabledBinding)
                 .toggleStyle(.switch)
-        }
-        .onChange(of: isOn) { _, enabled in
-            withAnimation { backgroundExpanded = enabled }
         }
     }
 
@@ -231,9 +260,6 @@ struct ItemInspector: View {
             Toggle("Shadow", isOn: shadowEnabledBinding)
                 .toggleStyle(.switch)
         }
-        .onChange(of: isOn) { _, enabled in
-            withAnimation { shadowExpanded = enabled }
-        }
     }
 
     // MARK: - Bevel Group
@@ -253,9 +279,6 @@ struct ItemInspector: View {
         } label: {
             Toggle("Bevel", isOn: bevelEnabledBinding)
                 .toggleStyle(.switch)
-        }
-        .onChange(of: isOn) { _, enabled in
-            withAnimation { bevelExpanded = enabled }
         }
     }
 

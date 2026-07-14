@@ -7,8 +7,16 @@ import UniformTypeIdentifiers
 /// ReferenceFileDocument requires ObservableObject. The @Observable macro provides
 /// fine-grained view observation, while objectWillChange signals document dirtiness
 /// for auto-save. Both conformances are intentional and required.
+///
+/// The class is MainActor-isolated (the project default), which also makes it
+/// `Sendable` — the compiler now enforces the main-thread access that the undo
+/// machinery's `assumeIsolated` previously only asserted at runtime. The two
+/// deliberately `nonisolated` members are the ones AppKit/SwiftUI invoke off
+/// the main thread: `init()` (document shell instantiation) and
+/// `fileWrapper(snapshot:configuration:)` (background write of a Sendable
+/// snapshot).
 @Observable
-final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unchecked Sendable {
+final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     @ObservationIgnored let objectWillChange = ObservableObjectPublisher()
 
     // MARK: - Persisted State
@@ -130,14 +138,17 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     func withUndo(
         _ undoManager: UndoManager?,
         _ actionName: String,
-        _ handler: @escaping @Sendable (RilmazafoneDocument, UndoManager?) -> Void
+        _ handler: @escaping @MainActor @Sendable (RilmazafoneDocument, UndoManager?) -> Void
     ) {
-        MainActor.assumeIsolated {
-            undoManager?.registerUndo(withTarget: self) { doc in
+        undoManager?.registerUndo(withTarget: self) { doc in
+            // NSUndoManager fires document undo actions on the main thread;
+            // this is the one runtime assertion of that contract, so the
+            // MainActor-typed handler can run statically checked.
+            MainActor.assumeIsolated {
                 handler(doc, undoManager)
             }
-            undoManager?.setActionName(actionName)
         }
+        undoManager?.setActionName(actionName)
     }
 
     // MARK: - Undo-Aware Mutations

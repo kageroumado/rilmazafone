@@ -108,7 +108,7 @@ struct CanvasView: View {
             titleBarIcon = await generateTitleBarIcon()
         }
         .task(id: panelBackdropGeneration) {
-            refreshPanelBackdrop()
+            await refreshPanelBackdrop()
         }
     }
 
@@ -134,25 +134,44 @@ struct CanvasView: View {
         return hasher.finalize()
     }
 
+    /// Bundles the composite inputs for the detached render below; NSImage is
+    /// not Sendable, but the images are never mutated after load (same pattern
+    /// as `LegibilityAnalysisInput`).
+    private nonisolated struct BackdropRenderInput: @unchecked Sendable {
+        let configuration: DMGConfiguration
+        let layerImages: [UUID: NSImage]
+    }
+
     /// Re-composites the shared unblurred backdrop for the current generation. Runs
     /// only on background-affecting edits; panels re-crop and re-blur the cached image
-    /// on their own.
-    private func refreshPanelBackdrop() {
+    /// on their own. The full-window composite renders off the main thread — at large
+    /// window sizes it costs tens of milliseconds, which hitched editing when it ran
+    /// on the main actor.
+    private func refreshPanelBackdrop() async {
         guard let generation = panelBackdropGeneration else {
             panelBackdrop = nil
             return
         }
         guard panelBackdrop?.generation != generation else { return }
 
-        let configuration = document.configuration
-        guard let image = CompositeRenderer.renderPanelBackdrop(
-            configuration: configuration,
-            layerImages: document.backgroundImages,
-            scale: 2
-        ) else {
+        let input = BackdropRenderInput(
+            configuration: document.configuration,
+            layerImages: document.backgroundImages
+        )
+        let image = await Task.detached(name: "Panel Backdrop Composite", priority: .userInitiated) {
+            CompositeRenderer.renderPanelBackdrop(
+                configuration: input.configuration,
+                layerImages: input.layerImages,
+                scale: 2
+            )
+        }.value
+
+        guard !Task.isCancelled else { return }
+        guard let image else {
             panelBackdrop = nil
             return
         }
+        let configuration = input.configuration
 
         panelBackdrop = CanvasBackdrop(
             image: image,
@@ -343,6 +362,7 @@ struct CanvasView: View {
                 } onSelect: {
                     selectedItemID = layer.id
                 }
+                .equatable()
             }
         }
     }
@@ -368,6 +388,7 @@ struct CanvasView: View {
             } onSelect: {
                 selectedItemID = layer.id
             }
+            .equatable()
         }
     }
 
@@ -392,6 +413,7 @@ struct CanvasView: View {
             } onSelect: {
                 selectedItemID = layer.id
             }
+            .equatable()
         }
     }
 
@@ -411,6 +433,7 @@ struct CanvasView: View {
                 iconSize: iconSize,
                 backdrop: panelBackdrop
             )
+            .equatable()
         }
     }
 
@@ -438,6 +461,7 @@ struct CanvasView: View {
             } onSelect: {
                 selectedItemID = item.id
             }
+            .equatable()
         }
     }
 

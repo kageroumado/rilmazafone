@@ -30,7 +30,7 @@ struct GradientEditor: View {
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
-                Slider(value: angleBinding, in: 0 ... 360)
+                UndoCoalescingSlider(value: angleBinding, range: 0 ... 360)
             }
 
         case .radial:
@@ -60,7 +60,7 @@ struct GradientEditor: View {
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
-                Slider(value: startRadiusBinding, in: 0 ... 1)
+                UndoCoalescingSlider(value: startRadiusBinding, range: 0 ... 1)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -71,7 +71,7 @@ struct GradientEditor: View {
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
-                Slider(value: endRadiusBinding, in: 0 ... 2)
+                UndoCoalescingSlider(value: endRadiusBinding, range: 0 ... 2)
             }
         }
     }

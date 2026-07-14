@@ -64,8 +64,8 @@ struct InspectorView: View {
         return .none
     }
 
-    private var activeElementKind: ElementKind {
-        switch resolvedElement {
+    private func kind(of element: ResolvedElement) -> ElementKind {
+        switch element {
         case .backgroundLayer: .backgroundLayer
         case .textLayer: .textLayer
         case .sfSymbolLayer: .sfSymbolLayer
@@ -82,23 +82,23 @@ struct InspectorView: View {
     @State private var cachedTextLayer: TextLayerConfiguration?
     @State private var cachedSFSymbolLayer: SFSymbolLayerConfiguration?
 
-    private var displayedItem: CanvasItem? {
-        if case let .item(item) = resolvedElement { return item }
+    private func displayedItem(for element: ResolvedElement) -> CanvasItem? {
+        if case let .item(item) = element { return item }
         return cachedItem
     }
 
-    private var displayedBackgroundLayer: BackgroundLayer? {
-        if case let .backgroundLayer(layer) = resolvedElement { return layer }
+    private func displayedBackgroundLayer(for element: ResolvedElement) -> BackgroundLayer? {
+        if case let .backgroundLayer(layer) = element { return layer }
         return cachedBackgroundLayer
     }
 
-    private var displayedTextLayer: TextLayerConfiguration? {
-        if case let .textLayer(layer) = resolvedElement { return layer }
+    private func displayedTextLayer(for element: ResolvedElement) -> TextLayerConfiguration? {
+        if case let .textLayer(layer) = element { return layer }
         return cachedTextLayer
     }
 
-    private var displayedSFSymbolLayer: SFSymbolLayerConfiguration? {
-        if case let .sfSymbolLayer(layer) = resolvedElement { return layer }
+    private func displayedSFSymbolLayer(for element: ResolvedElement) -> SFSymbolLayerConfiguration? {
+        if case let .sfSymbolLayer(layer) = element { return layer }
         return cachedSFSymbolLayer
     }
 
@@ -114,10 +114,14 @@ struct InspectorView: View {
 
     @ViewBuilder
     private var elementTab: some View {
-        let kind = activeElementKind
+        // Resolved once per body evaluation — the resolver linear-scans the
+        // document collections, so deriving every displayed value from this
+        // single local avoids ~5 redundant scans per update.
+        let element = resolvedElement
+        let kind = kind(of: element)
 
         ZStack {
-            if let item = displayedItem {
+            if let item = displayedItem(for: element) {
                 Form {
                     ItemInspector(item: item)
                 }
@@ -127,7 +131,7 @@ struct InspectorView: View {
                 .accessibilityHidden(kind != .item)
             }
 
-            if let layer = displayedBackgroundLayer {
+            if let layer = displayedBackgroundLayer(for: element) {
                 Form {
                     ImageLayerInspector(layer: layer, selectedItemID: $selectedItemID)
                     LayerEffectsSection(layer: layer)
@@ -138,7 +142,7 @@ struct InspectorView: View {
                 .accessibilityHidden(kind != .backgroundLayer)
             }
 
-            if let layer = displayedTextLayer {
+            if let layer = displayedTextLayer(for: element) {
                 Form {
                     TextLayerInspector(layer: layer, selectedItemID: $selectedItemID)
                 }
@@ -148,7 +152,7 @@ struct InspectorView: View {
                 .accessibilityHidden(kind != .textLayer)
             }
 
-            if let layer = displayedSFSymbolLayer {
+            if let layer = displayedSFSymbolLayer(for: element) {
                 Form {
                     SFSymbolLayerInspector(layer: layer, selectedItemID: $selectedItemID)
                 }
@@ -162,8 +166,8 @@ struct InspectorView: View {
                 noSelectionPlaceholder
             }
         }
-        .onChange(of: resolvedElement, initial: true) {
-            updateElementCache(resolvedElement)
+        .onChange(of: element, initial: true) { _, newElement in
+            updateElementCache(newElement)
         }
     }
 
