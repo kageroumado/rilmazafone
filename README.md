@@ -19,8 +19,8 @@ A native macOS app for creating beautifully styled DMG disk images. Design your 
 
 ## Requirements
 
-- macOS 15.0+
-- Xcode 16.0+
+- macOS 26.0+
+- Xcode 26.0+
 
 ## Building
 
@@ -73,7 +73,7 @@ Rilmazafone is a document-based app — each `.dmgtemplate` file represents one 
 
 ### Command Line
 
-Rilmazafone can also build DMGs headlessly from the terminal, useful for CI/CD pipelines and automation.
+Rilmazafone can also build DMGs headlessly from the terminal, useful for CI/CD pipelines and automation. The CLI is exclusive to the GitHub build — the App Store build launches the GUI regardless of arguments.
 
 ```bash
 # Generate a starter template
@@ -152,13 +152,20 @@ The build process (orchestrated by `BuildManager`) runs in 7 steps:
 6. **Set volume icon** — Compose app icon onto disk icon (ICNS), apply to volume
 7. **Compress** — Detach, convert to final format, optionally code sign
 
-### Private API Usage
+### Build Variants
 
-`BackdropBlurView.swift` uses `CABackdropLayer` and `CAFilter` (private CoreAnimation APIs) to render real-time backdrop blur effects for item background panels on the canvas. This means:
+Rilmazafone builds two products from the same codebase. The designer, the build pipeline, and the DMGs they produce are identical — the differences are packaging:
 
-- The app **cannot be distributed on the Mac App Store** without removing this feature
-- These APIs may break in future macOS versions
-- The rest of the app uses only public APIs
+| | GitHub build (`Rilmazafone`) | App Store build (`Rilmazafone AS`) |
+|---|---|---|
+| **Price** | Free (MIT) | Paid — a convenience build that supports development |
+| **CLI** (`build` / `init`) | ✓ | — (any argv launches the GUI) |
+| **Sandbox** | Unsandboxed | App Sandbox |
+| **Glass panel preview** | Real-time backdrop blur via private CoreAnimation APIs (`CABackdropLayer`, `CAFilter`) | Public APIs only |
+
+The private-API glass preview lives in `BackdropBlurView.swift`, which is a member of the GitHub target only; the App Store target's release build additionally fails if private symbols ever appear in the product. These APIs may break in future macOS versions — everything else uses only public APIs.
+
+If you build from source, the GitHub build is the full experience. The App Store listing exists for people who prefer the convenience of Mac App Store installs and updates.
 
 ### Document Format
 

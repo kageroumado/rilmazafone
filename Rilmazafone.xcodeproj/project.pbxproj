@@ -18,6 +18,7 @@
 
 /* Begin PBXFileReference section */
 		0B5F29582F452BCF00682874 /* Rilmazafone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rilmazafone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0BA5F00100000000000000A1 /* Rilmazafone AS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rilmazafone AS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B5F64172F480DA900682874 /* RilmazafoneTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RilmazafoneTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -29,6 +30,16 @@
 			);
 			target = 0B5F29572F452BCF00682874 /* Rilmazafone */;
 		};
+		0BA5F00100000000000000AA /* Exceptions for "Rilmazafone" folder in "Rilmazafone AS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				Headers/BridgingHeader.h,
+				Headers/QuartzCorePrivate.h,
+				Views/Shared/BackdropBlurView.swift,
+			);
+			target = 0BA5F00100000000000000A2 /* Rilmazafone AS */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -36,6 +47,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				0B5F29642F452BD100682874 /* Exceptions for "Rilmazafone" folder in "Rilmazafone" target */,
+				0BA5F00100000000000000AA /* Exceptions for "Rilmazafone" folder in "Rilmazafone AS" target */,
 			);
 			path = Rilmazafone;
 			sourceTree = "<group>";
@@ -58,6 +70,11 @@
 			files = (
 			);
 		};
+		0BA5F00100000000000000A4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -74,6 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				0B5F29582F452BCF00682874 /* Rilmazafone.app */,
+				0BA5F00100000000000000A1 /* Rilmazafone AS.app */,
 				0B5F64172F480DA900682874 /* RilmazafoneTests.xctest */,
 			);
 			name = Products;
@@ -98,6 +116,25 @@
 			name = Rilmazafone;
 			productName = Rilmazafone;
 			productReference = 0B5F29582F452BCF00682874 /* Rilmazafone.app */;
+			productType = "com.apple.product-type.application";
+		};
+		0BA5F00100000000000000A2 /* Rilmazafone AS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0BA5F00100000000000000A7 /* Build configuration list for PBXNativeTarget "Rilmazafone AS" */;
+			buildPhases = (
+				0BA5F00100000000000000A3 /* Sources */,
+				0BA5F00100000000000000A4 /* Frameworks */,
+				0BA5F00100000000000000A5 /* Resources */,
+				0BA5F00100000000000000A6 /* Private Symbol Gate */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				0B5F295A2F452BCF00682874 /* Rilmazafone */,
+			);
+			name = "Rilmazafone AS";
+			productName = "Rilmazafone AS";
+			productReference = 0BA5F00100000000000000A1 /* Rilmazafone AS.app */;
 			productType = "com.apple.product-type.application";
 		};
 		0B5F64162F480DA900682874 /* RilmazafoneTests */ = {
@@ -134,6 +171,9 @@
 					0B5F29572F452BCF00682874 = {
 						CreatedOnToolsVersion = 26.2;
 					};
+					0BA5F00100000000000000A2 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 					0B5F64162F480DA900682874 = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 0B5F29572F452BCF00682874;
@@ -155,6 +195,7 @@
 			projectRoot = "";
 			targets = (
 				0B5F29572F452BCF00682874 /* Rilmazafone */,
+				0BA5F00100000000000000A2 /* Rilmazafone AS */,
 				0B5F64162F480DA900682874 /* RilmazafoneTests */,
 			);
 		};
@@ -171,7 +212,34 @@
 			files = (
 			);
 		};
+		0BA5F00100000000000000A5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0BA5F00100000000000000A6 /* Private Symbol Gate */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Private Symbol Gate";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Private Symbol Gate: skipped for ${CONFIGURATION} configuration\"\n  exit 0\nfi\n\nBINARY=\"${CODESIGNING_FOLDER_PATH}/Contents/MacOS/${EXECUTABLE_NAME}\"\nif [ ! -f \"${BINARY}\" ]; then\n  echo \"error: Private Symbol Gate: built binary not found at ${BINARY}\"\n  exit 1\nfi\n\nDUMP=\"$(nm -m \"${BINARY}\" 2>/dev/null; strings -a \"${BINARY}\" 2>/dev/null)\"\nSTATUS=0\nfor SYM in CABackdropLayer CAFilter windowServerAware bleedAmount allowsInPlaceFiltering; do\n  if printf '%s' \"${DUMP}\" | grep -q \"${SYM}\"; then\n    echo \"error: Private Symbol Gate: forbidden private-API symbol '${SYM}' found in ${EXECUTABLE_NAME}. The App Store build must never reference private QuartzCore APIs (CABackdropLayer/CAFilter). Ensure BackdropBlurView.swift and the private headers are excluded from the Rilmazafone AS target.\"\n    STATUS=1\n  fi\ndone\n\nif [ ${STATUS} -eq 0 ]; then\n  echo \"Private Symbol Gate: passed - no private QuartzCore symbols in ${EXECUTABLE_NAME}\"\nfi\nexit ${STATUS}\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		0B5F29542F452BCF00682874 /* Sources */ = {
@@ -180,6 +248,11 @@
 			);
 		};
 		0B5F64132F480DA900682874 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		0BA5F00100000000000000A3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
 			);
@@ -208,8 +281,8 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Rilmazafone/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 kagerou.glass";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -245,8 +318,8 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Rilmazafone/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 kagerou.glass";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -261,6 +334,86 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = Rilmazafone/Headers/BridgingHeader.h;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = YES;
+				SWIFT_UPCOMING_FEATURE_INTERNAL_IMPORTS_BY_DEFAULT = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		0BA5F00100000000000000A8 /* Debug configuration for PBXNativeTarget "Rilmazafone AS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Rilmazafone/RilmazafoneAS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Rilmazafone/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 kagerou.glass";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = glass.kagerou.rilmazafone;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APPSTORE DEBUG";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = YES;
+				SWIFT_UPCOMING_FEATURE_INTERNAL_IMPORTS_BY_DEFAULT = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		0BA5F00100000000000000A9 /* Release configuration for PBXNativeTarget "Rilmazafone AS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Rilmazafone/RilmazafoneAS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Rilmazafone/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 kagerou.glass";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = glass.kagerou.rilmazafone;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APPSTORE;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = YES;
 				SWIFT_UPCOMING_FEATURE_INTERNAL_IMPORTS_BY_DEFAULT = YES;
@@ -441,6 +594,14 @@
 			buildConfigurations = (
 				0B5F29662F452BD100682874 /* Debug configuration for PBXNativeTarget "Rilmazafone" */,
 				0B5F29672F452BD100682874 /* Release configuration for PBXNativeTarget "Rilmazafone" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		0BA5F00100000000000000A7 /* Build configuration list for PBXNativeTarget "Rilmazafone AS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0BA5F00100000000000000A8 /* Debug configuration for PBXNativeTarget "Rilmazafone AS" */,
+				0BA5F00100000000000000A9 /* Release configuration for PBXNativeTarget "Rilmazafone AS" */,
 			);
 			defaultConfigurationName = Release;
 		};

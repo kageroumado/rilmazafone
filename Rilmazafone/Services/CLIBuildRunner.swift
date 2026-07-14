@@ -1,8 +1,10 @@
+#if !APPSTORE
 import Foundation
 
-/// Headless DMG build runner for CLI invocation.
+/// Headless DMG build runner for CLI invocation. GitHub build only —
+/// the App Store build compiles this out and treats argv as a GUI launch.
 ///
-/// Usage: `Rilmazafone build <template.rilmazafone> -o <output.dmg>`
+/// Usage: `Rilmazafone build <template.dmgtemplate> -o <output.dmg>`
 ///
 /// Handles CLI argument parsing, template loading, and stderr progress output,
 /// delegating the actual build to the shared `DMGBuildPipeline`.
@@ -240,8 +242,9 @@ nonisolated enum CLIBuildRunner {
         var errorDescription: String? {
             switch self {
             case let .missingManifest(name):
-                "No document.json found in \(name). Is this a valid .rilmazafone template?"
+                "No document.json found in \(name). Is this a valid .dmgtemplate?"
             }
         }
     }
 }
+#endif

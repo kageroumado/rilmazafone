@@ -65,6 +65,26 @@ struct ItemBackgroundPanel: View, Equatable {
         ZStack {
             if bg.enabled {
                 if bg.blurRadius > 0 {
+                    #if APPSTORE
+                    // TODO(1.1): swap in the public CanvasBackdropBlurView (CIGaussianBlur)
+                    // preview. The App Store target excludes BackdropBlurView.swift (private
+                    // CABackdropLayer/CAFilter), so it shows a neutral material stand-in until
+                    // the public preview lands.
+                    if bg.blurFeather > 0 {
+                        let featherPx = bgSide * bg.blurFeather * 0.5
+                        Rectangle()
+                            .fill(.ultraThinMaterial)
+                            .mask {
+                                RoundedRectangle(cornerRadius: max(cr - featherPx, 0))
+                                    .fill(.white)
+                                    .padding(featherPx)
+                                    .blur(radius: featherPx)
+                            }
+                    } else {
+                        Rectangle()
+                            .fill(.ultraThinMaterial)
+                    }
+                    #else
                     if bg.blurFeather > 0 {
                         let featherPx = bgSide * bg.blurFeather * 0.5
                         BackdropBlurView(blurRadius: bg.blurRadius * currentZoom)
@@ -77,6 +97,7 @@ struct ItemBackgroundPanel: View, Equatable {
                     } else {
                         BackdropBlurView(blurRadius: bg.blurRadius * currentZoom)
                     }
+                    #endif
                 }
 
                 RoundedRectangle(cornerRadius: cr)

@@ -1,9 +1,11 @@
 import AppKit
 import SwiftUI
 
-// CLI mode: `Rilmazafone build ...` or `Rilmazafone init ...`
+// CLI mode: `Rilmazafone build ...` or `Rilmazafone init ...` (GitHub build only).
 // GUI mode: all other invocations launch the normal SwiftUI app.
+// The App Store build has no CLI — any argv launches the GUI.
 
+#if !APPSTORE
 if CommandLine.arguments.count >= 2 {
     let subcommand = CommandLine.arguments[1]
 
@@ -24,5 +26,6 @@ if CommandLine.arguments.count >= 2 {
         break
     }
 }
+#endif
 
 RilmazafoneApp.main()
