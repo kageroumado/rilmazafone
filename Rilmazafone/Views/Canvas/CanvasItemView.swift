@@ -97,6 +97,7 @@ struct CanvasItemView: View, Equatable {
         }
         .task(id: item.iconCacheKey(isSourceMissing: isSourceMissing)) {
             cachedIcon = CanvasItem.resolveIcon(for: item, documentURL: document.fileURL)
+                ?? document.importedItemIcons[item.id]
         }
         .accessibilityLabel("\(item.label), position \(Int(item.position.x)), \(Int(item.position.y))")
         .accessibilityAddTraits(.isButton)

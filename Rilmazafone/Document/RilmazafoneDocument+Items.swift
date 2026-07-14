@@ -386,6 +386,8 @@ extension RilmazafoneDocument {
                 await addApp(from: url, at: CGPoint(x: appX, y: centerY), undoManager: undoManager)
             } else if ["png", "jpg", "jpeg", "tiff"].contains(ext) {
                 try? importBackgroundImage(from: url, undoManager: undoManager)
+            } else if ext == "dmg" {
+                await importDroppedDMG(from: url)
             } else {
                 addFileItem(from: url, at: defaultPosition, undoManager: undoManager)
             }

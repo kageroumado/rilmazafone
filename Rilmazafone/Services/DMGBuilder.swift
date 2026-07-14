@@ -87,6 +87,37 @@ nonisolated enum DMGBuilder {
         return tempMount
     }
 
+    /// Mounts a DMG read-only for inspection and returns the mount point URL.
+    ///
+    /// Used by the import flow: the image is never modified, so `-readonly`
+    /// keeps the attach safe for images of any format (including compressed
+    /// ones, which cannot be mounted writable anyway).
+    static func attachReadOnly(_ dmgPath: URL) async throws -> URL {
+        let tempMount = FileManager.default.temporaryDirectory
+            .appending(path: "rilmazafone-import-\(UUID().uuidString)")
+
+        try FileManager.default.createDirectory(at: tempMount, withIntermediateDirectories: true)
+
+        do {
+            try await ProcessRunner.run(
+                Executable.hdiutil,
+                arguments: [
+                    "attach", dmgPath.path,
+                    "-readonly",
+                    "-noautoopen",
+                    "-nobrowse",
+                    "-noverify",
+                    "-mountpoint", tempMount.path,
+                ]
+            )
+        } catch {
+            try? FileManager.default.removeItem(at: tempMount)
+            throw error
+        }
+
+        return tempMount
+    }
+
     /// Unmounts a DMG volume with retry on "resource busy".
     static func detach(_ mountPoint: URL) async throws {
         for attempt in 0 ..< detachRetries {

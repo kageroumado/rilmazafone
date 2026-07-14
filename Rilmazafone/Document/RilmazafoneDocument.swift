@@ -25,6 +25,12 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     /// never persisted; recomputed on open, add, remove, relink, and before builds.
     var missingSourceIDs: Set<UUID> = []
 
+    /// App icons harvested during DMG import, keyed by item ID. Runtime state,
+    /// never persisted: lets the canvas show the real icon for items whose
+    /// in-DMG source is unreachable while the missing-source badge drives
+    /// relinking.
+    var importedItemIcons: [UUID: NSImage] = [:]
+
     /// The document's on-disk URL, fed in by the hosting view.
     ///
     /// `ReferenceFileDocument` exposes no URL in its read or write configurations,

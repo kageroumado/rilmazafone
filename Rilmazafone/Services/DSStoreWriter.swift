@@ -163,12 +163,14 @@ nonisolated enum DSStoreWriter {
     /// The bwsp `WindowBounds` stores the window **frame** size, which includes
     /// the title bar. The canvas designs for content-area dimensions, so we add
     /// this offset to ensure the Finder content area matches the canvas.
-    private static let finderTitleBarHeight: CGFloat = 32
+    /// ``DSStoreReader`` clients invert this when mapping back to the canvas.
+    static let finderTitleBarHeight: CGFloat = 32
 
     /// Finder's icon view applies an internal top inset within the content area.
     /// Iloc y-positions must be reduced by this amount so icons render at the
-    /// intended canvas position.
-    private static let finderContentInset: CGFloat = 10
+    /// intended canvas position. ``DSStoreReader`` clients invert this when
+    /// mapping back to the canvas.
+    static let finderContentInset: CGFloat = 10
 
     /// bwsp record: browser window settings as a binary plist.
     private static func bwspRecord(
