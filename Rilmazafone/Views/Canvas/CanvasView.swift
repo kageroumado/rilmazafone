@@ -67,10 +67,10 @@ struct CanvasView: View {
             }
         }
         .overlay {
-            if document.configuration.items.isEmpty,
-               document.configuration.background.layers.isEmpty,
-               document.configuration.textLayers.isEmpty,
-               document.configuration.sfSymbolLayers.isEmpty {
+            if document.items.isEmpty,
+               document.background.layers.isEmpty,
+               document.textLayers.isEmpty,
+               document.sfSymbolLayers.isEmpty {
                 EmptyCanvasView(isFileImporterPresented: $isFileImporterPresented)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -90,7 +90,7 @@ struct CanvasView: View {
             if case let .success(urls) = result, let url = urls.first {
                 Task {
                     let width = windowWidth
-                    let iconSize = document.configuration.iconSize
+                    let iconSize = document.iconSize
                     let appX = round((2 * width - iconSize) / 6)
                     let centerY = round(windowHeight / 2)
                     await document.addApp(
@@ -116,21 +116,23 @@ struct CanvasView: View {
 
     /// Fingerprint of every background-affecting input to the panel backdrop composite
     /// (base background, image layers and their loaded images, text, symbols, window
-    /// size), or `nil` when no panel needs the glass preview. Item positions are
-    /// deliberately excluded so drag-moves never re-composite.
+    /// size), or `nil` when no panel needs the glass preview. Built from the document's
+    /// slice generation counters instead of deep-hashing content, so evaluating it is
+    /// O(1) in document size. Item positions are deliberately excluded (no
+    /// `itemsGeneration`) so drag-moves never re-composite.
     private var panelBackdropGeneration: Int? {
-        guard document.configuration.items.contains(where: { item in
+        guard document.items.contains(where: { item in
                   guard let bg = item.background else { return false }
                   return bg.enabled && bg.blurRadius > 0
               })
         else { return nil }
 
         var hasher = Hasher()
-        hasher.combine(document.configuration.window)
-        hasher.combine(document.configuration.background)
-        hasher.combine(document.configuration.textLayers)
-        hasher.combine(document.configuration.sfSymbolLayers)
-        hasher.combine(Set(document.backgroundImages.keys))
+        hasher.combine(document.restGeneration)
+        hasher.combine(document.backgroundGeneration)
+        hasher.combine(document.textLayersGeneration)
+        hasher.combine(document.sfSymbolLayersGeneration)
+        hasher.combine(document.imagesGeneration)
         return hasher.finalize()
     }
 
@@ -260,7 +262,7 @@ struct CanvasView: View {
                     .frame(width: 16, height: 16)
                     .padding(.trailing, 4)
 
-                Text(document.configuration.volumeName)
+                Text(document.volumeName)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(
                         prefersDarkAppearance ? ChromeColors.darkTitleText : ChromeColors.lightTitleText
@@ -281,7 +283,7 @@ struct CanvasView: View {
             ZStack {
                 windowContentBackground
 
-                if document.configuration.background.type == .image {
+                if document.background.type == .image {
                     backgroundLayersOverlay(zoom: currentZoom)
                 }
 
@@ -300,8 +302,8 @@ struct CanvasView: View {
 
     @ViewBuilder
     private var windowContentBackground: some View {
-        if document.configuration.background.type == .gradient,
-           let grad = document.configuration.background.gradient {
+        if document.background.type == .gradient,
+           let grad = document.background.gradient {
             gradientView(for: grad)
         } else {
             Rectangle()
@@ -341,7 +343,7 @@ struct CanvasView: View {
     // MARK: - Background Layers
 
     private func backgroundLayersOverlay(zoom currentZoom: CGFloat) -> some View {
-        ForEach(document.configuration.background.layers) { layer in
+        ForEach(document.background.layers) { layer in
             if let image = document.backgroundImages[layer.id] {
                 BackgroundLayerCanvasView(
                     layer: layer,
@@ -370,7 +372,7 @@ struct CanvasView: View {
     // MARK: - Text Layers
 
     private func textLayersOverlay(zoom currentZoom: CGFloat) -> some View {
-        ForEach(document.configuration.textLayers) { layer in
+        ForEach(document.textLayers) { layer in
             TextLayerCanvasView(
                 layer: layer,
                 isSelected: selectedItemID == layer.id,
@@ -395,7 +397,7 @@ struct CanvasView: View {
     // MARK: - SF Symbol Layers
 
     private func sfSymbolLayersOverlay(zoom currentZoom: CGFloat) -> some View {
-        ForEach(document.configuration.sfSymbolLayers) { layer in
+        ForEach(document.sfSymbolLayers) { layer in
             SFSymbolLayerCanvasView(
                 layer: layer,
                 isSelected: selectedItemID == layer.id,
@@ -420,9 +422,9 @@ struct CanvasView: View {
     // MARK: - Item Backgrounds
 
     private func itemBackgroundsOverlay(zoom currentZoom: CGFloat) -> some View {
-        let iconSize = document.configuration.iconSize
+        let iconSize = document.iconSize
 
-        return ForEach(document.configuration.items.filter { item in
+        return ForEach(document.items.filter { item in
             guard let bg = item.background else { return false }
             return bg.enabled || bg.shadow?.enabled == true || bg.bevel?.enabled == true
         }) { item in
@@ -440,18 +442,18 @@ struct CanvasView: View {
     // MARK: - Icons
 
     private func iconsOverlay(zoom currentZoom: CGFloat) -> some View {
-        ForEach(document.configuration.items) { item in
+        ForEach(document.items) { item in
             CanvasItemView(
                 item: item,
                 isSelected: selectedItemID == item.id,
-                iconSize: document.configuration.iconSize,
-                textSize: document.configuration.textSize,
+                iconSize: document.iconSize,
+                textSize: document.textSize,
                 zoom: currentZoom,
                 windowSize: CGSize(
                     width: windowWidth,
                     height: windowHeight
                 ),
-                hideExtensions: document.configuration.hideExtensions,
+                hideExtensions: document.hideExtensions,
                 onDragChanged: { proposed in
                     snapToGuides(proposed: proposed, excludingItemID: item.id)
                 }
@@ -493,13 +495,13 @@ struct CanvasView: View {
     /// Collects all positions of items other than the one being dragged.
     private func siblingPositions(excludingItemID id: UUID) -> [CGPoint] {
         var positions: [CGPoint] = []
-        for item in document.configuration.items where item.id != id {
+        for item in document.items where item.id != id {
             positions.append(item.position)
         }
-        for layer in document.configuration.textLayers where layer.id != id {
+        for layer in document.textLayers where layer.id != id {
             positions.append(layer.position)
         }
-        for layer in document.configuration.sfSymbolLayers where layer.id != id {
+        for layer in document.sfSymbolLayers where layer.id != id {
             positions.append(layer.position)
         }
         return positions
@@ -566,11 +568,11 @@ struct CanvasView: View {
     // MARK: - Title Bar Icon
 
     private var firstAppSourcePath: String? {
-        document.configuration.items.first { $0.kind == .app }?.sourcePath
+        document.items.first { $0.kind == .app }?.sourcePath
     }
 
     private func generateTitleBarIcon() async -> NSImage? {
-        guard let app = document.configuration.items.first(where: { $0.kind == .app }) else {
+        guard let app = document.items.first(where: { $0.kind == .app }) else {
             return nil
         }
         return await SourceAccess.withScope(item: app, documentURL: document.fileURL) { url in
@@ -585,15 +587,15 @@ struct CanvasView: View {
     // MARK: - Computed
 
     private var windowWidth: CGFloat {
-        document.configuration.window.width
+        document.window.width
     }
 
     private var windowHeight: CGFloat {
-        document.configuration.window.height
+        document.window.height
     }
 
     private var windowBackgroundFill: Color {
-        switch document.configuration.background.type {
+        switch document.background.type {
         case .none:
             // No baked background: Finder shows its default window fill, which
             // does follow the system appearance — preview it per the toggle.
@@ -603,7 +605,7 @@ struct CanvasView: View {
         case .image, .gradient:
             return Color.white
         case .color:
-            let c = document.configuration.background.color
+            let c = document.background.color
             return Color(red: c.red, green: c.green, blue: c.blue)
         }
     }

@@ -19,13 +19,144 @@ import UniformTypeIdentifiers
 final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     @ObservationIgnored let objectWillChange = ObservableObjectPublisher()
 
-    // MARK: - Persisted State
+    // MARK: - Persisted State (Observation Slices)
 
-    var configuration: DMGConfiguration
+    // The document model is stored as four hot slices plus a remainder so a
+    // mutation invalidates only the views that read its slice. `configuration`
+    // below reassembles the full model for serialization, builds, and other
+    // cold paths.
+
+    /// The canvas items slice of the document model.
+    var items: [CanvasItem] {
+        didSet { itemsGeneration &+= 1 }
+    }
+
+    /// The background slice of the document model.
+    var background: BackgroundConfiguration {
+        didSet { backgroundGeneration &+= 1 }
+    }
+
+    /// The text layers slice of the document model.
+    var textLayers: [TextLayerConfiguration] {
+        didSet { textLayersGeneration &+= 1 }
+    }
+
+    /// The SF Symbol layers slice of the document model.
+    var sfSymbolLayers: [SFSymbolLayerConfiguration] {
+        didSet { sfSymbolLayersGeneration &+= 1 }
+    }
+
+    /// Every configuration field outside the four hot slices (volume name,
+    /// window, sizes, code signing, formats, ...).
+    ///
+    /// Invariant: the slice fields inside (`items`, `background`, `textLayers`,
+    /// `sfSymbolLayers`) always hold their empty/default values. ``split(_:)``
+    /// is the only place that constructs this value, which keeps the design
+    /// drift-safe: any future `DMGConfiguration` field automatically lives here.
+    private var rest: DMGConfiguration {
+        didSet { restGeneration &+= 1 }
+    }
+
+    /// The full document model, reassembled from the observation slices.
+    ///
+    /// Reading registers an observation dependency on all five stored slices,
+    /// so view hot paths should read the slice properties (or the `rest`-backed
+    /// accessors) instead; cold paths (snapshot, build, template save, import)
+    /// read this freely. Writing replaces every slice — mutators must write
+    /// their slice directly rather than going through this setter.
+    var configuration: DMGConfiguration {
+        get {
+            var full = rest
+            full.items = items
+            full.background = background
+            full.textLayers = textLayers
+            full.sfSymbolLayers = sfSymbolLayers
+            return full
+        }
+        set {
+            let slices = Self.split(newValue)
+            items = slices.items
+            background = slices.background
+            textLayers = slices.textLayers
+            sfSymbolLayers = slices.sfSymbolLayers
+            rest = slices.rest
+        }
+    }
+
+    // MARK: - Slice Generations
+
+    // Monotonic version counters bumped whenever their slice changes. They are
+    // tracked (deliberately not @ObservationIgnored) so reading one registers
+    // an observation dependency exactly as fine-grained as the slice it
+    // versions — task fingerprints read the counters instead of deep-hashing
+    // the model, staying O(1) in document size while still invalidating.
+
+    private(set) var itemsGeneration: UInt64 = 0
+    private(set) var backgroundGeneration: UInt64 = 0
+    private(set) var textLayersGeneration: UInt64 = 0
+    private(set) var sfSymbolLayersGeneration: UInt64 = 0
+    private(set) var restGeneration: UInt64 = 0
+    private(set) var imagesGeneration: UInt64 = 0
+
+    // MARK: - Rest-Backed Accessors
+
+    // Read-only views into `rest` for view hot paths: reading one registers a
+    // dependency on `rest` alone instead of the whole reassembled
+    // `configuration`. Mutations go through the undo-aware setters below.
+
+    var volumeName: String { rest.volumeName }
+    var window: WindowConfiguration { rest.window }
+    var iconSize: CGFloat { rest.iconSize }
+    var textSize: CGFloat { rest.textSize }
+    var gridSpacing: CGFloat { rest.gridSpacing }
+    var isGridSpacingAuto: Bool { rest.isGridSpacingAuto }
+    var hideExtensions: Bool { rest.hideExtensions }
+    var volumeIcon: VolumeIconConfiguration { rest.volumeIcon }
+    var dmgFormat: DMGImageFormat { rest.dmgFormat }
+    var filesystem: DMGFilesystem { rest.filesystem }
+
+    /// The code-signing slice of `rest`. Settable so mutators in other files
+    /// (placeholder filling) can write it without access to the private `rest`.
+    var codeSign: CodeSignConfiguration {
+        get { rest.codeSign }
+        set { rest.codeSign = newValue }
+    }
+
+    // MARK: - Slice Splitting
+
+    private struct ConfigurationSlices {
+        var items: [CanvasItem]
+        var background: BackgroundConfiguration
+        var textLayers: [TextLayerConfiguration]
+        var sfSymbolLayers: [SFSymbolLayerConfiguration]
+        var rest: DMGConfiguration
+    }
+
+    /// Splits a full configuration into the four hot slices plus the pruned
+    /// remainder, upholding the `rest` invariant. Used by the `configuration`
+    /// setter and the inits (which assign stored properties directly).
+    private nonisolated static func split(
+        _ full: DMGConfiguration
+    ) -> ConfigurationSlices {
+        var rest = full
+        rest.items = []
+        rest.background = BackgroundConfiguration()
+        rest.textLayers = []
+        rest.sfSymbolLayers = []
+        return ConfigurationSlices(
+            items: full.items,
+            background: full.background,
+            textLayers: full.textLayers,
+            sfSymbolLayers: full.sfSymbolLayers,
+            rest: rest
+        )
+    }
 
     // MARK: - Runtime State
 
-    var backgroundImages: [UUID: NSImage] = [:]
+    var backgroundImages: [UUID: NSImage] = [:] {
+        didSet { imagesGeneration &+= 1 }
+    }
     var volumeIconImage: NSImage?
     var appIconImage: NSImage?
 
@@ -66,7 +197,11 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     /// Nonisolated because AppKit instantiates the document shell on a
     /// background queue when opening an existing file.
     nonisolated init() {
-        self.configuration = DMGConfiguration()
+        self.items = []
+        self.background = BackgroundConfiguration()
+        self.textLayers = []
+        self.sfSymbolLayers = []
+        self.rest = DMGConfiguration()
     }
 
     init(configuration: ReadConfiguration) throws {
@@ -85,7 +220,12 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
             from: manifestData
         )
         decoded.expandAbbreviatedPaths()
-        self.configuration = decoded
+        let slices = Self.split(decoded)
+        self.items = slices.items
+        self.background = slices.background
+        self.textLayers = slices.textLayers
+        self.sfSymbolLayers = slices.sfSymbolLayers
+        self.rest = slices.rest
         self.assetsWrapper = directoryWrapper["Assets"]
 
         loadCachedImages()
@@ -154,8 +294,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     // MARK: - Undo-Aware Mutations
 
     func setVolumeName(_ newValue: String, undoManager: UndoManager?) {
-        let oldValue = configuration.volumeName
-        configuration.volumeName = newValue
+        let oldValue = rest.volumeName
+        rest.volumeName = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change Volume Name") { doc, um in
             doc.setVolumeName(oldValue, undoManager: um)
@@ -163,8 +303,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setWindowWidth(_ newValue: CGFloat, undoManager: UndoManager?) {
-        let oldValue = configuration.window.width
-        configuration.window.width = newValue
+        let oldValue = rest.window.width
+        rest.window.width = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change Window Width") { doc, um in
             doc.setWindowWidth(oldValue, undoManager: um)
@@ -172,8 +312,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setWindowHeight(_ newValue: CGFloat, undoManager: UndoManager?) {
-        let oldValue = configuration.window.height
-        configuration.window.height = newValue
+        let oldValue = rest.window.height
+        rest.window.height = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change Window Height") { doc, um in
             doc.setWindowHeight(oldValue, undoManager: um)
@@ -181,10 +321,10 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setWindowSize(width: CGFloat, height: CGFloat, undoManager: UndoManager?) {
-        let oldWidth = configuration.window.width
-        let oldHeight = configuration.window.height
-        configuration.window.width = width
-        configuration.window.height = height
+        let oldWidth = rest.window.width
+        let oldHeight = rest.window.height
+        rest.window.width = width
+        rest.window.height = height
         objectWillChange.send()
         withUndo(undoManager, "Change Window Size") { doc, um in
             doc.setWindowSize(width: oldWidth, height: oldHeight, undoManager: um)
@@ -193,8 +333,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
 
     func setIconSize(_ newValue: CGFloat, undoManager: UndoManager?) {
         let clamped = min(max(newValue, 16), 512)
-        let oldValue = configuration.iconSize
-        configuration.iconSize = clamped
+        let oldValue = rest.iconSize
+        rest.iconSize = clamped
         objectWillChange.send()
         withUndo(undoManager, "Change Icon Size") { doc, um in
             doc.setIconSize(oldValue, undoManager: um)
@@ -203,8 +343,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
 
     func setTextSize(_ newValue: CGFloat, undoManager: UndoManager?) {
         let clamped = min(max(newValue, 10), 16)
-        let oldValue = configuration.textSize
-        configuration.textSize = clamped
+        let oldValue = rest.textSize
+        rest.textSize = clamped
         objectWillChange.send()
         withUndo(undoManager, "Change Text Size") { doc, um in
             doc.setTextSize(oldValue, undoManager: um)
@@ -213,8 +353,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
 
     func setGridSpacing(_ newValue: CGFloat, undoManager: UndoManager?) {
         let clamped = min(max(newValue, 1), 100)
-        let oldValue = configuration.gridSpacing
-        configuration.gridSpacing = clamped
+        let oldValue = rest.gridSpacing
+        rest.gridSpacing = clamped
         objectWillChange.send()
         withUndo(undoManager, "Change Grid Spacing") { doc, um in
             doc.setGridSpacing(oldValue, undoManager: um)
@@ -222,8 +362,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setGridSpacingAuto(_ newValue: Bool, undoManager: UndoManager?) {
-        let oldValue = configuration.isGridSpacingAuto
-        configuration.isGridSpacingAuto = newValue
+        let oldValue = rest.isGridSpacingAuto
+        rest.isGridSpacingAuto = newValue
         objectWillChange.send()
         withUndo(undoManager, newValue ? "Auto Grid Spacing" : "Custom Grid Spacing") { doc, um in
             doc.setGridSpacingAuto(oldValue, undoManager: um)
@@ -231,8 +371,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setHideExtensions(_ newValue: Bool, undoManager: UndoManager?) {
-        let oldValue = configuration.hideExtensions
-        configuration.hideExtensions = newValue
+        let oldValue = rest.hideExtensions
+        rest.hideExtensions = newValue
         objectWillChange.send()
         withUndo(undoManager, newValue ? "Hide Extensions" : "Show Extensions") { doc, um in
             doc.setHideExtensions(oldValue, undoManager: um)
@@ -240,8 +380,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setBackgroundType(_ newValue: BackgroundType, undoManager: UndoManager?) {
-        let oldValue = configuration.background.type
-        configuration.background.type = newValue
+        let oldValue = background.type
+        background.type = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change Background Type") { doc, um in
             doc.setBackgroundType(oldValue, undoManager: um)
@@ -249,8 +389,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setBackgroundColor(_ newValue: RGBColor, undoManager: UndoManager?) {
-        let oldValue = configuration.background.color
-        configuration.background.color = newValue
+        let oldValue = background.color
+        background.color = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change Background Color") { doc, um in
             doc.setBackgroundColor(oldValue, undoManager: um)
@@ -278,8 +418,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setCodeSignEnabled(_ newValue: Bool, undoManager: UndoManager?) {
-        let oldValue = configuration.codeSign.enabled
-        configuration.codeSign.enabled = newValue
+        let oldValue = rest.codeSign.enabled
+        rest.codeSign.enabled = newValue
         objectWillChange.send()
         withUndo(undoManager, newValue ? "Enable Code Signing" : "Disable Code Signing") { doc, um in
             doc.setCodeSignEnabled(oldValue, undoManager: um)
@@ -287,8 +427,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setVolumeIconType(_ newValue: VolumeIconType, undoManager: UndoManager?) {
-        let oldValue = configuration.volumeIcon.type
-        configuration.volumeIcon.type = newValue
+        let oldValue = rest.volumeIcon.type
+        rest.volumeIcon.type = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change Volume Icon") { doc, um in
             doc.setVolumeIconType(oldValue, undoManager: um)
@@ -298,8 +438,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     // MARK: - Gradient
 
     func setGradientConfiguration(to newValue: GradientConfiguration?, undoManager: UndoManager?) {
-        let oldValue = configuration.background.gradient
-        configuration.background.gradient = newValue
+        let oldValue = background.gradient
+        background.gradient = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change Gradient") { doc, um in
             doc.setGradientConfiguration(to: oldValue, undoManager: um)
@@ -321,21 +461,21 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
         ensureAssetsWrapper()
         replaceAsset(named: filename, with: data)
 
-        let oldConfig = configuration.volumeIcon
+        let oldConfig = rest.volumeIcon
         let oldImage = volumeIconImage
-        configuration.volumeIcon = VolumeIconConfiguration(type: .custom, sourceIconName: filename)
+        rest.volumeIcon = VolumeIconConfiguration(type: .custom, sourceIconName: filename)
         volumeIconImage = NSImage(data: data)
         objectWillChange.send()
 
         withUndo(undoManager, "Set Custom Volume Icon") { doc, _ in
-            doc.configuration.volumeIcon = oldConfig
+            doc.rest.volumeIcon = oldConfig
             doc.volumeIconImage = oldImage
         }
     }
 
     func setDMGFormat(_ newValue: DMGImageFormat, undoManager: UndoManager?) {
-        let oldValue = configuration.dmgFormat
-        configuration.dmgFormat = newValue
+        let oldValue = rest.dmgFormat
+        rest.dmgFormat = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change DMG Format") { doc, um in
             doc.setDMGFormat(oldValue, undoManager: um)
@@ -343,8 +483,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setFilesystem(_ newValue: DMGFilesystem, undoManager: UndoManager?) {
-        let oldValue = configuration.filesystem
-        configuration.filesystem = newValue
+        let oldValue = rest.filesystem
+        rest.filesystem = newValue
         objectWillChange.send()
         withUndo(undoManager, "Change Filesystem") { doc, um in
             doc.setFilesystem(oldValue, undoManager: um)
@@ -352,8 +492,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     }
 
     func setCodeSignIdentity(_ identity: String?, undoManager: UndoManager?) {
-        let oldValue = configuration.codeSign.identity
-        configuration.codeSign.identity = identity
+        let oldValue = rest.codeSign.identity
+        rest.codeSign.identity = identity
         objectWillChange.send()
         withUndo(undoManager, "Change Signing Identity") { doc, um in
             doc.setCodeSignIdentity(oldValue, undoManager: um)
@@ -403,7 +543,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     /// Recomputes ``missingSourceIDs`` from the items' current on-disk state.
     func refreshSourceStates() {
         let missing = Set(
-            configuration.items
+            items
                 .filter { !SourceAccess.isSourceAvailable(item: $0, documentURL: fileURL) }
                 .map(\.id)
         )
@@ -415,8 +555,8 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     #if APPSTORE
         private func reconcileSourceBookmarks() {
             var didChange = false
-            for index in configuration.items.indices {
-                let item = configuration.items[index]
+            for index in items.indices {
+                let item = items[index]
                 guard item.requiresSource,
                       let bookmark = item.sourceBookmark,
                       let reconciliation = SourceAccess.reconcile(
@@ -425,11 +565,11 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
                 else { continue }
 
                 if let refreshed = reconciliation.refreshedBookmark {
-                    configuration.items[index].sourceBookmark = refreshed
+                    items[index].sourceBookmark = refreshed
                     didChange = true
                 }
-                if configuration.items[index].sourcePath != reconciliation.url.path {
-                    configuration.items[index].sourcePath = reconciliation.url.path
+                if items[index].sourcePath != reconciliation.url.path {
+                    items[index].sourcePath = reconciliation.url.path
                     didChange = true
                 }
             }
@@ -442,22 +582,22 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
     // MARK: - Queries
 
     var hasApp: Bool {
-        configuration.items.contains { $0.kind == .app }
+        items.contains { $0.kind == .app }
     }
 
     /// Check if a UUID belongs to a background layer
     func backgroundLayer(for id: UUID) -> BackgroundLayer? {
-        configuration.background.layers.first { $0.id == id }
+        background.layers.first { $0.id == id }
     }
 
     /// Check if a UUID belongs to a text layer
     func textLayer(for id: UUID) -> TextLayerConfiguration? {
-        configuration.textLayers.first { $0.id == id }
+        textLayers.first { $0.id == id }
     }
 
     /// Check if a UUID belongs to an SF symbol layer
     func sfSymbolLayer(for id: UUID) -> SFSymbolLayerConfiguration? {
-        configuration.sfSymbolLayers.first { $0.id == id }
+        sfSymbolLayers.first { $0.id == id }
     }
 
     // MARK: - Legibility
@@ -494,14 +634,14 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject {
         guard let assets = assetsWrapper?.fileWrappers else { return }
 
         backgroundImages.removeAll()
-        for layer in configuration.background.layers {
+        for layer in background.layers {
             if let wrapper = assets[layer.imageName],
                let data = wrapper.regularFileContents {
                 backgroundImages[layer.id] = NSImage(data: data)
             }
         }
 
-        if let iconName = configuration.volumeIcon.sourceIconName,
+        if let iconName = rest.volumeIcon.sourceIconName,
            let iconWrapper = assets[iconName],
            let iconData = iconWrapper.regularFileContents {
             volumeIconImage = NSImage(data: iconData)

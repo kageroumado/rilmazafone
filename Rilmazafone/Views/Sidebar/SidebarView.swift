@@ -15,9 +15,9 @@ struct SidebarView: View {
     @State private var isContentsExpanded = true
 
     private var hasBackgroundItems: Bool {
-        !document.configuration.background.layers.isEmpty
-            || !document.configuration.textLayers.isEmpty
-            || !document.configuration.sfSymbolLayers.isEmpty
+        !document.background.layers.isEmpty
+            || !document.textLayers.isEmpty
+            || !document.sfSymbolLayers.isEmpty
     }
 
     var body: some View {
@@ -25,21 +25,21 @@ struct SidebarView: View {
             // Background layers + text layers
             if hasBackgroundItems {
                 Section(isExpanded: $isBackgroundExpanded) {
-                    ForEach(document.configuration.background.layers) { layer in
+                    ForEach(document.background.layers) { layer in
                         BackgroundLayerRow(layer: layer)
                             .contextMenu {
                                 layerContextMenu(for: layer)
                             }
                     }
 
-                    ForEach(document.configuration.textLayers) { layer in
+                    ForEach(document.textLayers) { layer in
                         TextLayerRow(layer: layer)
                             .contextMenu {
                                 textLayerContextMenu(for: layer)
                             }
                     }
 
-                    ForEach(document.configuration.sfSymbolLayers) { layer in
+                    ForEach(document.sfSymbolLayers) { layer in
                         SFSymbolLayerRow(layer: layer)
                             .contextMenu {
                                 sfSymbolLayerContextMenu(for: layer)
@@ -52,7 +52,7 @@ struct SidebarView: View {
 
             // Content items
             Section(isExpanded: $isContentsExpanded) {
-                ForEach(document.configuration.items) { item in
+                ForEach(document.items) { item in
                     CanvasItemRow(item: item)
                         .contextMenu {
                             itemContextMenu(for: item)
@@ -67,7 +67,7 @@ struct SidebarView: View {
                 }
                 .onDelete { offsets in
                     for index in offsets {
-                        let item = document.configuration.items[index]
+                        let item = document.items[index]
                         document.removeItem(item.id, undoManager: undoManager)
                     }
                 }
@@ -255,10 +255,10 @@ struct SidebarView: View {
         case .app:
             if let url = urls.first {
                 Task {
-                    let width = document.configuration.window.width
-                    let iconSize = document.configuration.iconSize
+                    let width = document.window.width
+                    let iconSize = document.iconSize
                     let appX = round((2 * width - iconSize) / 6)
-                    let centerY = round(document.configuration.window.height / 2)
+                    let centerY = round(document.window.height / 2)
                     await document.addApp(
                         from: url,
                         at: CGPoint(x: appX, y: centerY),
@@ -278,13 +278,13 @@ struct SidebarView: View {
     }
 
     private func addApplicationsSymlink() {
-        let hasSymlink = document.configuration.items.contains {
+        let hasSymlink = document.items.contains {
             $0.kind == .applicationsSymlink
         }
         guard !hasSymlink else { return }
 
-        let width = document.configuration.window.width
-        let height = document.configuration.window.height
+        let width = document.window.width
+        let height = document.window.height
 
         let item = CanvasItem(
             kind: .applicationsSymlink,
@@ -299,8 +299,8 @@ struct SidebarView: View {
 
     private func defaultPosition() -> CGPoint {
         CGPoint(
-            x: document.configuration.window.width / 2,
-            y: document.configuration.window.height / 2
+            x: document.window.width / 2,
+            y: document.window.height / 2
         )
     }
 }

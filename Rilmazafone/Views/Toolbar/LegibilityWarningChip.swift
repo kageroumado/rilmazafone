@@ -11,7 +11,7 @@ struct LegibilityWarningChip: View {
     @State private var isPopoverPresented = false
 
     private var flaggedItems: [(item: CanvasItem, modes: [LabelAppearanceMode])] {
-        document.configuration.items.compactMap { item in
+        document.items.compactMap { item in
             let modes = document.legibilityModes(for: item.id)
             return modes.isEmpty ? nil : (item, modes)
         }

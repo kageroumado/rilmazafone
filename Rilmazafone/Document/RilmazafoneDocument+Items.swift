@@ -24,13 +24,13 @@ extension RilmazafoneDocument {
         actionName: String = "Change Source",
         undoManager: UndoManager?
     ) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
-        let oldPath = configuration.items[index].sourcePath
-        let oldBookmark = configuration.items[index].sourceBookmark
-        let oldAssetName = configuration.items[index].assetName
-        configuration.items[index].sourcePath = path
-        configuration.items[index].sourceBookmark = bookmark
-        configuration.items[index].assetName = assetName
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        let oldPath = items[index].sourcePath
+        let oldBookmark = items[index].sourceBookmark
+        let oldAssetName = items[index].assetName
+        items[index].sourcePath = path
+        items[index].sourceBookmark = bookmark
+        items[index].assetName = assetName
         refreshSourceStates()
         objectWillChange.send()
         withUndo(undoManager, actionName) { doc, um in
@@ -56,15 +56,15 @@ extension RilmazafoneDocument {
             actionName: "Relink Item",
             undoManager: undoManager
         )
-        guard let item = configuration.items.first(where: { $0.id == id }),
+        guard let item = items.first(where: { $0.id == id }),
               item.kind == .app else { return }
         await configureCodeSigning(for: item, undoManager: undoManager)
     }
 
     func setItemLinkType(_ id: UUID, to newType: ItemLinkType, undoManager: UndoManager?) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
-        let oldType = configuration.items[index].linkType
-        configuration.items[index].linkType = newType
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        let oldType = items[index].linkType
+        items[index].linkType = newType
         objectWillChange.send()
         withUndo(undoManager, "Change Link Type") { doc, um in
             doc.setItemLinkType(id, to: oldType, undoManager: um)
@@ -74,9 +74,9 @@ extension RilmazafoneDocument {
     // MARK: - Item Background
 
     func setItemBackground(_ id: UUID, to background: ItemBackground?, undoManager: UndoManager?) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
-        let oldBackground = configuration.items[index].background
-        configuration.items[index].background = background
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        let oldBackground = items[index].background
+        items[index].background = background
         objectWillChange.send()
         withUndo(undoManager, background != nil ? "Add Item Background" : "Remove Item Background") { doc, um in
             doc.setItemBackground(id, to: oldBackground, undoManager: um)
@@ -88,11 +88,11 @@ extension RilmazafoneDocument {
         with transform: (inout ItemBackground) -> Void,
         undoManager: UndoManager?
     ) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }),
-              let old = configuration.items[index].background else { return }
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              let old = items[index].background else { return }
         var updated = old
         transform(&updated)
-        configuration.items[index].background = updated
+        items[index].background = updated
         objectWillChange.send()
         withUndo(undoManager, "Change Item Background") { doc, um in
             doc.setItemBackground(id, to: old, undoManager: um)
@@ -102,9 +102,9 @@ extension RilmazafoneDocument {
     // MARK: - Item CRUD
 
     func moveItem(_ id: UUID, to newPosition: CGPoint, undoManager: UndoManager?) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
-        let oldPosition = configuration.items[index].position
-        configuration.items[index].position = newPosition
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        let oldPosition = items[index].position
+        items[index].position = newPosition
         objectWillChange.send()
         withUndo(undoManager, "Move Item") { doc, um in
             doc.moveItem(id, to: oldPosition, undoManager: um)
@@ -112,7 +112,7 @@ extension RilmazafoneDocument {
     }
 
     func addItem(_ item: CanvasItem, undoManager: UndoManager?) {
-        configuration.items.append(item)
+        items.append(item)
         refreshSourceStates()
         objectWillChange.send()
         withUndo(undoManager, "Add \(item.label)") { doc, um in
@@ -121,12 +121,12 @@ extension RilmazafoneDocument {
     }
 
     func removeItem(_ id: UUID, undoManager: UndoManager?) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
-        let removed = configuration.items.remove(at: index)
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        let removed = items.remove(at: index)
         refreshSourceStates()
         objectWillChange.send()
         withUndo(undoManager, "Remove \(removed.label)") { doc, um in
-            doc.configuration.items.insert(removed, at: min(index, doc.configuration.items.count))
+            doc.items.insert(removed, at: min(index, doc.items.count))
             doc.refreshSourceStates()
             doc.objectWillChange.send()
             doc.withUndo(um, "Add \(removed.label)") { doc, um in
@@ -136,9 +136,9 @@ extension RilmazafoneDocument {
     }
 
     func setItemLabel(_ id: UUID, to newLabel: String, undoManager: UndoManager?) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
-        let oldLabel = configuration.items[index].label
-        configuration.items[index].label = newLabel
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        let oldLabel = items[index].label
+        items[index].label = newLabel
         objectWillChange.send()
         withUndo(undoManager, "Rename Item") { doc, um in
             doc.setItemLabel(id, to: oldLabel, undoManager: um)
@@ -146,11 +146,11 @@ extension RilmazafoneDocument {
     }
 
     func moveItemInList(from source: IndexSet, to destination: Int, undoManager: UndoManager?) {
-        let oldItems = configuration.items
-        configuration.items.move(fromOffsets: source, toOffset: destination)
+        let oldItems = items
+        items.move(fromOffsets: source, toOffset: destination)
         objectWillChange.send()
         withUndo(undoManager, "Reorder Items") { doc, um in
-            doc.configuration.items = oldItems
+            doc.items = oldItems
             doc.objectWillChange.send()
             doc.withUndo(um, "Reorder Items") { doc, um in
                 doc.moveItemInList(from: source, to: destination, undoManager: um)
@@ -161,11 +161,11 @@ extension RilmazafoneDocument {
     // MARK: - Item Shadow, Bevel & Enabled
 
     func setItemShadow(_ id: UUID, to newValue: ShadowConfiguration?, undoManager: UndoManager?) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }),
-              var bg = configuration.items[index].background else { return }
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              var bg = items[index].background else { return }
         let oldValue = bg.shadow
         bg.shadow = newValue
-        configuration.items[index].background = bg
+        items[index].background = bg
         objectWillChange.send()
         withUndo(undoManager, newValue != nil ? "Add Shadow" : "Remove Shadow") { doc, um in
             doc.setItemShadow(id, to: oldValue, undoManager: um)
@@ -173,11 +173,11 @@ extension RilmazafoneDocument {
     }
 
     func setItemBevel(_ id: UUID, to newValue: BevelConfiguration?, undoManager: UndoManager?) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }),
-              var bg = configuration.items[index].background else { return }
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              var bg = items[index].background else { return }
         let oldValue = bg.bevel
         bg.bevel = newValue
-        configuration.items[index].background = bg
+        items[index].background = bg
         objectWillChange.send()
         withUndo(undoManager, newValue != nil ? "Add Bevel" : "Remove Bevel") { doc, um in
             doc.setItemBevel(id, to: oldValue, undoManager: um)
@@ -185,12 +185,12 @@ extension RilmazafoneDocument {
     }
 
     func setItemBackgroundEnabled(_ id: UUID, _ enabled: Bool, undoManager: UndoManager?) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }),
-              var bg = configuration.items[index].background else { return }
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              var bg = items[index].background else { return }
         let oldEnabled = bg.enabled
         guard oldEnabled != enabled else { return }
         bg.enabled = enabled
-        configuration.items[index].background = bg
+        items[index].background = bg
         objectWillChange.send()
         withUndo(undoManager, enabled ? "Enable Item Background" : "Disable Item Background") { doc, um in
             doc.setItemBackgroundEnabled(id, oldEnabled, undoManager: um)
@@ -198,23 +198,23 @@ extension RilmazafoneDocument {
     }
 
     func copyItemBackgroundToAll(_ sourceID: UUID, undoManager: UndoManager?) {
-        guard let sourceItem = configuration.items.first(where: { $0.id == sourceID }),
+        guard let sourceItem = items.first(where: { $0.id == sourceID }),
               let sourceBg = sourceItem.background else { return }
-        let otherIndices = configuration.items.indices.filter { configuration.items[$0].id != sourceID }
+        let otherIndices = items.indices.filter { items[$0].id != sourceID }
         guard !otherIndices.isEmpty else { return }
 
         let oldBackgrounds: [(UUID, ItemBackground?)] = otherIndices.map {
-            (configuration.items[$0].id, configuration.items[$0].background)
+            (items[$0].id, items[$0].background)
         }
         for i in otherIndices {
-            configuration.items[i].background = sourceBg
+            items[i].background = sourceBg
         }
         objectWillChange.send()
 
         withUndo(undoManager, "Copy Background to All Items") { doc, um in
             for (id, bg) in oldBackgrounds {
-                guard let idx = doc.configuration.items.firstIndex(where: { $0.id == id }) else { continue }
-                doc.configuration.items[idx].background = bg
+                guard let idx = doc.items.firstIndex(where: { $0.id == id }) else { continue }
+                doc.items[idx].background = bg
             }
             doc.objectWillChange.send()
             doc.withUndo(um, "Copy Background to All Items") { doc, um in
@@ -229,9 +229,9 @@ extension RilmazafoneDocument {
     /// The widest element is either the label (maxLabelWidth = iconSize + 40)
     /// or the background square (iconSize + 44 + 2*padding) when present.
     private func itemHalfWidth(_ item: CanvasItem) -> CGFloat {
-        let labelHalf = (configuration.iconSize + 40) / 2
+        let labelHalf = (iconSize + 40) / 2
         if let bg = item.background, bg.enabled {
-            let bgHalf = (configuration.iconSize + 44) / 2 + bg.padding
+            let bgHalf = (iconSize + 44) / 2 + bg.padding
             return max(labelHalf, bgHalf)
         }
         return labelHalf
@@ -241,37 +241,37 @@ extension RilmazafoneDocument {
     /// The tallest element is either the VStack (icon cell + text gap + text)
     /// or the background square when present.
     private func itemHalfHeight(_ item: CanvasItem) -> CGFloat {
-        let vStackHalf = (configuration.iconSize + 28 + configuration.textSize) / 2
+        let vStackHalf = (iconSize + 28 + textSize) / 2
         if let bg = item.background, bg.enabled {
-            let bgHalf = (configuration.iconSize + 44) / 2 + bg.padding
+            let bgHalf = (iconSize + 44) / 2 + bg.padding
             return max(vStackHalf, bgHalf)
         }
         return vStackHalf
     }
 
     func distributeItemsHorizontally(undoManager: UndoManager?) {
-        let items = configuration.items
+        let items = self.items
         guard items.count >= 2 else { return }
 
         let oldPositions = items.map { ($0.id, $0.position) }
         let sorted = items.sorted { $0.position.x < $1.position.x }
         let halfWidths = sorted.map { itemHalfWidth($0) }
         let totalItemWidth = halfWidths.reduce(0, +) * 2
-        let gap = max((configuration.window.width - totalItemWidth) / CGFloat(sorted.count + 1), 0)
+        let gap = max((window.width - totalItemWidth) / CGFloat(sorted.count + 1), 0)
 
         var x = gap
         for (i, item) in sorted.enumerated() {
             x += halfWidths[i]
-            guard let index = configuration.items.firstIndex(where: { $0.id == item.id }) else { continue }
-            configuration.items[index].position.x = round(x)
+            guard let index = self.items.firstIndex(where: { $0.id == item.id }) else { continue }
+            self.items[index].position.x = round(x)
             x += halfWidths[i] + gap
         }
         objectWillChange.send()
 
         withUndo(undoManager, "Distribute Horizontally") { doc, um in
             for (id, pos) in oldPositions {
-                guard let idx = doc.configuration.items.firstIndex(where: { $0.id == id }) else { continue }
-                doc.configuration.items[idx].position = pos
+                guard let idx = doc.items.firstIndex(where: { $0.id == id }) else { continue }
+                doc.items[idx].position = pos
             }
             doc.objectWillChange.send()
             doc.withUndo(um, "Distribute Horizontally") { doc, um in
@@ -281,28 +281,28 @@ extension RilmazafoneDocument {
     }
 
     func distributeItemsVertically(undoManager: UndoManager?) {
-        let items = configuration.items
+        let items = self.items
         guard items.count >= 2 else { return }
 
         let oldPositions = items.map { ($0.id, $0.position) }
         let sorted = items.sorted { $0.position.y < $1.position.y }
         let halfHeights = sorted.map { itemHalfHeight($0) }
         let totalItemHeight = halfHeights.reduce(0, +) * 2
-        let gap = max((configuration.window.height - totalItemHeight) / CGFloat(sorted.count + 1), 0)
+        let gap = max((window.height - totalItemHeight) / CGFloat(sorted.count + 1), 0)
 
         var y = gap
         for (i, item) in sorted.enumerated() {
             y += halfHeights[i]
-            guard let index = configuration.items.firstIndex(where: { $0.id == item.id }) else { continue }
-            configuration.items[index].position.y = round(y)
+            guard let index = self.items.firstIndex(where: { $0.id == item.id }) else { continue }
+            self.items[index].position.y = round(y)
             y += halfHeights[i] + gap
         }
         objectWillChange.send()
 
         withUndo(undoManager, "Distribute Vertically") { doc, um in
             for (id, pos) in oldPositions {
-                guard let idx = doc.configuration.items.firstIndex(where: { $0.id == id }) else { continue }
-                doc.configuration.items[idx].position = pos
+                guard let idx = doc.items.firstIndex(where: { $0.id == id }) else { continue }
+                doc.items[idx].position = pos
             }
             doc.objectWillChange.send()
             doc.withUndo(um, "Distribute Vertically") { doc, um in
@@ -312,22 +312,22 @@ extension RilmazafoneDocument {
     }
 
     func centerItemsVertically(undoManager: UndoManager?) {
-        let items = configuration.items
+        let items = self.items
         guard !items.isEmpty else { return }
 
         // Slight upward bias (47%) for optical center — title bar weight
-        let centerY = round(configuration.window.height * 0.47)
+        let centerY = round(window.height * 0.47)
         let oldPositions = items.map { ($0.id, $0.position) }
 
-        for i in configuration.items.indices {
-            configuration.items[i].position.y = centerY
+        for i in items.indices {
+            self.items[i].position.y = centerY
         }
         objectWillChange.send()
 
         withUndo(undoManager, "Center Vertically") { doc, um in
             for (id, pos) in oldPositions {
-                guard let idx = doc.configuration.items.firstIndex(where: { $0.id == id }) else { continue }
-                doc.configuration.items[idx].position = pos
+                guard let idx = doc.items.firstIndex(where: { $0.id == id }) else { continue }
+                doc.items[idx].position = pos
             }
             doc.objectWillChange.send()
             doc.withUndo(um, "Center Vertically") { doc, um in
@@ -354,12 +354,12 @@ extension RilmazafoneDocument {
             let name = url.deletingPathExtension().lastPathComponent
             setVolumeName(name, undoManager: undoManager)
 
-            let width = configuration.window.width
+            let width = window.width
             let appX = position.x
             let symlinkX = round(width - appX)
             let centerY = position.y
 
-            let hasSymlink = configuration.items.contains { $0.kind == .applicationsSymlink }
+            let hasSymlink = items.contains { $0.kind == .applicationsSymlink }
             if !hasSymlink {
                 let symlink = CanvasItem(
                     kind: .applicationsSymlink,
@@ -392,7 +392,7 @@ extension RilmazafoneDocument {
     /// The first unfilled placeholder of the given kind, if any — the slot a
     /// dropped source of that kind fills.
     func firstPlaceholderID(ofKind kind: CanvasItemKind) -> UUID? {
-        configuration.items.first { $0.isPlaceholder && $0.kind == kind }?.id
+        items.first { $0.isPlaceholder && $0.kind == kind }?.id
     }
 
     /// Fills a placeholder in place from a dropped source of its own kind (app,
@@ -402,11 +402,11 @@ extension RilmazafoneDocument {
     /// substitution is a single undoable action, so one undo restores the
     /// placeholder (and any prior signing configuration).
     func fillPlaceholder(_ id: UUID, from url: URL, undoManager: UndoManager?) async {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }),
-              configuration.items[index].isPlaceholder else { return }
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              items[index].isPlaceholder else { return }
 
-        let oldItem = configuration.items[index]
-        let oldCodeSign = configuration.codeSign
+        let oldItem = items[index]
+        let oldCodeSign = codeSign
 
         var filledItem = oldItem
         filledItem.label = url.lastPathComponent
@@ -453,9 +453,9 @@ extension RilmazafoneDocument {
         actionName: String,
         undoManager: UndoManager?
     ) {
-        guard let index = configuration.items.firstIndex(where: { $0.id == id }) else { return }
-        configuration.items[index] = toItem
-        configuration.codeSign = toCodeSign
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        items[index] = toItem
+        codeSign = toCodeSign
         refreshSourceStates()
         objectWillChange.send()
         withUndo(undoManager, actionName) { doc, um in
@@ -488,9 +488,9 @@ extension RilmazafoneDocument {
                 if let placeholderID = firstPlaceholderID(ofKind: .app) {
                     await fillPlaceholder(placeholderID, from: url, undoManager: undoManager)
                 } else {
-                    let width = configuration.window.width
-                    let appX = round((2 * width - configuration.iconSize) / 6)
-                    let centerY = round(configuration.window.height / 2)
+                    let width = window.width
+                    let appX = round((2 * width - iconSize) / 6)
+                    let centerY = round(window.height / 2)
                     await addApp(from: url, at: CGPoint(x: appX, y: centerY), undoManager: undoManager)
                 }
             } else if ["png", "jpg", "jpeg", "tiff"].contains(ext) {

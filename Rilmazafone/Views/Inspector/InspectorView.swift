@@ -58,7 +58,7 @@ struct InspectorView: View {
         if let sfLayer = document.sfSymbolLayer(for: id) {
             return .sfSymbolLayer(sfLayer)
         }
-        if let item = document.configuration.items.first(where: { $0.id == id }) {
+        if let item = document.items.first(where: { $0.id == id }) {
             return .item(item)
         }
         return .none

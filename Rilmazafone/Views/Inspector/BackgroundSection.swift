@@ -10,11 +10,11 @@ struct BackgroundSection: View {
     var body: some View {
         Section("Background") {
             Picker("Type", selection: Binding(
-                get: { document.configuration.background.type },
+                get: { document.background.type },
                 set: { newType in
                     document.setBackgroundType(newType, undoManager: undoManager)
                     // Auto-create gradient config when switching to gradient
-                    if newType == .gradient, document.configuration.background.gradient == nil {
+                    if newType == .gradient, document.background.gradient == nil {
                         document.setGradientConfiguration(to: GradientConfiguration(), undoManager: undoManager)
                     }
                 }
@@ -26,7 +26,7 @@ struct BackgroundSection: View {
             }
             .pickerStyle(.segmented)
 
-            switch document.configuration.background.type {
+            switch document.background.type {
             case .none:
                 EmptyView()
 
@@ -41,7 +41,7 @@ struct BackgroundSection: View {
                 GradientEditor()
 
             case .image:
-                let layerCount = document.configuration.background.layers.count
+                let layerCount = document.background.layers.count
                 if layerCount > 0 {
                     LabeledContent("Layers") {
                         Text("\(layerCount)")
@@ -53,9 +53,9 @@ struct BackgroundSection: View {
                     isImagePickerPresented = true
                 }
 
-                if !document.configuration.background.layers.isEmpty {
+                if !document.background.layers.isEmpty {
                     Button("Remove All", role: .destructive) {
-                        let layerIDs = document.configuration.background.layers.map(\.id)
+                        let layerIDs = document.background.layers.map(\.id)
                         for id in layerIDs {
                             document.removeBackgroundLayer(id, undoManager: undoManager)
                         }
@@ -87,10 +87,10 @@ struct BackgroundSection: View {
     /// Stable color binding that avoids feedback loops by using explicit sRGB throughout.
     private var colorBinding: Binding<Color> {
         Binding(
-            get: { document.configuration.background.color.swiftUIColor },
+            get: { document.background.color.swiftUIColor },
             set: { newColor in
                 guard let newRGB = RGBColor(swiftUIColor: newColor) else { return }
-                let old = document.configuration.background.color
+                let old = document.background.color
                 guard abs(newRGB.red - old.red) > 0.001
                     || abs(newRGB.green - old.green) > 0.001
                     || abs(newRGB.blue - old.blue) > 0.001 else { return }

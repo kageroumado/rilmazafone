@@ -110,19 +110,17 @@ struct DocumentContentView: View {
     /// Fingerprint of every input to the legibility analysis: the composited
     /// background (base, layers, text, symbols, window size), icon/text metrics,
     /// and the items themselves — unlike the panel-backdrop cache, item positions
-    /// and panels DO matter here, since the label rect moves with the item and
-    /// baked panels count toward its backdrop.
+    /// and panels DO matter here, so `itemsGeneration` is included. Built from the
+    /// document's slice generation counters instead of deep-hashing content, so
+    /// evaluating it is O(1) in document size.
     private var legibilityAnalysisGeneration: Int {
-        let configuration = document.configuration
         var hasher = Hasher()
-        hasher.combine(configuration.window)
-        hasher.combine(configuration.background)
-        hasher.combine(configuration.textLayers)
-        hasher.combine(configuration.sfSymbolLayers)
-        hasher.combine(configuration.iconSize)
-        hasher.combine(configuration.textSize)
-        hasher.combine(configuration.items)
-        hasher.combine(Set(document.backgroundImages.keys))
+        hasher.combine(document.itemsGeneration)
+        hasher.combine(document.backgroundGeneration)
+        hasher.combine(document.textLayersGeneration)
+        hasher.combine(document.sfSymbolLayersGeneration)
+        hasher.combine(document.restGeneration)
+        hasher.combine(document.imagesGeneration)
         return hasher.finalize()
     }
 
@@ -131,7 +129,7 @@ struct DocumentContentView: View {
     /// rapid edits keep cancelling before any compositing work starts, and edit
     /// latency stays untouched.
     private func refreshLegibilityWarnings() async {
-        guard !document.configuration.items.isEmpty else {
+        guard !document.items.isEmpty else {
             document.legibilityWarnings = []
             return
         }
@@ -158,7 +156,7 @@ struct DocumentContentView: View {
     private func startBuild() {
         document.refreshSourceStates()
 
-        let unfilledSlots = document.configuration.items.filter(\.isPlaceholder).map(\.label)
+        let unfilledSlots = document.items.filter(\.isPlaceholder).map(\.label)
         guard unfilledSlots.isEmpty else {
             buildManager.reportError(
                 ValidationError.unfilledPlaceholder(unfilledSlots).localizedDescription
@@ -166,7 +164,7 @@ struct DocumentContentView: View {
             return
         }
 
-        let missingLabels = document.configuration.items
+        let missingLabels = document.items
             .filter { document.missingSourceIDs.contains($0.id) }
             .map(\.label)
         guard missingLabels.isEmpty else {
@@ -178,7 +176,7 @@ struct DocumentContentView: View {
 
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType("com.apple.disk-image") ?? .data]
-        panel.nameFieldStringValue = "\(document.configuration.volumeName).dmg"
+        panel.nameFieldStringValue = "\(document.volumeName).dmg"
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
 

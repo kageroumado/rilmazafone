@@ -5,7 +5,7 @@ struct GradientEditor: View {
     @Environment(\.undoManager) private var undoManager
 
     private var gradient: GradientConfiguration {
-        document.configuration.background.gradient ?? GradientConfiguration()
+        document.background.gradient ?? GradientConfiguration()
     }
 
     var body: some View {

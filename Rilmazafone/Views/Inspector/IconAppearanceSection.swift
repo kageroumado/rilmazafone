@@ -43,7 +43,7 @@ struct IconAppearanceSection: View {
         Section("Icon Appearance") {
             presetRow(
                 label: "Icon Size",
-                value: document.configuration.iconSize,
+                value: document.iconSize,
                 presets: iconSizePresets,
                 showCustom: $showCustomIconSize,
                 setValue: { document.setIconSize($0, undoManager: undoManager) }
@@ -51,7 +51,7 @@ struct IconAppearanceSection: View {
 
             presetRow(
                 label: "Text Size",
-                value: document.configuration.textSize,
+                value: document.textSize,
                 presets: textSizePresets,
                 showCustom: $showCustomTextSize,
                 setValue: { document.setTextSize($0, undoManager: undoManager) }
@@ -62,7 +62,7 @@ struct IconAppearanceSection: View {
             Toggle(
                 "Hide File Extensions",
                 isOn: Binding(
-                    get: { document.configuration.hideExtensions },
+                    get: { document.hideExtensions },
                     set: { document.setHideExtensions($0, undoManager: undoManager) }
                 )
             )
@@ -78,7 +78,7 @@ struct IconAppearanceSection: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .disabled(document.configuration.items.count < 2)
+                    .disabled(document.items.count < 2)
                     .help("Space items evenly left to right")
 
                     Button {
@@ -89,7 +89,7 @@ struct IconAppearanceSection: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .disabled(document.configuration.items.isEmpty)
+                    .disabled(document.items.isEmpty)
                     .help("Align all items to the vertical center")
 
                     Button {
@@ -100,7 +100,7 @@ struct IconAppearanceSection: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .disabled(document.configuration.items.count < 2)
+                    .disabled(document.items.count < 2)
                     .help("Space items evenly top to bottom")
                 }
             }
@@ -119,7 +119,7 @@ struct IconAppearanceSection: View {
                 .pickerStyle(.segmented)
                 .fixedSize()
 
-                if !document.configuration.isGridSpacingAuto {
+                if !document.isGridSpacingAuto {
                     Menu {
                         ForEach(gridSpacingPresets, id: \.self) { preset in
                             Button {
@@ -128,7 +128,7 @@ struct IconAppearanceSection: View {
                             } label: {
                                 HStack {
                                     Text("\(preset) pt")
-                                    if Int(document.configuration.gridSpacing) == preset,
+                                    if Int(document.gridSpacing) == preset,
                                        !showCustomGridSpacing {
                                         Spacer()
                                         Image(systemName: "checkmark")
@@ -150,7 +150,7 @@ struct IconAppearanceSection: View {
                         }
                     } label: {
                         HStack(spacing: 2) {
-                            Text("\(Int(document.configuration.gridSpacing)) pt")
+                            Text("\(Int(document.gridSpacing)) pt")
                                 .monospacedDigit()
                             Image(systemName: "chevron.up.chevron.down")
                                 .imageScale(.small)
@@ -163,7 +163,7 @@ struct IconAppearanceSection: View {
                         TextField(
                             "",
                             value: Binding(
-                                get: { Double(document.configuration.gridSpacing) },
+                                get: { Double(document.gridSpacing) },
                                 set: { document.setGridSpacing(CGFloat($0), undoManager: undoManager) }
                             ),
                             format: .number
@@ -182,7 +182,7 @@ struct IconAppearanceSection: View {
 
     private var gridSpacingModeBinding: Binding<Bool> {
         Binding(
-            get: { document.configuration.isGridSpacingAuto },
+            get: { document.isGridSpacingAuto },
             set: { document.setGridSpacingAuto($0, undoManager: undoManager) }
         )
     }
@@ -191,7 +191,7 @@ struct IconAppearanceSection: View {
 
     private var widthBinding: Binding<Double> {
         Binding(
-            get: { document.configuration.window.width },
+            get: { document.window.width },
             set: {
                 let clamped = min(max($0, 300), 1_200)
                 document.setWindowWidth(clamped, undoManager: undoManager)
@@ -201,7 +201,7 @@ struct IconAppearanceSection: View {
 
     private var heightBinding: Binding<Double> {
         Binding(
-            get: { document.configuration.window.height },
+            get: { document.window.height },
             set: {
                 let clamped = min(max($0, 200), 800)
                 document.setWindowHeight(clamped, undoManager: undoManager)

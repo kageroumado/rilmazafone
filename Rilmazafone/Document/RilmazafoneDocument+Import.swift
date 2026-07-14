@@ -10,10 +10,10 @@ extension RilmazafoneDocument {
     /// open a new one.
     var isUntitledAndEmpty: Bool {
         fileURL == nil
-            && configuration.items.isEmpty
-            && configuration.background.layers.isEmpty
-            && configuration.textLayers.isEmpty
-            && configuration.sfSymbolLayers.isEmpty
+            && items.isEmpty
+            && background.layers.isEmpty
+            && textLayers.isEmpty
+            && sfSymbolLayers.isEmpty
     }
 
     /// Creates a document pre-populated from a DMG import result.
@@ -43,13 +43,13 @@ extension RilmazafoneDocument {
         }
 
         backgroundImages.removeAll()
-        for layer in configuration.background.layers {
+        for layer in background.layers {
             if let data = result.assets[layer.imageName] {
                 backgroundImages[layer.id] = NSImage(data: data)
             }
         }
 
-        if let iconName = configuration.volumeIcon.sourceIconName,
+        if let iconName = volumeIcon.sourceIconName,
            let data = result.assets[iconName] {
             volumeIconImage = NSImage(data: data)
         }

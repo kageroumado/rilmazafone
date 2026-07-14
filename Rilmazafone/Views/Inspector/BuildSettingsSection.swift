@@ -32,14 +32,14 @@ struct BuildSettingsSection: View {
                 Toggle(
                     "Code Sign",
                     isOn: Binding(
-                        get: { document.configuration.codeSign.enabled },
+                        get: { document.codeSign.enabled },
                         set: { document.setCodeSignEnabled($0, undoManager: undoManager) }
                     )
                 )
                 .toggleStyle(.switch)
                 .disabled(signingIdentities.isEmpty && hasCheckedIdentities)
 
-                if document.configuration.codeSign.enabled {
+                if document.codeSign.enabled {
                     Picker("Identity", selection: identityBinding) {
                         Text("Auto-detect")
                             .tag(String?.none)
@@ -50,7 +50,7 @@ struct BuildSettingsSection: View {
                     }
                     .help("The code signing identity used to sign the DMG")
 
-                    if document.configuration.codeSign.identity == nil,
+                    if document.codeSign.identity == nil,
                        let first = signingIdentities.first {
                         Text("Will use: \(abbreviatedIdentity(first))")
                             .font(.caption)
@@ -75,7 +75,7 @@ struct BuildSettingsSection: View {
 
         Section("Volume Icon") {
             Picker("Type", selection: Binding(
-                get: { document.configuration.volumeIcon.type },
+                get: { document.volumeIcon.type },
                 set: { document.setVolumeIconType($0, undoManager: undoManager) }
             )) {
                 Text("Auto-compose").tag(VolumeIconType.composed)
@@ -83,7 +83,7 @@ struct BuildSettingsSection: View {
                 Text("None").tag(VolumeIconType.none)
             }
 
-            if document.configuration.volumeIcon.type == .custom {
+            if document.volumeIcon.type == .custom {
                 if let iconImage = document.volumeIconImage {
                     Image(nsImage: iconImage)
                         .resizable()
@@ -100,8 +100,8 @@ struct BuildSettingsSection: View {
                     .foregroundStyle(.tertiary)
             }
 
-            if document.configuration.volumeIcon.type == .composed {
-                if let app = document.configuration.items.first(where: { $0.kind == .app }),
+            if document.volumeIcon.type == .composed {
+                if let app = document.items.first(where: { $0.kind == .app }),
                    let path = app.sourcePath {
                     HStack(spacing: 8) {
                         if let preview = composedIconPreview {
@@ -159,7 +159,7 @@ struct BuildSettingsSection: View {
 
     private var identityBinding: Binding<String?> {
         Binding(
-            get: { document.configuration.codeSign.identity },
+            get: { document.codeSign.identity },
             set: {
                 document.setCodeSignIdentity(
                     $0,

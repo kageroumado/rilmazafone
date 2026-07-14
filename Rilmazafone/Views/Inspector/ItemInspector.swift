@@ -39,10 +39,10 @@ struct ItemInspector: View {
     }
 
     private var windowWidth: CGFloat {
-        document.configuration.window.width
+        document.window.width
     }
     private var windowHeight: CGFloat {
-        document.configuration.window.height
+        document.window.height
     }
 
     var body: some View {
@@ -157,7 +157,7 @@ struct ItemInspector: View {
                 .disabled(!(item.background?.enabled ?? false))
             bevelGroup
 
-            if document.configuration.items.count > 1 {
+            if document.items.count > 1 {
                 Button("Apply to All") {
                     document.copyItemBackgroundToAll(item.id, undoManager: undoManager)
                 }
