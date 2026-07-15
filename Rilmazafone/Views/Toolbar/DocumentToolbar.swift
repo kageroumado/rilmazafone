@@ -16,8 +16,12 @@ struct CanvasToolbar: ToolbarContent {
 
         ToolbarItem {
             Picker("Appearance", selection: $prefersDarkAppearance) {
-                Image(systemName: "sun.max.fill").tag(false)
-                Image(systemName: "moon.fill").tag(true)
+                Image(systemName: "sun.max.fill")
+                    .accessibilityLabel("Light Appearance")
+                    .tag(false)
+                Image(systemName: "moon.fill")
+                    .accessibilityLabel("Dark Appearance")
+                    .tag(true)
             }
             .pickerStyle(.segmented)
             .help("Preview Appearance")
@@ -63,10 +67,13 @@ struct InspectorToolbar: ToolbarContent {
         ToolbarItem {
             Picker("Inspector", selection: $inspectorTab) {
                 Label("DMG", systemImage: "doc.text")
+                    .accessibilityLabel("DMG Settings")
                     .tag(InspectorTab.dmg)
                 Label("Canvas", systemImage: "paintbrush")
+                    .accessibilityLabel("Canvas Settings")
                     .tag(InspectorTab.canvas)
                 Label("Element", systemImage: "square.on.square")
+                    .accessibilityLabel("Element Settings")
                     .tag(InspectorTab.element)
             }
             .pickerStyle(.segmented)

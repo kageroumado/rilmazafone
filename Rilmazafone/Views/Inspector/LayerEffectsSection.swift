@@ -5,6 +5,7 @@ struct LayerEffectsSection: View {
 
     @Environment(RilmazafoneDocument.self) private var document
     @Environment(\.undoManager) private var undoManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var variableBlurExpanded: Bool
     @State private var colorAdjustmentsExpanded: Bool
@@ -36,10 +37,11 @@ struct LayerEffectsSection: View {
                 vignetteExpanded = new.vignette
                 bloomExpanded = new.bloom
             } else {
-                if old.variableBlur != new.variableBlur { withAnimation { variableBlurExpanded = new.variableBlur } }
-                if old.colorAdjustments != new.colorAdjustments { withAnimation { colorAdjustmentsExpanded = new.colorAdjustments } }
-                if old.vignette != new.vignette { withAnimation { vignetteExpanded = new.vignette } }
-                if old.bloom != new.bloom { withAnimation { bloomExpanded = new.bloom } }
+                let animation: Animation? = reduceMotion ? nil : .default
+                if old.variableBlur != new.variableBlur { withAnimation(animation) { variableBlurExpanded = new.variableBlur } }
+                if old.colorAdjustments != new.colorAdjustments { withAnimation(animation) { colorAdjustmentsExpanded = new.colorAdjustments } }
+                if old.vignette != new.vignette { withAnimation(animation) { vignetteExpanded = new.vignette } }
+                if old.bloom != new.bloom { withAnimation(animation) { bloomExpanded = new.bloom } }
             }
         }
     }

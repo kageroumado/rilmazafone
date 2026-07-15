@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BuildSheet: View {
     @Environment(BuildManager.self) private var buildManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -21,7 +22,7 @@ struct BuildSheet: View {
             }
         }
         .frame(width: 380, height: 240)
-        .animation(.spring(duration: 0.5, bounce: 0.15), value: phaseKey)
+        .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.15), value: phaseKey)
     }
 
     private var phaseKey: String {
@@ -40,6 +41,7 @@ private struct BuildingContent: View {
     let progress: BuildManager.BuildProgress
     @Environment(BuildManager.self) private var buildManager
     @Environment(RilmazafoneDocument.self) private var document
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: 20) {
@@ -51,13 +53,13 @@ private struct BuildingContent: View {
                     .trim(from: 0, to: progress.fraction)
                     .stroke(.tint, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                    .animation(.smooth(duration: 0.4), value: progress.fraction)
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: progress.fraction)
 
                 Text("\(progress.stepIndex)")
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
                     .contentTransition(.numericText())
-                    .animation(.smooth(duration: 0.3), value: progress.stepIndex)
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: progress.stepIndex)
             }
             .frame(width: 48, height: 48)
             .accessibilityLabel(
@@ -72,7 +74,7 @@ private struct BuildingContent: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .contentTransition(.interpolate)
-                    .animation(.smooth(duration: 0.3), value: progress.currentStep)
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: progress.currentStep)
             }
 
             Button("Cancel", role: .cancel) {
@@ -98,6 +100,7 @@ private struct BuildingContent: View {
 private struct CompletedContent: View {
     let url: URL
     @Environment(BuildManager.self) private var buildManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
     var body: some View {
@@ -105,7 +108,7 @@ private struct CompletedContent: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.green)
-                .symbolEffect(.bounce, value: appeared)
+                .symbolEffect(.bounce, value: reduceMotion ? false : appeared)
 
             VStack(spacing: 4) {
                 Text("Build Successful")

@@ -7,6 +7,7 @@ struct ItemInspector: View {
 
     @Environment(RilmazafoneDocument.self) private var document
     @Environment(\.undoManager) private var undoManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var cachedIcon: NSImage?
     @State private var backgroundExpanded: Bool
     @State private var shadowExpanded: Bool
@@ -179,9 +180,10 @@ struct ItemInspector: View {
                 shadowExpanded = new.shadow
                 bevelExpanded = new.bevel
             } else {
-                if old.background != new.background { withAnimation { backgroundExpanded = new.background } }
-                if old.shadow != new.shadow { withAnimation { shadowExpanded = new.shadow } }
-                if old.bevel != new.bevel { withAnimation { bevelExpanded = new.bevel } }
+                let animation: Animation? = reduceMotion ? nil : .default
+                if old.background != new.background { withAnimation(animation) { backgroundExpanded = new.background } }
+                if old.shadow != new.shadow { withAnimation(animation) { shadowExpanded = new.shadow } }
+                if old.bevel != new.bevel { withAnimation(animation) { bevelExpanded = new.bevel } }
             }
         }
     }
