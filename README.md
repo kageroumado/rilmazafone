@@ -1,8 +1,40 @@
-# Rilmazafone
+<div align="center">
+
+[![rilmazafone](https://readme-typing-svg.demolab.com/?font=DotGothic16&weight=400&size=22&duration=3800&pause=900&color=FF0078&center=true&vCenter=true&width=820&height=60&lines=a%20prodrug%20for%20the%20disk%20image%20%E2%99%A1;drag%20icons%20on%20a%20canvas%20%E3%83%BB%20what%20you%20draw%20is%20what%20mounts;then%20press%20build%20%E3%83%BB%20ship%20the%20dmg;rx%20no.%20004%20%E3%83%BB%20%E5%89%8D%E9%A7%86%E8%96%AC%20%E3%83%BB%20%E8%A6%8B%E3%81%9F%E3%81%BE%E3%81%BE%E3%80%81%E3%83%9E%E3%82%A6%E3%83%B3%E3%83%88%E3%81%99%E3%82%8B)](https://kagerou.glass/rilmazafone/)
+
+<img src=".github/rilmazafone-icon.png" alt="Rilmazafone icon" width="128" height="128">
+
+# rilmazafone
+
+**rx no. 004 ・ ril·maz·a·fone /rɪlˈmæzəfoʊn/ ・ a prodrug for the disk image ♡**
+
+[![kagerou.glass](https://img.shields.io/badge/kagerou.glass-FF0078?style=for-the-badge&logo=safari&logoColor=white)](https://kagerou.glass/rilmazafone/)
+[![@kageroumado](https://img.shields.io/badge/@kageroumado-76e6e0?style=for-the-badge&logo=x&logoColor=0d0a10)](https://x.com/kageroumado)
+[![macOS Tahoe](https://img.shields.io/badge/macOS-Tahoe_26%2B-0d0a10?style=for-the-badge&logo=apple&logoColor=white)](#requirements)
+
+<table>
+  <tr>
+    <td align="center"><img src="screenshot.png" alt="The Rilmazafone canvas — an app icon and Applications folder arranged over a blue gradient, with the layers sidebar and the background/window/icon inspector" width="840"><br><sub><b>the canvas</b> ・ drag icons where they'll sit in Finder; the inspector drives background, window, and icon layout</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src=".github/rilmazafone-templates.png" alt="The Choose a Template gallery — Blank, Aurora, Classic, Compact, Cosmos, and Editorial starting points" width="560"><br><sub><b>templates</b> ・ start from Aurora, Classic, Cosmos, Editorial… or a blank canvas</sub></td>
+  </tr>
+</table>
+
+</div>
+
+> **服用注意 ・ the installer, drawn.**
+>
+> A DMG is the first thing anyone sees of your app, and building a nice one has always meant
+> shell scripts, `hdiutil` incantations, and a `.DS_Store` you pray copied correctly. A prodrug
+> is an inert design that becomes the real thing only once it's taken up — and that's the shape
+> of a `.dmgtemplate` here: you *draw* the installer on a WYSIWYG canvas, position every icon
+> exactly where it lands in Finder, style the background, and press **Build**. What you drew is
+> what mounts. No scripts, no guessing. ♡
+
+---
 
 A native macOS app for creating beautifully styled DMG disk images. Design your installer visually with a WYSIWYG canvas, then build a production-ready DMG with one click.
-
-![Rilmazafone](screenshot.png)
 
 ## Features
 
