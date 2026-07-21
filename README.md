@@ -12,6 +12,8 @@
 [![@kageroumado](https://img.shields.io/badge/@kageroumado-76e6e0?style=for-the-badge&logo=x&logoColor=0d0a10)](https://x.com/kageroumado)
 [![macOS Tahoe](https://img.shields.io/badge/macOS-Tahoe_26%2B-0d0a10?style=for-the-badge&logo=apple&logoColor=white)](#requirements)
 
+<a href="https://apps.apple.com/us/app/rilmazafone-dmg-designer/id6790960011?mt=12"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-mac-app-store/black/en-us" alt="Download on the Mac App Store" height="48"></a>
+
 <table>
   <tr>
     <td align="center"><img src="screenshot.png" alt="The Rilmazafone canvas — an app icon and Applications folder arranged over a blue gradient, with the layers sidebar and the background/window/icon inspector" width="840"><br><sub><b>the canvas</b> ・ drag icons where they'll sit in Finder; the inspector drives background, window, and icon layout</sub></td>
@@ -48,6 +50,15 @@ A native macOS app for creating beautifully styled DMG disk images. Design your 
 - **Code Signing** — Optional signing with automatic keychain identity detection
 - **Multiple Formats** — UDZO, UDBZ, LZFSE, LZMA compression; HFS+ or APFS filesystem
 - **Comprehensive Undo/Redo** — Every action is undoable
+
+## Download
+
+Two dispensations, one app:
+
+- **[Mac App Store](https://apps.apple.com/us/app/rilmazafone-dmg-designer/id6790960011?mt=12)** — $19.99, one time. The same designer and build pipeline, sandboxed, installed and updated the App Store way. The price is not a feature gate — it's the support channel: buying it funds the time that keeps the free edition free, and it's the most direct way to say *keep going*. ♡
+- **[GitHub Releases](https://github.com/kageroumado/rilmazafone/releases/latest)** — free, MIT, notarized DMG. The full experience, CLI included.
+
+Whichever you pick, you get the real thing — see [Build Variants](#build-variants) for the exact differences.
 
 ## Requirements
 
@@ -190,14 +201,14 @@ Rilmazafone builds two products from the same codebase. The designer, the build 
 
 | | GitHub build (`Rilmazafone`) | App Store build (`Rilmazafone AS`) |
 |---|---|---|
-| **Price** | Free (MIT) | Paid — a convenience build that supports development |
+| **Price** | Free (MIT) | [$19.99](https://apps.apple.com/us/app/rilmazafone-dmg-designer/id6790960011?mt=12) — a convenience build that supports development |
 | **CLI** (`build` / `init`) | ✓ | — (any argv launches the GUI) |
 | **Sandbox** | Unsandboxed | App Sandbox |
 | **Glass panel preview** | Real-time backdrop blur via private CoreAnimation APIs (`CABackdropLayer`, `CAFilter`) | Public APIs only |
 
 The private-API glass preview lives in `BackdropBlurView.swift`, which is a member of the GitHub target only; the App Store target's release build additionally fails if private symbols ever appear in the product. These APIs may break in future macOS versions — everything else uses only public APIs.
 
-If you build from source, the GitHub build is the full experience. The App Store listing exists for people who prefer the convenience of Mac App Store installs and updates.
+If you build from source, the GitHub build is the full experience. The [App Store copy](https://apps.apple.com/us/app/rilmazafone-dmg-designer/id6790960011?mt=12) exists for people who prefer the convenience of Mac App Store installs and updates — and as the way to pay for this work if you want it to continue.
 
 ### Document Format
 
