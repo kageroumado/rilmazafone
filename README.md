@@ -57,6 +57,7 @@ Two dispensations, one app:
 
 - **[Mac App Store](https://apps.apple.com/app/apple-store/id6790960011?pt=128650112&ct=GitHub&mt=8)** — $19.99, one time. The same designer and build pipeline, sandboxed, installed and updated the App Store way. The price is not a feature gate — it's the support channel: buying it funds the time that keeps the free edition free, and it's the most direct way to say *keep going*. ♡
 - **[GitHub Releases](https://github.com/kageroumado/rilmazafone/releases/latest)** — free, MIT, notarized DMG. The full experience, CLI included.
+- **Homebrew** — `brew install --cask kageroumado/tap/rilmazafone` — the same free DMG, via [my tap](https://github.com/kageroumado/homebrew-tap). The fully qualified name auto-trusts the cask under Homebrew 6's tap-trust system.
 
 Whichever you pick, you get the real thing — see [Build Variants](#build-variants) for the exact differences.
 
