@@ -95,7 +95,12 @@ struct ItemBackgroundPanel: View, Equatable {
                                     .blur(radius: featherPx)
                             }
                     } else {
+                        // Shape the blur at its source rather than relying on the ancestor
+                        // `.clipShape`: this subtree contains `.blendMode` children, which the
+                        // compositor may hoist past an ancestor mask (square panels on macOS 27),
+                        // so every layer must carry its own shape.
                         blurSource
+                            .clipShape(RoundedRectangle(cornerRadius: cr))
                     }
                 }
 
@@ -120,9 +125,11 @@ struct ItemBackgroundPanel: View, Equatable {
             }
 
             if let bevelImg = bevelImage {
+                // Carries `.blendMode`, so it too must be shaped intrinsically (see blurSource).
                 Image(nsImage: bevelImg)
                     .resizable()
                     .frame(width: bgSide, height: bgSide)
+                    .clipShape(RoundedRectangle(cornerRadius: cr))
                     .blendMode(.softLight)
             }
         }
