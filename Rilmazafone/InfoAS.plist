@@ -20,20 +20,6 @@
 			<key>LSTypeIsPackage</key>
 			<true/>
 		</dict>
-		<dict>
-			<key>CFBundleTypeName</key>
-			<string>Release Plan</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>glass.kagerou.rilmazafone.release-plan</string>
-			</array>
-			<key>LSTypeIsPackage</key>
-			<true/>
-		</dict>
 	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
@@ -51,23 +37,6 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>dmgtemplate</string>
-				</array>
-			</dict>
-		</dict>
-		<dict>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>com.apple.package</string>
-			</array>
-			<key>UTTypeDescription</key>
-			<string>Release Plan</string>
-			<key>UTTypeIdentifier</key>
-			<string>glass.kagerou.rilmazafone.release-plan</string>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>releaseplan</string>
 				</array>
 			</dict>
 		</dict>

@@ -6,7 +6,20 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0B486F22303E6AED001CB276 /* QuickLookThumbnailing.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B486F21303E6AED001CB276 /* QuickLookThumbnailing.framework */; };
+		0B486F24303E6AED001CB276 /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B486F23303E6AED001CB276 /* Quartz.framework */; };
+		0B486F2B303E6AED001CB276 /* RilmazafoneThumbnails.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B486F1F303E6AED001CB276 /* RilmazafoneThumbnails.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		0B486F29303E6AED001CB276 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0B5F29502F452BCF00682874 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0B486F1E303E6AED001CB276;
+			remoteInfo = RilmazafoneThumbnails;
+		};
 		0B5F641B2F480DA900682874 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0B5F29502F452BCF00682874 /* Project object */;
@@ -16,17 +29,40 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		0B486F30303E6AED001CB276 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				0B486F2B303E6AED001CB276 /* RilmazafoneThumbnails.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		0B486F1F303E6AED001CB276 /* RilmazafoneThumbnails.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RilmazafoneThumbnails.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B486F21303E6AED001CB276 /* QuickLookThumbnailing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookThumbnailing.framework; path = System/Library/Frameworks/QuickLookThumbnailing.framework; sourceTree = SDKROOT; };
+		0B486F23303E6AED001CB276 /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 		0B5F29582F452BCF00682874 /* Rilmazafone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rilmazafone.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B5F64172F480DA900682874 /* RilmazafoneTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RilmazafoneTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BA5F00100000000000000A1 /* Rilmazafone AS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rilmazafone AS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0B486F2F303E6AED001CB276 /* Exceptions for "RilmazafoneThumbnails" folder in "RilmazafoneThumbnails" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0B486F1E303E6AED001CB276 /* RilmazafoneThumbnails */;
+		};
 		0B5F29642F452BD100682874 /* Exceptions for "Rilmazafone" folder in "Rilmazafone" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				InfoAS.plist,
 			);
 			target = 0B5F29572F452BCF00682874 /* Rilmazafone */;
 		};
@@ -34,12 +70,21 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				InfoAS.plist,
 			);
 			target = 0BA5F00100000000000000A2 /* Rilmazafone AS */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		0B486F25303E6AED001CB276 /* RilmazafoneThumbnails */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0B486F2F303E6AED001CB276 /* Exceptions for "RilmazafoneThumbnails" folder in "RilmazafoneThumbnails" target */,
+			);
+			path = RilmazafoneThumbnails;
+			sourceTree = "<group>";
+		};
 		0B5F295A2F452BCF00682874 /* Rilmazafone */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -60,6 +105,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		0B486F1C303E6AED001CB276 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				0B486F22303E6AED001CB276 /* QuickLookThumbnailing.framework in Frameworks */,
+				0B486F24303E6AED001CB276 /* Quartz.framework in Frameworks */,
+			);
+		};
 		0B5F29552F452BCF00682874 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
@@ -78,11 +130,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0B486F20303E6AED001CB276 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0B486F21303E6AED001CB276 /* QuickLookThumbnailing.framework */,
+				0B486F23303E6AED001CB276 /* Quartz.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		0B5F294F2F452BCF00682874 = {
 			isa = PBXGroup;
 			children = (
 				0B5F295A2F452BCF00682874 /* Rilmazafone */,
 				0B5F64182F480DA900682874 /* RilmazafoneTests */,
+				0B486F25303E6AED001CB276 /* RilmazafoneThumbnails */,
+				0B486F20303E6AED001CB276 /* Frameworks */,
 				0B5F29592F452BCF00682874 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -93,6 +156,7 @@
 				0B5F29582F452BCF00682874 /* Rilmazafone.app */,
 				0BA5F00100000000000000A1 /* Rilmazafone AS.app */,
 				0B5F64172F480DA900682874 /* RilmazafoneTests.xctest */,
+				0B486F1F303E6AED001CB276 /* RilmazafoneThumbnails.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -100,6 +164,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		0B486F1E303E6AED001CB276 /* RilmazafoneThumbnails */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0B486F2C303E6AED001CB276 /* Build configuration list for PBXNativeTarget "RilmazafoneThumbnails" */;
+			buildPhases = (
+				0B486F1B303E6AED001CB276 /* Sources */,
+				0B486F1C303E6AED001CB276 /* Frameworks */,
+				0B486F1D303E6AED001CB276 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				0B486F25303E6AED001CB276 /* RilmazafoneThumbnails */,
+			);
+			name = RilmazafoneThumbnails;
+			productName = RilmazafoneThumbnails;
+			productReference = 0B486F1F303E6AED001CB276 /* RilmazafoneThumbnails.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		0B5F29572F452BCF00682874 /* Rilmazafone */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0B5F29652F452BD100682874 /* Build configuration list for PBXNativeTarget "Rilmazafone" */;
@@ -107,8 +189,12 @@
 				0B5F29542F452BCF00682874 /* Sources */,
 				0B5F29552F452BCF00682874 /* Frameworks */,
 				0B5F29562F452BCF00682874 /* Resources */,
+				0B486F30303E6AED001CB276 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				0B486F2A303E6AED001CB276 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0B5F295A2F452BCF00682874 /* Rilmazafone */,
@@ -165,9 +251,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					0B486F1E303E6AED001CB276 = {
+						CreatedOnToolsVersion = 26.6;
+					};
 					0B5F29572F452BCF00682874 = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -197,11 +286,17 @@
 				0B5F29572F452BCF00682874 /* Rilmazafone */,
 				0BA5F00100000000000000A2 /* Rilmazafone AS */,
 				0B5F64162F480DA900682874 /* RilmazafoneTests */,
+				0B486F1E303E6AED001CB276 /* RilmazafoneThumbnails */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0B486F1D303E6AED001CB276 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 		0B5F29562F452BCF00682874 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
@@ -256,6 +351,11 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0B486F1B303E6AED001CB276 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 		0B5F29542F452BCF00682874 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -274,6 +374,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0B486F2A303E6AED001CB276 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0B486F1E303E6AED001CB276 /* RilmazafoneThumbnails */;
+			targetProxy = 0B486F29303E6AED001CB276 /* PBXContainerItemProxy */;
+		};
 		0B5F641C2F480DA900682874 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0B5F29572F452BCF00682874 /* Rilmazafone */;
@@ -282,6 +387,66 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		0B486F2D303E6AED001CB276 /* Debug configuration for PBXNativeTarget "RilmazafoneThumbnails" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RilmazafoneThumbnails/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RilmazafoneThumbnails;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = glass.kagerou.rilmazafone.thumbnails;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		0B486F2E303E6AED001CB276 /* Release configuration for PBXNativeTarget "RilmazafoneThumbnails" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RilmazafoneThumbnails/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RilmazafoneThumbnails;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = glass.kagerou.rilmazafone.thumbnails;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		0B5F29662F452BD100682874 /* Debug configuration for PBXNativeTarget "Rilmazafone" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -536,7 +701,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Rilmazafone/Info.plist;
+				INFOPLIST_FILE = Rilmazafone/InfoAS.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 kagerou.glass";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -577,7 +742,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Rilmazafone/Info.plist;
+				INFOPLIST_FILE = Rilmazafone/InfoAS.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 kagerou.glass";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -605,6 +770,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0B486F2C303E6AED001CB276 /* Build configuration list for PBXNativeTarget "RilmazafoneThumbnails" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0B486F2D303E6AED001CB276 /* Debug configuration for PBXNativeTarget "RilmazafoneThumbnails" */,
+				0B486F2E303E6AED001CB276 /* Release configuration for PBXNativeTarget "RilmazafoneThumbnails" */,
+			);
+			defaultConfigurationName = Release;
+		};
 		0B5F29532F452BCF00682874 /* Build configuration list for PBXProject "Rilmazafone" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

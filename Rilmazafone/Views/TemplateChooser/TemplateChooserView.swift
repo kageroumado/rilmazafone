@@ -215,6 +215,13 @@ struct TemplateChooserView: View {
                     TemplateSaveCoordinator.shared.createTemplateFromDMG()
                 }
 
+                #if !APPSTORE
+                    Button("New Release Plan\u{2026}") {
+                        onCancel()
+                        ReleasePlanCreator.createNew()
+                    }
+                #endif
+
                 Spacer()
 
                 Button("Cancel") {

@@ -18,6 +18,10 @@ import SwiftUI
             NSApplication.shared.setActivationPolicy(.prohibited)
             exit(CLIBuildRunner.runInit(arguments: Array(CommandLine.arguments.dropFirst(2))))
 
+        case "release":
+            NSApplication.shared.setActivationPolicy(.prohibited)
+            exit(CLIReleaseRunner.run(arguments: Array(CommandLine.arguments.dropFirst(2))))
+
         case "-h", "--help", "help":
             CLIBuildRunner.printGlobalHelp()
             exit(0)

@@ -42,6 +42,11 @@ struct RilmazafoneApp: App {
                 .keyboardShortcut("n", modifiers: .command)
 
                 newFromTemplateMenu
+
+                #if !APPSTORE
+                    Divider()
+                    NewReleasePlanButton()
+                #endif
             }
             SaveAsTemplateCommands()
             CommandGroup(after: .importExport) {
@@ -49,7 +54,19 @@ struct RilmazafoneApp: App {
                     DMGImportCoordinator.shared.presentOpenPanel()
                 }
             }
+            #if !APPSTORE
+                ReleaseCommands()
+            #endif
         }
+
+        #if !APPSTORE
+            DocumentGroup(newDocument: { ReleasePlanDocument() }) { file in
+                ReleasePlanContentView()
+                    .environment(file.document)
+            }
+            .defaultSize(width: 880, height: 620)
+            .defaultLaunchBehavior(.suppressed)
+        #endif
 
         Settings {
             SettingsView()
@@ -86,21 +103,77 @@ struct RilmazafoneApp: App {
     }
 }
 
+#if !APPSTORE
+    // MARK: - New Release Plan
+
+    /// Command-menu button for the second document type. A plain View so it can
+    /// reach the `newDocument` environment action, which Commands themselves
+    /// can't.
+    struct NewReleasePlanButton: View {
+        @Environment(\.newDocument) private var newDocument
+
+        var body: some View {
+            Button("New Release Plan") {
+                newDocument { ReleasePlanDocument() }
+            }
+            .keyboardShortcut("n", modifiers: [.command, .shift])
+        }
+    }
+
+    // MARK: - Release Menu
+
+    /// Menu-bar counterparts of the plan window's toolbar actions — a toolbar
+    /// item can't be a command's only home.
+    struct ReleaseCommands: Commands {
+        @FocusedValue(\.releasePlanActions) private var actions
+
+        var body: some Commands {
+            CommandMenu("Release") {
+                Button("Build Release") {
+                    actions?.build()
+                }
+                .keyboardShortcut("b", modifiers: [.command, .shift])
+                .disabled(actions?.canRun != true)
+
+                Button("Publish") {
+                    actions?.publish()
+                }
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+                .disabled(actions?.canRun != true)
+            }
+        }
+    }
+#endif
+
 // MARK: - Save as Template
 
-/// File → Save as Template…, placed with the save items and enabled only
-/// while a document window is focused.
+/// File → Save as Template… (and Save as Release Plan…), enabled only while
+/// a design document window is focused.
+///
+/// Anchored to `.importExport`, NOT `.saveItem`: with a second
+/// `DocumentGroup` in the app, SwiftUI silently discards command groups
+/// anchored to the save-item section. The import/export section keeps them,
+/// and the resulting menu order matches the original placement anyway.
 struct SaveAsTemplateCommands: Commands {
     @FocusedValue(\.document) private var document
 
     var body: some Commands {
-        CommandGroup(after: .saveItem) {
+        CommandGroup(after: .importExport) {
             Button("Save as Template\u{2026}") {
                 if let document {
                     TemplateSaveCoordinator.shared.saveAsTemplate(document)
                 }
             }
             .disabled(document == nil)
+
+            #if !APPSTORE
+                Button("Save as Release Plan\u{2026}") {
+                    if let document {
+                        ReleasePlanCreator.createFromDesign(document)
+                    }
+                }
+                .disabled(document == nil)
+            #endif
         }
     }
 }

@@ -212,6 +212,12 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
 
     @ObservationIgnored var assetsWrapper: FileWrapper?
 
+    /// Latest rendered preview of the document, written into the package as
+    /// `thumbnail.png` on save. Kept current by `DocumentContentView`'s
+    /// debounced render; consumers (the release-plan design row, and
+    /// eventually Finder) read the persisted copy.
+    @ObservationIgnored var thumbnailPNG: Data?
+
     // MARK: - UTType
 
     nonisolated static let readableContentTypes: [UTType] = [.rilmazafoneDocument]
@@ -251,6 +257,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
         self.sfSymbolLayers = slices.sfSymbolLayers
         self.rest = slices.rest
         self.assetsWrapper = directoryWrapper["Assets"]
+        self.thumbnailPNG = directoryWrapper["thumbnail.png"]?.regularFileContents
 
         loadCachedImages()
     }
@@ -260,6 +267,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     struct Snapshot {
         let configuration: DMGConfiguration
         let assetsWrapper: FileWrapper?
+        let thumbnailPNG: Data?
     }
 
     func snapshot(contentType _: UTType) throws -> Snapshot {
@@ -268,6 +276,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
         return Snapshot(
             configuration: portable,
             assetsWrapper: assetsWrapper,
+            thumbnailPNG: thumbnailPNG,
         )
     }
 
@@ -275,6 +284,13 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
         snapshot: Snapshot,
         configuration _: WriteConfiguration,
     ) throws -> FileWrapper {
+        try Self.makeFileWrapper(snapshot: snapshot)
+    }
+
+    /// Assembles the package wrapper for a snapshot. Split from
+    /// `fileWrapper(snapshot:configuration:)` because `WriteConfiguration`
+    /// has no public initializer, which would leave the write path untestable.
+    nonisolated static func makeFileWrapper(snapshot: Snapshot) throws -> FileWrapper {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let manifestData = try encoder.encode(snapshot.configuration)
@@ -292,6 +308,13 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
             )
             assetsCopy.preferredFilename = "Assets"
             directory.addFileWrapper(assetsCopy)
+        }
+
+        if let thumbnail = snapshot.thumbnailPNG {
+            directory.addRegularFile(
+                withContents: thumbnail,
+                preferredFilename: "thumbnail.png",
+            )
         }
 
         return directory

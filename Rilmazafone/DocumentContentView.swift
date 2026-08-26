@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -85,6 +86,9 @@ struct DocumentContentView: View {
         .task(id: legibilityAnalysisGeneration) {
             await refreshLegibilityWarnings()
         }
+        .task(id: legibilityAnalysisGeneration) {
+            await refreshThumbnail()
+        }
         .onDeleteCommand {
             if let id = selectedItemID {
                 if document.backgroundLayer(for: id) != nil {
@@ -151,6 +155,42 @@ struct DocumentContentView: View {
         if !Task.isCancelled {
             document.legibilityWarnings = warnings
         }
+    }
+
+    /// Debounced re-render of the package's `thumbnail.png` payload. Heavier
+    /// debounce than the legibility pass — the thumbnail only needs to be
+    /// current by the next save.
+    private func refreshThumbnail() async {
+        guard !document.items.isEmpty else { return }
+        do {
+            try await Task.sleep(for: .seconds(1))
+        } catch {
+            return
+        }
+
+        guard let assetsDirectory = try? document.extractAssetsToTemporaryDirectory() else { return }
+        defer { try? FileManager.default.removeItem(at: assetsDirectory) }
+
+        let configuration = document.configuration
+        var itemIcons: [UUID: CGImage] = [:]
+        for item in configuration.items {
+            let icon = document.importedItemIcons[item.id] ?? item.sourcePath.flatMap { path in
+                FileManager.default.fileExists(atPath: path)
+                    ? NSWorkspace.shared.icon(forFile: path) : nil
+            }
+            if let cgIcon = icon?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                itemIcons[item.id] = cgIcon
+            }
+        }
+
+        let rendered = await TemplateThumbnailRenderer.render(
+            configuration: configuration,
+            assetsDirectory: assetsDirectory,
+            itemIcons: itemIcons,
+        )
+        guard let rendered, !Task.isCancelled else { return }
+        let bitmap = NSBitmapImageRep(cgImage: rendered)
+        document.thumbnailPNG = bitmap.representation(using: .png, properties: [:])
     }
 
     private func startBuild() {
