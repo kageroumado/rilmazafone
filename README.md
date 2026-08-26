@@ -1,6 +1,6 @@
 <div align="center">
 
-[![rilmazafone](https://readme-typing-svg.demolab.com/?font=DotGothic16&weight=400&size=22&duration=3800&pause=900&color=FF0078&center=true&vCenter=true&width=820&height=60&lines=a%20prodrug%20for%20the%20disk%20image%20%E2%99%A1;drag%20icons%20on%20a%20canvas%20%E3%83%BB%20what%20you%20draw%20is%20what%20mounts;then%20press%20build%20%E3%83%BB%20ship%20the%20dmg;rx%20no.%20004%20%E3%83%BB%20%E5%89%8D%E9%A7%86%E8%96%AC%20%E3%83%BB%20%E8%A6%8B%E3%81%9F%E3%81%BE%E3%81%BE%E3%80%81%E3%83%9E%E3%82%A6%E3%83%B3%E3%83%88%E3%81%99%E3%82%8B)](https://kagerou.glass/rilmazafone/)
+[![rilmazafone](https://readme-typing-svg.demolab.com/?font=DotGothic16&weight=400&size=22&duration=3800&pause=900&color=FF0078&center=true&vCenter=true&width=820&height=60&lines=a%20prodrug%20for%20the%20disk%20image%20%E2%99%A1;drag%20icons%20on%20a%20canvas%20%E3%83%BB%20what%20you%20draw%20is%20what%20mounts;then%20press%20build%20%E3%83%BB%20ship%20the%20dmg;or%20press%20publish%20%E3%83%BB%20ship%20the%20whole%20release;rx%20no.%20004%20%E3%83%BB%20%E5%89%8D%E9%A7%86%E8%96%AC%20%E3%83%BB%20%E8%A6%8B%E3%81%9F%E3%81%BE%E3%81%BE%E3%80%81%E3%83%9E%E3%82%A6%E3%83%B3%E3%83%88%E3%81%99%E3%82%8B)](https://kagerou.glass/rilmazafone/)
 
 <img src=".github/rilmazafone-icon.png" alt="Rilmazafone icon" width="128" height="128">
 
@@ -19,6 +19,9 @@
     <td align="center"><img src="screenshot.png" alt="The Rilmazafone canvas — an app icon and Applications folder arranged over a blue gradient, with the layers sidebar and the background/window/icon inspector" width="840"><br><sub><b>the canvas</b> ・ drag icons where they'll sit in Finder; the inspector drives background, window, and icon layout</sub></td>
   </tr>
   <tr>
+    <td align="center"><img src=".github/rilmazafone-releaseplan.png" alt="A release plan — the pipeline stages and latest build in the center, with the Project inspector showing signing, notarization, artifacts, and the embedded DMG design" width="840"><br><sub><b>the release plan</b> (2.0) ・ archive, sign, notarize, DMG, verify, GitHub release — one Publish button, live stage view</sub></td>
+  </tr>
+  <tr>
     <td align="center"><img src=".github/rilmazafone-templates.png" alt="The Choose a Template gallery — Blank, Aurora, Classic, Compact, Cosmos, and Editorial starting points" width="560"><br><sub><b>templates</b> ・ start from Aurora, Classic, Cosmos, Editorial… or a blank canvas</sub></td>
   </tr>
 </table>
@@ -33,10 +36,14 @@
 > of a `.dmgtemplate` here: you *draw* the installer on a WYSIWYG canvas, position every icon
 > exactly where it lands in Finder, style the background, and press **Build**. What you drew is
 > what mounts. No scripts, no guessing. ♡
+>
+> And since 2.0 the metabolite goes further: a `.releaseplan` is the whole prescription —
+> the design plus everything around it (archive, Developer ID signing, notarization,
+> verification, the GitHub release), encoded in one document. Press **Publish**. ♡
 
 ---
 
-A native macOS app for creating beautifully styled DMG disk images. Design your installer visually with a WYSIWYG canvas, then build a production-ready DMG with one click.
+A native macOS app for creating beautifully styled DMG disk images — and, since 2.0, for shipping the whole release. Design your installer visually with a WYSIWYG canvas, then build a production-ready DMG with one click, or encode the entire pipeline in a release plan and publish notarized builds straight to GitHub.
 
 ## Features
 
@@ -50,6 +57,15 @@ A native macOS app for creating beautifully styled DMG disk images. Design your 
 - **Code Signing** — Optional signing with automatic keychain identity detection
 - **Multiple Formats** — UDZO, UDBZ, LZFSE, LZMA compression; HFS+ or APFS filesystem
 - **Comprehensive Undo/Redo** — Every action is undoable
+
+And the release pipeline (2.0, GitHub build):
+
+- **Release Plans** — A second document type, `.releaseplan`, encodes the whole release: project, signing, notarization, artifacts, and distribution, with the DMG design embedded inside
+- **One-Button Publish** — Version bump → Xcode archive → inside-out Developer ID signing → app and DMG notarization with stapling → mount-and-verify → commit, push, GitHub release, Homebrew cask bump — with a live stage view, and a hard seam between the repeatable Build phase and the fix-forward Publish phase
+- **Xcode Organizer Integration** — Archives land in Organizer's store and existing archives can be reused instead of rebuilding
+- **Auto-Detection** — Repo from the git remote, schemes from the project, identity from the keychain, push access verified through `gh`
+- **Release CLI** — `release build / publish / staple / status / doctor`, NDJSON stage events for CI, proper exit codes, persistent per-plan logs
+- **Finder Thumbnails** — Both document types show their design as the file icon, via a QuickLook extension
 
 ## Download
 
@@ -115,6 +131,19 @@ Rilmazafone is a document-based app — each `.dmgtemplate` file represents one 
 
 7. **Build** — Click the Build button in the toolbar (or Cmd+Shift+B), choose an output location, and the DMG is created. The build sheet shows progress through each step.
 
+### Release Plans (2.0)
+
+A `.releaseplan` turns a design into a repeatable release. Create one with **File → New Release Plan**, from the template chooser, or convert an open design with **File → Save as Release Plan…** — then save it into your app's repository (its folder is the default repo root, and the plan auto-fills from there: scheme, version, GitHub repo from the `origin` remote, signing identity from the keychain).
+
+The window shows the pipeline as the document: the stage list runs live in the center, and a three-tab inspector (Project / Publish / Run) holds the configuration. Opening an existing plan starts in execute mode — the plan is a recipe being run, not edited; the pencil unlocks it.
+
+The pipeline has two phases with a deliberate seam:
+
+- **Build** (repeatable; failures revert the version bump) — bump, archive into Xcode Organizer, sign every nested Mach-O inside-out with Developer ID, notarize + staple the app, build the DMG from the embedded design, notarize + staple the DMG, mount and re-verify everything, then optional EdDSA `.sig` and dSYM archiving. Ends with final artifacts you can ship anywhere.
+- **Publish** (the point of no return; failures fix forward) — commit + push the version bump *before* the release so the tag pins the right commit, create the GitHub release with the DMG (+ `.sig`), bump your Homebrew cask, run an optional post script.
+
+Publishing needs the [GitHub CLI](https://cli.github.com) signed in, and a notarization keychain profile (`xcrun notarytool store-credentials` — the ⓘ next to the Notary profile field has the full command). Everything the plan stores is a reference — no secrets land in the file.
+
 ### Command Line
 
 Rilmazafone can also build DMGs headlessly from the terminal, useful for CI/CD pipelines and automation. The CLI is exclusive to the GitHub build — the App Store build launches the GUI regardless of arguments.
@@ -137,6 +166,18 @@ rilmazafone build MyApp.dmgtemplate -o MyApp.dmg
 ```
 
 Run `rilmazafone --help`, `rilmazafone build --help`, or `rilmazafone init --help` for full usage.
+
+The release pipeline is scriptable too — the same engine behind the Publish button:
+
+```bash
+rilmazafone release build   MyApp.releaseplan            # → notarized, verified artifacts
+rilmazafone release publish MyApp.releaseplan -n "Fixes" # → GitHub release (builds first if needed)
+rilmazafone release staple  MyApp.releaseplan            # finish an --async-notarize build
+rilmazafone release status  MyApp.releaseplan            # build record · notarization · published?
+rilmazafone release doctor  MyApp.releaseplan            # preflight: identity · notary · gh access
+```
+
+`--json` streams stage events as NDJSON for CI. Exit codes: 0 success, 1 pipeline failure, 2 usage error; every run appends a transcript to the plan's `release.log`.
 
 **Key `document.json` fields for CLI use:**
 
@@ -163,6 +204,11 @@ Rilmazafone is a SwiftUI document-based app using `ReferenceFileDocument` with a
 Rilmazafone/
   Model/          DMGConfiguration — all nested model types (Codable, Sendable, nonisolated)
   Document/       RilmazafoneDocument (ReferenceFileDocument + @Observable) with undo support
+  Release/        The 2.0 release pipeline (GitHub build only, compiled out of the App Store build)
+    ReleasePlan       .releaseplan model with path resolution and no-secrets invariant
+    ReleasePipeline   The engine: staged Build/Publish run with revert vs. fix-forward policies
+    ReleasePlanDocument, Views/  The plan document and its window (pipeline + tabbed inspector)
+    CLIReleaseRunner  `release build/publish/staple/status/doctor`
   Services/       Stateless service enums for the build pipeline
     BuildManager    @Observable build orchestrator and composite background rendering
     DMGBuilder      hdiutil/codesign process wrapper
@@ -173,6 +219,7 @@ Rilmazafone/
     ProcessRunner   Async process execution utility
   Views/          SwiftUI views organized by panel (Canvas, Sidebar, Inspector, Sheets, Toolbar)
   Headers/        Bridging header + private QuartzCore headers
+RilmazafoneThumbnails/  QuickLook extension serving Finder thumbnails for both document types
 ```
 
 ### Key Design Decisions
@@ -203,7 +250,9 @@ Rilmazafone builds two products from the same codebase. The designer, the build 
 | | GitHub build (`Rilmazafone`) | App Store build (`Rilmazafone AS`) |
 |---|---|---|
 | **Price** | Free (MIT) | [$19.99](https://apps.apple.com/app/apple-store/id6790960011?pt=128650112&ct=GitHub&mt=8) — a convenience build that supports development |
-| **CLI** (`build` / `init`) | ✓ | — (any argv launches the GUI) |
+| **CLI** (`build` / `init` / `release`) | ✓ | — (any argv launches the GUI) |
+| **Release pipeline** (`.releaseplan`) | ✓ | — (the sandbox can't run `xcodebuild`, `codesign`, or `notarytool`) |
+| **Finder thumbnails** (QuickLook) | ✓ | — |
 | **Sandbox** | Unsandboxed | App Sandbox |
 | **Glass panel preview** | Real-time backdrop blur via private CoreAnimation APIs (`CABackdropLayer`, `CAFilter`) | Public APIs only |
 
@@ -218,10 +267,20 @@ If you build from source, the GitHub build is the full experience. The [App Stor
 ```
 MyApp.dmgtemplate/
   document.json                # Configuration manifest (all settings as JSON)
+  thumbnail.png                # Rendered preview, refreshed on save (drives Finder thumbnails)
   Assets/
     background-<uuid>.png      # Background layer images
     volume-icon.icns           # Custom volume icon (if provided)
     app-icon-<uuid>.icns       # Cached app icons
+```
+
+`.releaseplan` files wrap a design with its pipeline:
+
+```
+MyApp.releaseplan/
+  plan.json                    # Project, signing, notarization, artifacts, distribution —
+                               # keychain references and paths only, never secrets
+  Design.dmgtemplate/          # The DMG design, an ordinary template editable in the canvas
 ```
 
 ## License
