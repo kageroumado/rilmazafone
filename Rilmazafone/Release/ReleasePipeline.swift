@@ -898,8 +898,12 @@
                 throw ReleasePipelineError("gh or repository unavailable")
             }
             let tag = "v\(context.version)"
+            // Only artifacts in the output folder ship as release assets —
+            // the DMG, its .sig, and the optional app zip. dSYM archives live
+            // in their own directory and stay off the release.
+            let outputPrefix = context.resolved.outputDirURL.path
             let assetPaths = context.artifacts
-                .filter { ["dmg", "sig", "zip"].contains($0.pathExtension) }
+                .filter { $0.path.hasPrefix(outputPrefix) }
                 .map(\.path)
 
             if context.request.republish {
