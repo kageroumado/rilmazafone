@@ -109,12 +109,29 @@ struct DMGImporterTests {
             .first { FileManager.default.fileExists(atPath: $0.path) }
     }
 
+    /// Opt-in, because the fixture lives in `~/Downloads` and that folder is
+    /// TCC-protected.
+    ///
+    /// A test host without the grant does not fail on the copy — it blocks on a consent
+    /// prompt no one can answer, and the test then burns its whole time limit before
+    /// reporting. `isReadableFile` does not help: the POSIX check passes while `open`
+    /// is what raises the prompt. So this runs when asked for and not otherwise:
+    ///
+    ///     TEST_RUNNER_THIRD_PARTY_DMG=1 xcodebuild … test
+    ///
+    /// The .DS_Store parsing this covers also has a committed fixture
+    /// (`DSStoreReaderTests`, `thirdparty-codeedit`), which needs no permission; what is
+    /// only covered here is mounting and harvesting a real DMG built by another tool.
+    private nonisolated static var runsThirdPartyImport: Bool {
+        ProcessInfo.processInfo.environment["THIRD_PARTY_DMG"] == "1"
+    }
+
     @Test(
         .enabled(
-            if: DMGImporterTests.thirdPartyDMG != nil,
-            "No third-party DMG fixture found in ~/Downloads — skipping",
+            if: DMGImporterTests.runsThirdPartyImport && DMGImporterTests.thirdPartyDMG != nil,
+            "Set THIRD_PARTY_DMG=1 with a DMG in ~/Downloads to run this",
         ),
-        .timeLimit(.minutes(2)),
+        .timeLimit(.minutes(1)),
     )
     func `Importing a third-party DMG yields a sensible document`() async throws {
         let dmg = try #require(Self.thirdPartyDMG)

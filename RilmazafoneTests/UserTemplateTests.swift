@@ -349,6 +349,15 @@ struct TemplateFromDMGAcceptanceTests {
             .first { FileManager.default.fileExists(atPath: $0.path) }
     }
 
+    /// Opt-in for the same reason `DMGImporterTests` is: the fixture lives in
+    /// `~/Downloads`, and a test host without that TCC grant blocks on a consent prompt
+    /// no one can answer rather than failing.
+    ///
+    ///     TEST_RUNNER_THIRD_PARTY_DMG=1 xcodebuild … test
+    private nonisolated static var runsStyledDMG: Bool {
+        ProcessInfo.processInfo.environment["THIRD_PARTY_DMG"] == "1"
+    }
+
     private nonisolated static var systemApp: URL? {
         [
             "/System/Applications/Calculator.app",
@@ -360,9 +369,10 @@ struct TemplateFromDMGAcceptanceTests {
 
     @Test(
         .enabled(
-            if: TemplateFromDMGAcceptanceTests.styledDMG != nil
+            if: TemplateFromDMGAcceptanceTests.runsStyledDMG
+                && TemplateFromDMGAcceptanceTests.styledDMG != nil
                 && TemplateFromDMGAcceptanceTests.systemApp != nil,
-            "No styled DMG fixture found in ~/Downloads — skipping",
+            "Set THIRD_PARTY_DMG=1 with a styled DMG in ~/Downloads to run this",
         ),
         .timeLimit(.minutes(5)),
     )
