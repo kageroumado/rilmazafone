@@ -24,7 +24,10 @@ struct CanvasToolbar: ToolbarContent {
                     .tag(true)
             }
             .pickerStyle(.segmented)
-            .help("Preview Appearance")
+            .help(
+                "Preview the Finder window's chrome. A background picture keeps its "
+                    + "Light Mode rendering, so the background and labels do not change.",
+            )
         }
 
         ToolbarItem {
@@ -42,14 +45,19 @@ struct CanvasToolbar: ToolbarContent {
             } label: {
                 Text(zoomLabel)
                     .monospacedDigit()
+                    .frame(minWidth: Self.zoomLabelMinimumWidth)
             }
             .menuIndicator(.visible)
             .help("Canvas Zoom")
         }
     }
 
+    /// Holds the menu's width steady across "Fit" and the percentages, so the toolbar
+    /// does not reflow as the zoom changes.
+    private static let zoomLabelMinimumWidth: CGFloat = 34
+
     private var zoomLabel: String {
-        isFitToWindow ? " Fit " : "\(Int(zoom * 100))%"
+        isFitToWindow ? "Fit" : "\(Int(zoom * 100))%"
     }
 }
 
@@ -86,7 +94,7 @@ struct InspectorToolbar: ToolbarContent {
             } label: {
                 Label("Create", systemImage: "externaldrive.fill")
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .labelStyle(.titleAndIcon)
             .help("Create DMG")
             .disabled(!document.hasApp || buildManager.isBuilding)

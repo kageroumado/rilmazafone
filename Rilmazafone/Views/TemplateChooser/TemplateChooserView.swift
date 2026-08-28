@@ -41,8 +41,10 @@ struct TemplateChooserView: View {
     @AppStorage(NewDocumentPolicy.showsChooserDefaultsKey) private var showsChooser = true
 
     private enum Layout {
-        static let windowWidth: CGFloat = 700
-        static let windowHeight: CGFloat = 540
+        /// Floor for the content view; the window carries the same minimum, and the
+        /// gallery adds columns as it grows.
+        static let minimumWidth: CGFloat = 460
+        static let minimumHeight: CGFloat = 420
         static let gridSpacing: CGFloat = 16
         static let gridPadding: CGFloat = 24
         /// The grid's vertical inset — tighter than the horizontal one so the
@@ -63,7 +65,7 @@ struct TemplateChooserView: View {
             footer
         }
         .background(Color(nsColor: .textBackgroundColor))
-        .frame(width: Layout.windowWidth, height: Layout.windowHeight)
+        .frame(minWidth: Layout.minimumWidth, minHeight: Layout.minimumHeight)
         .onChange(of: state.selection) {
             sizeChoice = .templateDefault
         }
@@ -118,6 +120,7 @@ struct TemplateChooserView: View {
             .padding(.horizontal, Layout.gridPadding)
             .padding(.vertical, Layout.gridVerticalPadding)
         }
+        .scrollEdgeEffectStyle(.soft, for: .bottom)
     }
 
     @ViewBuilder
@@ -202,7 +205,7 @@ struct TemplateChooserView: View {
     private var footer: some View {
         VStack(spacing: 8) {
             HStack(spacing: 12) {
-                Toggle("Don't show this dialog again", isOn: dontShowAgainBinding)
+                Toggle("Don't show this when creating a document", isOn: dontShowAgainBinding)
                     .controlSize(.small)
 
                 Spacer()
@@ -328,20 +331,25 @@ private struct TemplateTile: View {
     private enum Layout {
         static let thumbnailWidth: CGFloat = 196
         static let thumbnailHeight: CGFloat = 132
-        static let selectionCornerRadius: CGFloat = 10
         static let selectionRingWidth: CGFloat = 3
         static let selectionRingPadding: CGFloat = 5
         static let titleSpacing: CGFloat = 8
+
+        /// How far the ring's centerline sits outside the card it wraps.
+        static let selectionRingInset: CGFloat = selectionRingPadding + selectionRingWidth
     }
 
     var body: some View {
         VStack(spacing: Layout.titleSpacing) {
             thumbnailCard
                 .frame(width: Layout.thumbnailWidth, height: Layout.thumbnailHeight)
-                .padding(Layout.selectionRingPadding + Layout.selectionRingWidth)
+                .padding(Layout.selectionRingInset)
                 .overlay {
                     if isSelected {
-                        RoundedRectangle(cornerRadius: Layout.selectionCornerRadius)
+                        // Concentric with the card: a ring offset outward has to grow its
+                        // radius by the same offset, or its corners pinch in against the
+                        // corners they wrap.
+                        RoundedRectangle(cornerRadius: cardCornerRadius + Layout.selectionRingInset)
                             .strokeBorder(Color.accentColor, lineWidth: Layout.selectionRingWidth)
                     }
                 }
@@ -365,6 +373,15 @@ private struct TemplateTile: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// The card's own corner radius, which `MiniFinderWindow` scales down from the
+    /// mock window's 18 pt to fit the tile.
+    private var cardCornerRadius: CGFloat {
+        MiniFinderWindow.cornerRadius(
+            for: entry?.windowSize ?? TemplateRegistry.blankWindowSize,
+            in: CGSize(width: Layout.thumbnailWidth, height: Layout.thumbnailHeight),
+        )
     }
 
     private var thumbnailCard: some View {
@@ -411,12 +428,23 @@ private struct MiniFinderWindow: View {
         ]
     }
 
+    /// How far the mock window shrinks to fit `available`.
+    static func scale(for windowSize: CGSize, in available: CGSize) -> CGFloat {
+        min(
+            available.width / windowSize.width,
+            available.height / (windowSize.height + Chrome.titleBarHeight),
+        )
+    }
+
+    /// The card's drawn corner radius at that scale — the value a ring wrapping the
+    /// card has to stay concentric with.
+    static func cornerRadius(for windowSize: CGSize, in available: CGSize) -> CGFloat {
+        Chrome.cornerRadius * scale(for: windowSize, in: available)
+    }
+
     var body: some View {
         GeometryReader { geometry in
-            let scale = min(
-                geometry.size.width / windowSize.width,
-                geometry.size.height / (windowSize.height + Chrome.titleBarHeight),
-            )
+            let scale = Self.scale(for: windowSize, in: geometry.size)
 
             VStack(spacing: 0) {
                 titleBar(scale: scale)

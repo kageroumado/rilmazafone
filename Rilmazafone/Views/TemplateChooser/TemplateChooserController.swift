@@ -75,7 +75,11 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
     )
 
     private enum Layout {
+        /// Opening size. The gallery lays out adaptively, so a wider window simply
+        /// shows more columns.
         static let windowSize = NSSize(width: 700, height: 540)
+        /// Two tile columns plus the footer's controls.
+        static let minimumSize = NSSize(width: 460, height: 420)
     }
 
     private var window: NSWindow?
@@ -120,7 +124,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
 
         let hostingController = NSHostingController(rootView: rootView)
         let window = NSWindow(contentViewController: hostingController)
-        window.styleMask = [.titled, .closable, .fullSizeContentView]
+        window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
@@ -128,6 +132,7 @@ final class TemplateChooserController: NSObject, NSWindowDelegate {
         window.isExcludedFromWindowsMenu = true
         window.isReleasedWhenClosed = false
         window.setContentSize(Layout.windowSize)
+        window.contentMinSize = Layout.minimumSize
         window.delegate = self
         window.center()
         self.window = window

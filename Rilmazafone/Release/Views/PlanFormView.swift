@@ -75,25 +75,25 @@
         private var projectSection: some View {
             Section("Project") {
                 if isEditing {
-                    LabeledContent("Repository") {
-                        HStack(spacing: 6) {
-                            Text(repoRootDisplay)
-                                .foregroundStyle(.secondary)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
-                            Menu("Change") {
-                                Button("Choose Folder\u{2026}") { chooseRepoRoot() }
-                                Button("Use Plan's Folder") { resetRepoRoot() }
-                                    .disabled(document.plan.project.path == nil)
-                            }
-                            .fixedSize()
+                    // The path rides in the label as a subtitle rather than beside the
+                    // control: a truncating path plus a fixed-size menu overflows the
+                    // inspector's column and wraps the whole row onto two lines.
+                    LabeledContent {
+                        Menu("Change") {
+                            Button("Choose Folder\u{2026}") { chooseRepoRoot() }
+                            Button("Use Plan's Folder") { resetRepoRoot() }
+                                .disabled(document.plan.project.path == nil)
                         }
+                        .fixedSize()
+                    } label: {
+                        Text("Repository")
+                        Text(repoRootDisplay)
                     }
                     .help("The app's repo. \u{201C}Plan's folder\u{201D} means the plan lives in the repo root — the default.")
 
                     Picker("Scheme", selection: schemeBinding) {
                         if document.detection.schemes.isEmpty {
-                            Text(document.plan.project.scheme ?? "\u{2014}")
+                            Text(document.plan.project.scheme ?? Self.absentValue)
                                 .tag(document.plan.project.scheme ?? "")
                         } else {
                             ForEach(document.detection.schemes, id: \.self) { scheme in
@@ -104,7 +104,7 @@
                     .help("Detected from the Xcode project")
                 } else {
                     staticRow("Repository", repoRootDisplay)
-                    staticRow("Scheme", document.plan.project.scheme ?? "\u{2014}")
+                    staticRow("Scheme", document.plan.project.scheme ?? Self.absentValue)
                 }
 
                 versionRow
@@ -130,7 +130,8 @@
                         + Text("\(nextVersionPreview) (\(version.build + 1))").bold())
                         .monospacedDigit()
                 } else {
-                    Text("\u{2014}")
+                    Text(Self.absentValue)
+                        .foregroundStyle(.tertiary)
                 }
             }
             .help("What the next build ships: current \u{2192} next")
@@ -206,13 +207,8 @@
                     )
                 }
 
-                LabeledContent("Output") {
+                LabeledContent {
                     HStack(spacing: 6) {
-                        Text(outputDirDisplayPath)
-                            .foregroundStyle(.secondary)
-                            .truncationMode(.middle)
-                            .lineLimit(1)
-                            .help(resolvedOutputDir?.path ?? "")
                         Button {
                             revealOutputDir()
                         } label: {
@@ -220,12 +216,17 @@
                         }
                         .buttonStyle(.borderless)
                         .help("Show in Finder")
+                        .accessibilityLabel("Show Output Folder in Finder")
                         if isEditing {
                             Button("Choose\u{2026}") { chooseOutputDir() }
                                 .controlSize(.small)
                         }
                     }
+                } label: {
+                    Text("Output")
+                    Text(outputDirDisplayPath)
                 }
+                .help(resolvedOutputDir?.path ?? "")
             }
         }
 
@@ -309,7 +310,7 @@
                             )
                             .help(repoProvenanceHelp)
                         } else {
-                            staticRow("Repository", document.plan.publish.githubRepo ?? "\u{2014}")
+                            staticRow("Repository", document.plan.publish.githubRepo ?? Self.absentValue)
                         }
                         githubStatusRow
 
@@ -345,7 +346,7 @@
                             )
                             .help("Runs after the build with RILMAZAFONE_* environment variables describing the artifacts")
                         } else {
-                            staticRow("Script", document.plan.publish.script ?? "\u{2014}")
+                            staticRow("Script", document.plan.publish.script ?? Self.absentValue)
                         }
                         notesFileRow
                         postScriptRow
@@ -534,10 +535,14 @@
 
         // MARK: - Helpers
 
+        /// Shown where a value has not been set. Tertiary, the level `labels.md` gives
+        /// unavailable items — and one spelling, so the tabs agree with each other.
+        static let absentValue = "\u{2014}"
+
         private func staticRow(_ label: String, _ value: String) -> some View {
             LabeledContent(label) {
                 Text(value)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(value == Self.absentValue ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.secondary))
                     .truncationMode(.middle)
                     .lineLimit(1)
                     .textSelection(.enabled)

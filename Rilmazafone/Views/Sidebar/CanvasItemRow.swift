@@ -45,11 +45,13 @@ struct CanvasItemRow: View {
             .overlay(alignment: .bottomLeading) {
                 if isSymlink {
                     Image(systemName: "arrowshape.turn.up.right.fill")
-                        .font(.system(size: 6))
+                        .font(.system(size: Self.symlinkBadgeSize))
                         .foregroundStyle(.white)
-                        .padding(1)
+                        .padding(1.5)
                         .background(Circle().fill(.black.opacity(0.6)))
-                        .offset(x: -2, y: 2)
+                        .offset(x: -3, y: 3)
+                        .help("Written to the DMG as a symbolic link")
+                        .accessibilityHidden(true)
                 }
             }
         }
@@ -57,7 +59,28 @@ struct CanvasItemRow: View {
             cachedIcon = CanvasItem.resolveIcon(for: item, documentURL: document.fileURL)
                 ?? document.importedItemIcons[item.id]
         }
-        .accessibilityLabel("\(item.label), \(item.kind.displayName)")
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    /// The alias badge on the item's icon. macOS puts the floor for legible text at
+    /// 10 pt (`accessibility.md`); this sits at that floor rather than the 6 pt it was,
+    /// and the link type is spelled out in the row's accessibility label besides, so
+    /// nothing depends on reading a badge this size.
+    private static let symlinkBadgeSize: CGFloat = 10
+
+    /// Spells out everything the row shows as marks — the kind, whether it is written
+    /// as a link, and any warning — since each of those is otherwise carried by a glyph.
+    private var accessibilityDescription: String {
+        var parts = [item.label, item.kind.displayName]
+        if isSymlink {
+            parts.append("symbolic link")
+        }
+        if isSourceMissing {
+            parts.append("source file missing")
+        } else if isLabelIllegible {
+            parts.append("label may be hard to read")
+        }
+        return parts.joined(separator: ", ")
     }
 
     private var isSymlink: Bool {
@@ -87,7 +110,9 @@ struct CanvasItemRow: View {
     }
 
     private var fallbackIconColor: Color {
-        if item.isPlaceholder { return .secondary }
+        if item.isPlaceholder {
+            return .secondary
+        }
         switch item.kind {
         case .app: return .accentColor
         case .applicationsSymlink, .file: return .secondary

@@ -223,7 +223,7 @@
             HStack(spacing: 6) {
                 Rectangle().frame(height: 1).foregroundStyle(.quaternary)
                 Text("POINT OF NO RETURN")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.tertiary)
                     .fixedSize()
                 Rectangle().frame(height: 1).foregroundStyle(.quaternary)

@@ -185,7 +185,7 @@ struct InspectorView: View {
             IconAppearanceSection()
 
             Section {
-                Button("Reset to Defaults", role: .destructive) {
+                Button("Reset Canvas", role: .destructive) {
                     undoManager?.beginUndoGrouping()
                     document.setWindowSize(width: 660, height: 400, undoManager: undoManager)
                     document.setIconSize(160, undoManager: undoManager)
@@ -211,7 +211,7 @@ struct InspectorView: View {
             BuildSettingsSection()
 
             Section {
-                Button("Reset to Defaults", role: .destructive) {
+                Button("Reset DMG Settings", role: .destructive) {
                     undoManager?.beginUndoGrouping()
                     document.setVolumeName("Untitled", undoManager: undoManager)
                     document.setDMGFormat(.ulfo, undoManager: undoManager)

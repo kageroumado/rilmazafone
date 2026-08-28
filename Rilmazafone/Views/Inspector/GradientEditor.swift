@@ -11,7 +11,9 @@ struct GradientEditor: View {
     var body: some View {
         gradientPreview
 
-        Picker("Type", selection: typeBinding) {
+        // "Style", not "Type" — the Background section already has a Type row four
+        // rows above, and two identically named rows in one tab read as a duplicate.
+        Picker("Style", selection: typeBinding) {
             Text("Linear").tag(GradientType.linear)
             Text("Radial").tag(GradientType.radial)
         }

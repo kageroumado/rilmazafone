@@ -250,7 +250,7 @@
                     Label("Publish", systemImage: "arrow.up.circle.fill")
                         .labelStyle(.titleAndIcon)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .disabled(!canPublish)
                 .help(canPublish
                     ? "Ship the latest build through the configured channel"
