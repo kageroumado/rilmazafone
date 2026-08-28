@@ -46,16 +46,14 @@ struct TemplateAuthoring {
             let base = URL(fileURLWithPath: previewDir)
             try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
             for name in ["Snow Leopard", "Cosmos", "Toolbox"] {
-                for mode in LabelAppearanceMode.allCases {
-                    writePreview(name, mode: mode, into: base)
-                }
+                writePreview(name, into: base)
             }
         }
     }
 
-    // MARK: - Preview render (background + panels + tiles + mode-colored labels)
+    // MARK: - Preview render (background + panels + tiles + labels)
 
-    private func writePreview(_ name: String, mode: LabelAppearanceMode, into dir: URL) {
+    private func writePreview(_ name: String, into dir: URL) {
         let templateDir = Self.templatesDir.appending(path: "\(name).dmgtemplate")
         guard let data = try? Data(contentsOf: templateDir.appending(path: "document.json")),
               var config = try? JSONDecoder().decode(DMGConfiguration.self, from: data) else { return }
@@ -87,7 +85,9 @@ struct TemplateAuthoring {
 
         let iconSize = config.iconSize
         let canvasH = config.window.height
-        let labelColor: NSColor = mode == .dark ? .white : .black
+        // Finder draws these dark whatever the appearance: a window with a background
+        // picture keeps its Light Mode rendering.
+        let labelColor: NSColor = .black
         for item in config.items {
             let contentHeight = iconSize + 10 * 2 + 4 + 20
             let iconCenterTop = item.position.y - contentHeight / 2 + 10 + iconSize / 2
@@ -111,7 +111,7 @@ struct TemplateAuthoring {
 
         NSGraphicsContext.restoreGraphicsState()
         guard let out = ctx.makeImage() else { return }
-        let file = dir.appending(path: "\(name.replacingOccurrences(of: " ", with: "-"))-\(mode.rawValue).png")
+        let file = dir.appending(path: "\(name.replacingOccurrences(of: " ", with: "-")).png")
         if let dest = CGImageDestinationCreateWithURL(file as CFURL, UTType.png.identifier as CFString, 1, nil) {
             CGImageDestinationAddImage(dest, out, nil)
             CGImageDestinationFinalize(dest)

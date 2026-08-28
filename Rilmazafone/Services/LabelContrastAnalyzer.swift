@@ -2,39 +2,26 @@ import AppKit
 import CoreGraphics
 import Foundation
 
-// MARK: - Appearance Mode
+// MARK: - Window Backdrop
 
-/// The two Finder appearances a DMG's static background must stay legible in.
+/// What Finder draws behind a composite's transparent pixels, which is the only part
+/// of a styled DMG window that still follows the system appearance.
 ///
-/// Finder colors icon labels by system appearance — black in Light Mode, white in
-/// Dark Mode — while a DMG background is a single static image with no
-/// per-appearance variant.
-nonisolated enum LabelAppearanceMode: String, CaseIterable, Hashable {
+/// The labels themselves do not: a window with any custom background is frozen at its
+/// light-mode rendering, so the text stays dark in both appearances. Only where the
+/// background is transparent does the appearance show through, and there it can turn a
+/// legible label illegible.
+nonisolated enum FinderWindowBackdrop: String, CaseIterable, Hashable {
     case light
     case dark
 
-    var displayName: String {
+    /// Encoded sRGB gray of Finder's own window fill in this appearance.
+    var encodedGray: Double {
         switch self {
-        case .light: "Light Mode"
-        case .dark: "Dark Mode"
+        case .light: 1.0
+        case .dark: 0.12 // ≈ #1E1E1E
         }
     }
-
-    /// WCAG relative luminance of the label color Finder uses in this appearance.
-    var labelLuminance: Double {
-        switch self {
-        case .light: 0 // black labels
-        case .dark: 1 // white labels
-        }
-    }
-}
-
-// MARK: - Warning
-
-/// One item's label flagged as potentially unreadable in one Finder appearance.
-nonisolated struct LegibilityWarning: Hashable {
-    let itemID: UUID
-    let mode: LabelAppearanceMode
 }
 
 // MARK: - Analysis Input
@@ -52,9 +39,14 @@ nonisolated struct LegibilityAnalysisInput: @unchecked Sendable {
 
 // MARK: - Analyzer
 
-/// Samples the composited DMG background beneath each item's label and flags
-/// labels whose WCAG contrast against Finder's label color falls below a
-/// legibility threshold, per appearance mode.
+/// Samples the composited DMG background beneath each item's label and flags labels
+/// whose WCAG contrast against Finder's label color falls below a legibility threshold.
+///
+/// Finder draws those labels dark whatever the system appearance, because a window with
+/// a custom background is frozen at its light-mode rendering — so there is one verdict
+/// per label, not one per appearance. The appearance still reaches whatever shows
+/// through transparent pixels, so a label is flagged if it fails over either of
+/// Finder's own window fills.
 ///
 /// The core (`analyze(composite:items:iconSize:textSize:windowSize:)`) is pure and
 /// nonisolated: it takes only Sendable inputs and touches no shared state, so it
@@ -88,12 +80,13 @@ nonisolated enum LabelContrastAnalyzer {
         /// photographic "busy" regions typically land in 0.15–0.30.
         static let stddevSaturation: Double = 0.25
 
-        /// Encoded sRGB gray Finder shows behind transparent composite pixels in
-        /// Light Mode (the default window background).
-        static let lightModeWindowBackdrop: Double = 1.0
-
-        /// Encoded sRGB gray of Finder's Dark Mode window background (≈ #1E1E1E).
-        static let darkModeWindowBackdrop: Double = 0.12
+        /// Relative luminance of the label color Finder draws.
+        ///
+        /// Finder uses `labelColor`, which in its light-mode rendering is black at 85%
+        /// alpha — measured at (39, 39, 39) over white and (3, 3, 4) over a near-black
+        /// background. Treating it as pure black is within a rounding step of that
+        /// everywhere it changes a verdict, and it never flatters a dark background.
+        static let labelLuminance: Double = 0
     }
 
     /// Pixel density the full pipeline composites at — matches the baked `@2x`
@@ -140,9 +133,13 @@ nonisolated enum LabelContrastAnalyzer {
     ///
     /// Placeholder items are analyzed too: once filled, their label renders in
     /// Finder at the same position.
-    static func analyze(input: LegibilityAnalysisInput) -> Set<LegibilityWarning> {
+    static func analyze(input: LegibilityAnalysisInput) -> Set<UUID> {
         let configuration = input.configuration
         guard !configuration.items.isEmpty else { return [] }
+
+        // With no custom background Finder draws its own window fill and picks a label
+        // color to suit it, so there is nothing here that can be unreadable.
+        guard configuration.finderPinsLabelColor else { return [] }
         guard let composite = CompositeRenderer.renderAnalysisComposite(
             configuration: configuration,
             layerImages: input.layerImages,
@@ -172,15 +169,15 @@ nonisolated enum LabelContrastAnalyzer {
     ///   - textSize: Configured label text size in canvas points.
     ///   - windowSize: DMG window size in canvas points; defines the mapping from
     ///     item coordinates onto `composite` pixels.
-    /// - Returns: One warning per (item, mode) whose contrast ratio against
-    ///   Finder's label color falls below the variance-adjusted threshold.
+    /// - Returns: The ids of items whose label contrast against Finder's label color
+    ///   falls below the variance-adjusted threshold.
     static func analyze(
         composite: CGImage,
         items: [CanvasItem],
         iconSize: CGFloat,
         textSize: CGFloat,
         windowSize: CGSize,
-    ) -> Set<LegibilityWarning> {
+    ) -> Set<UUID> {
         guard windowSize.width > 0, windowSize.height > 0, !items.isEmpty,
               let buffer = PixelBuffer(normalizing: composite)
         else { return [] }
@@ -188,7 +185,7 @@ nonisolated enum LabelContrastAnalyzer {
         let scale = CGFloat(composite.width) / windowSize.width
         let imageBounds = CGRect(x: 0, y: 0, width: composite.width, height: composite.height)
 
-        var warnings: Set<LegibilityWarning> = []
+        var warnings: Set<UUID> = []
         for item in items {
             let rect = labelRect(position: item.position, iconSize: iconSize, textSize: textSize)
             let pixelRect = rect
@@ -199,12 +196,14 @@ nonisolated enum LabelContrastAnalyzer {
                   let statistics = buffer.luminanceStatistics(in: pixelRect)
             else { continue }
 
-            for mode in LabelAppearanceMode.allCases {
-                let s = statistics[mode]
-                let ratio = contrastRatio(s.mean, mode.labelLuminance)
-                if ratio < effectiveThreshold(stddev: s.stddev) {
-                    warnings.insert(LegibilityWarning(itemID: item.id, mode: mode))
-                }
+            // The label color is the same either way; only what shows through
+            // transparency moves, so the worse of the two backdrops decides.
+            let fails = FinderWindowBackdrop.allCases.contains { backdrop in
+                let s = statistics[backdrop]
+                return contrastRatio(s.mean, Tuning.labelLuminance) < effectiveThreshold(stddev: s.stddev)
+            }
+            if fails {
+                warnings.insert(item.id)
             }
         }
         return warnings
@@ -235,12 +234,12 @@ nonisolated enum LabelContrastAnalyzer {
         let stddev: Double
     }
 
-    struct ModeStatistics {
+    struct BackdropStatistics {
         let light: LuminanceStatistics
         let dark: LuminanceStatistics
 
-        subscript(mode: LabelAppearanceMode) -> LuminanceStatistics {
-            switch mode {
+        subscript(backdrop: FinderWindowBackdrop) -> LuminanceStatistics {
+            switch backdrop {
             case .light: light
             case .dark: dark
             }
@@ -294,15 +293,15 @@ nonisolated enum LabelContrastAnalyzer {
 
         /// Mean and standard deviation of WCAG relative luminance over `pixelRect`
         /// (top-left-origin pixel coordinates), per appearance mode.
-        func luminanceStatistics(in pixelRect: CGRect) -> ModeStatistics? {
+        func luminanceStatistics(in pixelRect: CGRect) -> BackdropStatistics? {
             let minX = max(Int(pixelRect.minX), 0)
             let minY = max(Int(pixelRect.minY), 0)
             let maxX = min(Int(pixelRect.maxX), width)
             let maxY = min(Int(pixelRect.maxY), height)
             guard maxX > minX, maxY > minY else { return nil }
 
-            let lightBase = Tuning.lightModeWindowBackdrop
-            let darkBase = Tuning.darkModeWindowBackdrop
+            let lightBase = FinderWindowBackdrop.light.encodedGray
+            let darkBase = FinderWindowBackdrop.dark.encodedGray
             var lightSum = 0.0
             var lightSumSquares = 0.0
             var darkSum = 0.0
@@ -352,7 +351,7 @@ nonisolated enum LabelContrastAnalyzer {
             }
 
             let count = Double((maxX - minX) * (maxY - minY))
-            return ModeStatistics(
+            return BackdropStatistics(
                 light: Self.statistics(sum: lightSum, sumSquares: lightSumSquares, count: count),
                 dark: Self.statistics(sum: darkSum, sumSquares: darkSumSquares, count: count),
             )

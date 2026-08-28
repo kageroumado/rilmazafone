@@ -22,7 +22,7 @@ struct CanvasItemRow: View {
                         .symbolRenderingMode(.multicolor)
                         .help("Source file is missing. Right-click and choose Locate\u{2026} to relink.")
                         .accessibilityLabel("Source file missing")
-                } else if !legibilityModes.isEmpty {
+                } else if isLabelIllegible {
                     Image(systemName: "textformat.abc")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.orange)
@@ -68,13 +68,12 @@ struct CanvasItemRow: View {
         document.missingSourceIDs.contains(item.id)
     }
 
-    private var legibilityModes: [LabelAppearanceMode] {
-        document.legibilityModes(for: item.id)
+    private var isLabelIllegible: Bool {
+        document.isLabelIllegible(item.id)
     }
 
     private var legibilityHelpText: String {
-        let modes = legibilityModes.map(\.displayName).joined(separator: " and ")
-        return "Label may be hard to read in \(modes). "
+        "Label may be hard to read against the background. "
             + "Add a panel behind it, move it, or adjust the background."
     }
 

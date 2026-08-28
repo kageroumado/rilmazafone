@@ -48,6 +48,17 @@ nonisolated struct DMGConfiguration: Codable, Hashable {
         }
     }
 
+    /// Whether Finder will pin this volume's icon labels to their light-mode color.
+    ///
+    /// Finder adapts label color to the system appearance only for a window with no
+    /// custom background. Any other `backgroundType` — a solid color, or the picture a
+    /// composite bakes — freezes the icon view: the background is drawn with no
+    /// appearance treatment and the labels stay dark however the rest of the window is
+    /// drawn. Measured on macOS 26.5; DropDMG and DMG Canvas document the same.
+    var finderPinsLabelColor: Bool {
+        needsCompositeBackground || background.type == .color
+    }
+
     var effectiveGridSpacing: CGFloat {
         let raw = isGridSpacingAuto ? round(window.width / 6) : gridSpacing
         return min(raw, 100)

@@ -40,16 +40,22 @@ struct CanvasItemView: View, Equatable {
     private var isSourceMissing: Bool {
         document.missingSourceIDs.contains(item.id)
     }
-    private var legibilityModes: [LabelAppearanceMode] {
-        document.legibilityModes(for: item.id)
+    private var isLabelIllegible: Bool {
+        document.isLabelIllegible(item.id)
     }
 
-    /// Finder's label color for the previewed appearance: black in the light
-    /// preview, white in the dark preview. Driven by the canvas appearance toggle
-    /// (which injects `\.colorScheme` into the window preview), not the system,
-    /// so toggling shows exactly what a legibility warning describes.
+    /// The label color Finder will actually draw.
+    ///
+    /// A window with any custom background keeps its Light Mode rendering, so the label
+    /// stays dark however the chrome is drawn — which is why the canvas appearance
+    /// toggle moves the title bar and leaves this alone. Only a volume with no custom
+    /// background at all gets Finder's adaptive label color, and the toggle previews
+    /// that honestly.
     private var labelColor: Color {
-        colorScheme == .dark ? .white : .black
+        if document.configuration.finderPinsLabelColor {
+            return .black
+        }
+        return colorScheme == .dark ? .white : .black
     }
 
     private static let missingBadgeSize: CGFloat = 22
@@ -65,7 +71,7 @@ struct CanvasItemView: View, Equatable {
                     // label anyway, so legibility is re-judged after the fix.
                     if isSourceMissing {
                         missingSourceBadge
-                    } else if !legibilityModes.isEmpty {
+                    } else if isLabelIllegible {
                         legibilityBadge
                     }
                 }
@@ -151,8 +157,7 @@ struct CanvasItemView: View, Equatable {
     }
 
     private var legibilityHelpText: String {
-        let modes = legibilityModes.map(\.displayName).joined(separator: " and ")
-        return "Label may be hard to read in \(modes). "
+        "Label may be hard to read against the background. "
             + "Add a panel behind it, move it, or adjust the background."
     }
 

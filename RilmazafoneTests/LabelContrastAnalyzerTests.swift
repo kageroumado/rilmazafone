@@ -35,7 +35,7 @@ struct LabelContrastAnalyzerTests {
         return config
     }
 
-    static func analyze(_ configuration: DMGConfiguration) -> Set<LegibilityWarning> {
+    static func analyze(_ configuration: DMGConfiguration) -> Set<UUID> {
         LabelContrastAnalyzer.analyze(
             input: LegibilityAnalysisInput(configuration: configuration, layerImages: [:]),
         )
@@ -100,22 +100,22 @@ struct LabelContrastAnalyzerTests {
 
     // MARK: - Phase Acceptance: solid backgrounds
 
+    /// Finder draws the labels dark whatever the appearance, so a white background is
+    /// the readable one and stays readable — there is no appearance in which white
+    /// behind dark text becomes a problem.
     @Test
-    func `White background flags every item for dark mode and none for light`() {
+    func `A white background flags nothing`() {
         let config = Self.solidBackgroundConfiguration(
             color: RGBColor(red: 1, green: 1, blue: 1),
             itemCount: 3,
         )
-        let warnings = Self.analyze(config)
-
-        for item in config.items {
-            #expect(warnings.contains(LegibilityWarning(itemID: item.id, mode: .dark)))
-            #expect(!warnings.contains(LegibilityWarning(itemID: item.id, mode: .light)))
-        }
+        #expect(Self.analyze(config).isEmpty)
     }
 
+    /// The failure this analysis exists to catch: dark text on a dark background, which
+    /// Dark Mode does not rescue because the label never turns white.
     @Test
-    func `Black background flags every item for light mode and none for dark`() {
+    func `A black background flags every item`() {
         let config = Self.solidBackgroundConfiguration(
             color: RGBColor(red: 0, green: 0, blue: 0),
             itemCount: 3,
@@ -123,13 +123,12 @@ struct LabelContrastAnalyzerTests {
         let warnings = Self.analyze(config)
 
         for item in config.items {
-            #expect(warnings.contains(LegibilityWarning(itemID: item.id, mode: .light)))
-            #expect(!warnings.contains(LegibilityWarning(itemID: item.id, mode: .dark)))
+            #expect(warnings.contains(item.id))
         }
     }
 
     @Test
-    func `Mid-gray background passes both modes when flat`() {
+    func `A flat mid-gray background passes`() {
         let config = Self.solidBackgroundConfiguration(
             color: RGBColor(red: 0.5, green: 0.5, blue: 0.5),
             itemCount: 2,
@@ -137,28 +136,40 @@ struct LabelContrastAnalyzerTests {
         #expect(Self.analyze(config).isEmpty)
     }
 
+    /// Without a custom background Finder draws its own window fill and picks a label
+    /// color to suit it, so nothing here can be unreadable and nothing should be flagged.
+    @Test
+    func `A volume with no custom background flags nothing`() {
+        var config = Self.solidBackgroundConfiguration(
+            color: RGBColor(red: 0, green: 0, blue: 0),
+            itemCount: 2,
+        )
+        config.background.type = .none
+
+        #expect(!config.finderPinsLabelColor)
+        #expect(Self.analyze(config).isEmpty)
+    }
+
     // MARK: - Phase Acceptance: panel remediation
 
+    /// Lightening is the only direction that helps a dark label, which is what the
+    /// chip's one-click remediation now installs.
     @Test
-    func `Adding a dark glass panel behind a flagged label clears its dark-mode warning`() {
+    func `Adding a white glass panel behind a flagged label clears its warning`() {
         var config = Self.solidBackgroundConfiguration(
-            color: RGBColor(red: 1, green: 1, blue: 1),
+            color: RGBColor(red: 0, green: 0, blue: 0),
             itemCount: 1,
         )
         let itemID = config.items[0].id
-
-        let before = Self.analyze(config)
-        #expect(before.contains(LegibilityWarning(itemID: itemID, mode: .dark)))
+        #expect(Self.analyze(config).contains(itemID))
 
         config.items[0].background = ItemBackground(
             enabled: true,
-            color: RGBColor(red: 0, green: 0, blue: 0),
+            color: RGBColor(red: 1, green: 1, blue: 1),
             opacity: 0.6,
             blurRadius: 20,
         )
-        let after = Self.analyze(config)
-        #expect(!after.contains(LegibilityWarning(itemID: itemID, mode: .dark)))
-        #expect(!after.contains(LegibilityWarning(itemID: itemID, mode: .light)))
+        #expect(!Self.analyze(config).contains(itemID))
     }
 
     // MARK: - Placeholders
@@ -166,14 +177,13 @@ struct LabelContrastAnalyzerTests {
     @Test
     func `Placeholder items are analyzed at their position`() {
         var config = Self.solidBackgroundConfiguration(
-            color: RGBColor(red: 1, green: 1, blue: 1),
+            color: RGBColor(red: 0, green: 0, blue: 0),
             itemCount: 0,
         )
         let placeholder = CanvasItem.appPlaceholder(position: CGPoint(x: 220, y: 190))
         config.items = [placeholder]
 
-        let warnings = Self.analyze(config)
-        #expect(warnings.contains(LegibilityWarning(itemID: placeholder.id, mode: .dark)))
+        #expect(Self.analyze(config).contains(placeholder.id))
     }
 
     // MARK: - Variance penalty
@@ -183,12 +193,12 @@ struct LabelContrastAnalyzerTests {
         let windowSize = CGSize(width: 660, height: 400)
         let item = CanvasItem(kind: .app, label: "App.app", position: CGPoint(x: 330, y: 190))
 
-        // Encoded 141 has linear luminance ~0.266 — the same mean as a 26/191
-        // checker — giving a flat dark-mode ratio of ~3.3:1: above the 3.0 base
-        // threshold, below the 4.5 busy ceiling.
-        let flat = try #require(Self.makeFlatImage(width: 660, height: 400, encodedGray: 141))
+        // Encoded 95 has linear luminance ~0.114 — the same mean as a 0/132 checker —
+        // giving a ratio against the dark label of ~3.3:1: above the 3.0 base threshold,
+        // and below the ~3.7:1 the checker's variance raises the threshold to.
+        let flat = try #require(Self.makeFlatImage(width: 660, height: 400, encodedGray: 95))
         let checker = try #require(
-            Self.makeCheckerImage(width: 660, height: 400, first: 26, second: 191),
+            Self.makeCheckerImage(width: 660, height: 400, first: 0, second: 132),
         )
 
         let flatWarnings = LabelContrastAnalyzer.analyze(
@@ -198,8 +208,8 @@ struct LabelContrastAnalyzerTests {
             composite: checker, items: [item], iconSize: 160, textSize: 13, windowSize: windowSize,
         )
 
-        #expect(!flatWarnings.contains(LegibilityWarning(itemID: item.id, mode: .dark)))
-        #expect(busyWarnings.contains(LegibilityWarning(itemID: item.id, mode: .dark)))
+        #expect(!flatWarnings.contains(item.id))
+        #expect(busyWarnings.contains(item.id))
     }
 
     // MARK: - Geometry
@@ -287,15 +297,15 @@ struct LabelContrastAnalyzerTests {
 
         // Assertions happen back on the test after the hop; results cross as a
         // Sendable tuple so failures attribute to this test, not to the task.
-        let probe: (wasOffMain: Bool, elapsed: Duration, warnings: Set<LegibilityWarning>)? =
+        let probe: (wasOffMain: Bool, elapsed: Duration, warnings: Set<UUID>)? =
             await Task.detached(name: "Legibility Perf Probe") {
                 guard let composite = LabelContrastAnalyzerTests.makeFlatImage(
-                    width: 3_840, height: 2_160, encodedGray: 255,
+                    width: 3_840, height: 2_160, encodedGray: 0,
                 ) else { return nil }
 
                 let wasOffMain = !LabelContrastAnalyzerTests.isOnMainThread()
                 let clock = ContinuousClock()
-                var warnings: Set<LegibilityWarning> = []
+                var warnings: Set<UUID> = []
                 let elapsed = clock.measure {
                     warnings = LabelContrastAnalyzer.analyze(
                         composite: composite,
@@ -312,7 +322,7 @@ struct LabelContrastAnalyzerTests {
         print("Measured 4K analysis pass: \(result.elapsed)")
         #expect(result.wasOffMain, "Analysis core must be runnable off the main thread")
         #expect(result.elapsed < .milliseconds(150))
-        // White composite: every item flags for dark mode, none for light.
-        #expect(result.warnings == Set(items.map { LegibilityWarning(itemID: $0.id, mode: .dark) }))
+        // Black composite behind dark labels: every item flags.
+        #expect(result.warnings == Set(items.map(\.id)))
     }
 }

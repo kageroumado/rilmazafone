@@ -3,18 +3,15 @@ import SwiftUI
 /// Aggregate toolbar chip for label legibility warnings.
 ///
 /// Hidden while there are no warnings. Clicking it opens a popover listing each
-/// flagged item with the affected appearance mode and a one-click "Add Panel"
-/// remediation that installs a sensible default panel behind the label (undoable).
+/// flagged item with a one-click "Add Panel" remediation that installs a sensible
+/// default panel behind the label (undoable).
 struct LegibilityWarningChip: View {
     @Environment(RilmazafoneDocument.self) private var document
     @Environment(\.undoManager) private var undoManager
     @State private var isPopoverPresented = false
 
-    private var flaggedItems: [(item: CanvasItem, modes: [LabelAppearanceMode])] {
-        document.items.compactMap { item in
-            let modes = document.legibilityModes(for: item.id)
-            return modes.isEmpty ? nil : (item, modes)
-        }
+    private var flaggedItems: [CanvasItem] {
+        document.items.filter { document.isLabelIllegible($0.id) }
     }
 
     var body: some View {
@@ -41,8 +38,9 @@ struct LegibilityWarningChip: View {
                 .font(.headline)
 
             Text(
-                "Finder colors labels black in Light Mode and white in Dark Mode, "
-                    + "but a DMG background never changes with appearance.",
+                "Finder draws these labels dark whatever the system appearance: "
+                    + "a window with a background picture keeps its Light Mode "
+                    + "rendering. A dark background stays hard to read in both.",
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -50,20 +48,15 @@ struct LegibilityWarningChip: View {
 
             Divider()
 
-            ForEach(flaggedItems, id: \.item.id) { flagged in
+            ForEach(flaggedItems) { item in
                 HStack(spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(flagged.item.label)
-                            .lineLimit(1)
-                        Text(modesDescription(flagged.modes))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text(item.label)
+                        .lineLimit(1)
 
                     Spacer()
 
                     Button("Add Panel") {
-                        addRemediationPanel(for: flagged.item, modes: flagged.modes)
+                        addRemediationPanel(for: item)
                     }
                     .controlSize(.small)
                     .help(
@@ -86,40 +79,20 @@ struct LegibilityWarningChip: View {
         .frame(width: 320)
     }
 
-    private func modesDescription(_ modes: [LabelAppearanceMode]) -> String {
-        "May be unreadable in " + modes.map(\.displayName).joined(separator: " and ")
-    }
-
     // MARK: - Remediation
 
-    /// Default remediation panel constants: a blurred glass panel whose tint is
-    /// chosen from the flagged modes so the label region lands at a luminance
-    /// readable in both appearances.
+    /// Default remediation panel: blurred white glass. The label is dark whatever the
+    /// appearance, so lightening the region behind it is the only direction that helps.
     private enum RemediationPanel {
         static let opacity: CGFloat = 0.5
         static let blurRadius: CGFloat = 20
-        /// Dark-mode warning means the backdrop is too bright for white labels →
-        /// darken with black glass. Light-only warnings get white glass.
-        static let darkeningColor = RGBColor(red: 0, green: 0, blue: 0)
-        static let lighteningColor = RGBColor(red: 1, green: 1, blue: 1)
-        /// Both modes flagged (busy mid-luminance backdrop) → pull toward mid-gray,
-        /// which clears 3.9:1 against both black and white labels while the blur
-        /// removes the variance penalty.
-        static let neutralColor = RGBColor(red: 0.5, green: 0.5, blue: 0.5)
+        static let color = RGBColor(red: 1, green: 1, blue: 1)
     }
 
-    private func addRemediationPanel(for item: CanvasItem, modes: [LabelAppearanceMode]) {
-        let color: RGBColor = if modes.count > 1 {
-            RemediationPanel.neutralColor
-        } else if modes.contains(.dark) {
-            RemediationPanel.darkeningColor
-        } else {
-            RemediationPanel.lighteningColor
-        }
-
+    private func addRemediationPanel(for item: CanvasItem) {
         let panel = ItemBackground(
             enabled: true,
-            color: color,
+            color: RemediationPanel.color,
             opacity: RemediationPanel.opacity,
             blurRadius: RemediationPanel.blurRadius,
         )

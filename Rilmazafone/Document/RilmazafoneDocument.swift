@@ -198,7 +198,7 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     /// Runtime state, never persisted; written by `DocumentContentView`'s analysis
     /// task and read by the canvas badges, sidebar rows, toolbar chip, and build
     /// sheet notice.
-    var legibilityWarnings: Set<LegibilityWarning> = []
+    var legibilityWarnings: Set<UUID> = []
 
     /// The document's on-disk URL, fed in by the hosting view.
     ///
@@ -672,29 +672,19 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
     // MARK: - Legibility
 
     /// The appearance modes an item's label is flagged for, in display order.
-    func legibilityModes(for id: UUID) -> [LabelAppearanceMode] {
-        LabelAppearanceMode.allCases.filter { mode in
-            legibilityWarnings.contains(LegibilityWarning(itemID: id, mode: mode))
-        }
+    func isLabelIllegible(_ id: UUID) -> Bool {
+        legibilityWarnings.contains(id)
     }
 
     /// One-line aggregate of the current legibility warnings with correct
     /// pluralization, or `nil` when there are none. Shared by the toolbar chip
     /// and the build sheet notice.
     var legibilitySummary: String? {
-        let flaggedCount = Set(legibilityWarnings.map(\.itemID)).count
+        let flaggedCount = legibilityWarnings.count
         guard flaggedCount > 0 else { return nil }
 
         let noun = flaggedCount == 1 ? "label" : "labels"
-        let modes = Set(legibilityWarnings.map(\.mode))
-        let suffix = if modes == [.dark] {
-            "in Dark Mode"
-        } else if modes == [.light] {
-            "in Light Mode"
-        } else {
-            "in Light and Dark Mode"
-        }
-        return "\(flaggedCount) \(noun) may be unreadable \(suffix)"
+        return "\(flaggedCount) \(noun) may be unreadable"
     }
 
     // MARK: - Private
