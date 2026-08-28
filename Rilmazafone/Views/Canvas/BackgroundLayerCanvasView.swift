@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// A background image layer's handle on the canvas.
+///
+/// The canvas paints the layer from the composite the build bakes, so this view shows
+/// the image only while the layer is selected — the moment it is being moved and the
+/// one moment its own rendition has to follow the pointer. Deselected, it is an
+/// invisible target covering exactly the area the composite drew into.
 struct BackgroundLayerCanvasView: View, Equatable {
     let layer: BackgroundLayer
     let image: NSImage
@@ -64,34 +70,41 @@ struct BackgroundLayerCanvasView: View, Equatable {
     }
 
     var body: some View {
-        Image(nsImage: processedImage ?? image)
-            .resizable()
-            .frame(width: displayWidth, height: displayHeight)
-            .overlay {
-                if isSelected {
-                    Rectangle()
-                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                }
+        Group {
+            if isSelected {
+                Image(nsImage: processedImage ?? image)
+                    .resizable()
+            } else {
+                Color.clear
             }
-            .position(
-                x: layer.position.x * zoom + dragOffset.width,
-                y: layer.position.y * zoom + dragOffset.height,
+        }
+        .frame(width: displayWidth, height: displayHeight)
+        .contentShape(Rectangle())
+        .overlay {
+            if isSelected {
+                Rectangle()
+                    .strokeBorder(Color.accentColor, lineWidth: 2)
+            }
+        }
+        .position(
+            x: layer.position.x * zoom + dragOffset.width,
+            y: layer.position.y * zoom + dragOffset.height,
+        )
+        .gesture(dragGesture)
+        .onTapGesture {
+            onSelect()
+        }
+        .task(id: effectsFingerprint) {
+            guard hasEffects else {
+                processedImage = nil
+                return
+            }
+            processedImage = CompositeRenderer.applyLayerEffects(
+                to: image,
+                layer: layer,
+                displaySize: CGSize(width: logicalWidth, height: logicalHeight),
             )
-            .gesture(dragGesture)
-            .onTapGesture {
-                onSelect()
-            }
-            .task(id: effectsFingerprint) {
-                guard hasEffects else {
-                    processedImage = nil
-                    return
-                }
-                processedImage = CompositeRenderer.applyLayerEffects(
-                    to: image,
-                    layer: layer,
-                    displaySize: CGSize(width: logicalWidth, height: logicalHeight),
-                )
-            }
+        }
     }
 
     private var dragGesture: some Gesture {

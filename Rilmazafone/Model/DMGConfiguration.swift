@@ -246,17 +246,6 @@ nonisolated struct GradientStop: Codable, Hashable, Identifiable {
     var location: CGFloat
 }
 
-extension GradientConfiguration {
-    func swiftUIStops() -> [Gradient.Stop] {
-        stops.sorted { $0.location < $1.location }.map { stop in
-            Gradient.Stop(
-                color: Color(red: stop.color.red, green: stop.color.green, blue: stop.color.blue),
-                location: stop.location,
-            )
-        }
-    }
-}
-
 // MARK: - Variable Blur
 
 nonisolated struct VariableBlurConfiguration: Codable, Hashable {

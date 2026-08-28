@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// A text layer's handle on the canvas.
+///
+/// The canvas paints the layer from the composite the build bakes, so this view shows
+/// type only while the layer is selected — when it becomes an editable field, and when
+/// dragging needs it to follow the pointer. Deselected, it is an invisible target the
+/// size of the drawn text.
 struct TextLayerCanvasView: View, Equatable {
     @Environment(RilmazafoneDocument.self) private var document
     @Environment(\.undoManager) private var undoManager
@@ -34,14 +40,12 @@ struct TextLayerCanvasView: View, Equatable {
                     .focused($isEditing)
                     .fixedSize()
             } else {
-                Text(layer.text)
-                    .font(resolvedFont)
-                    .bold(layer.isBold)
-                    .italic(layer.isItalic)
-                    .foregroundStyle(textColor)
+                Color.clear
+                    .frame(width: drawnSize.width * zoom, height: drawnSize.height * zoom)
             }
         }
         .padding(4 * zoom)
+        .contentShape(Rectangle())
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 2)
@@ -61,6 +65,11 @@ struct TextLayerCanvasView: View, Equatable {
                 isEditing = true
             }
         }
+    }
+
+    /// The layer's footprint in canvas points, measured the way the renderer draws it.
+    private var drawnSize: CGSize {
+        CompositeRenderer.attributedString(for: layer).size()
     }
 
     private var textColor: Color {

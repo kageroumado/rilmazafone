@@ -108,7 +108,7 @@ nonisolated enum CompositeRenderer {
         NSGraphicsContext.current = nsContext
         defer { NSGraphicsContext.restoreGraphicsState() }
 
-        renderBeneathPanels(into: context, configuration: configuration) { layer in
+        renderBeneathPanels(into: context, configuration: configuration, excluding: nil) { layer in
             NSImage(contentsOf: assetsDirectory.appending(path: layer.imageName))
         }
         renderItemBackgrounds(
@@ -123,9 +123,14 @@ nonisolated enum CompositeRenderer {
     /// Draws everything composited *beneath* item panels — base background, image
     /// layers, text layers, and SF symbols — in the exact order `renderComposite` uses,
     /// so panel blurs (baked and live preview) read from identical content.
+    ///
+    /// - Parameter excluding: A layer the canvas is drawing live because it is selected,
+    ///   and which must therefore be left out of the composite beneath it. The build
+    ///   passes `nil`; nothing is ever excluded from a baked background.
     private static func renderBeneathPanels(
         into context: CGContext,
         configuration: DMGConfiguration,
+        excluding: UUID?,
         imageProvider: (BackgroundLayer) -> NSImage?,
     ) {
         let width = configuration.window.width
@@ -137,15 +142,21 @@ nonisolated enum CompositeRenderer {
         if configuration.background.type == .image {
             renderImageLayers(
                 context: context,
-                layers: configuration.background.layers,
+                layers: configuration.background.layers.filter { $0.id != excluding },
                 canvasWidth: width,
                 canvasHeight: height,
                 imageProvider: imageProvider,
             )
         }
 
-        renderTextLayers(configuration.textLayers, in: context, canvasHeight: height)
-        renderSFSymbolLayers(configuration.sfSymbolLayers, in: context, canvasHeight: height)
+        renderTextLayers(
+            configuration.textLayers.filter { $0.id != excluding },
+            in: context, canvasHeight: height,
+        )
+        renderSFSymbolLayers(
+            configuration.sfSymbolLayers.filter { $0.id != excluding },
+            in: context, canvasHeight: height,
+        )
     }
 
     // MARK: - Panel Backdrop (live preview)
@@ -153,20 +164,23 @@ nonisolated enum CompositeRenderer {
     /// Renders the composite that sits beneath item panels at `scale`× pixel density,
     /// sourcing layer images from memory instead of an on-disk assets directory.
     ///
-    /// This is the image `renderPanelPreview` composites each canvas panel over. The
-    /// panels themselves are deliberately excluded: in the built DMG each panel's blur
-    /// reads only the content composited before `renderItemBackgrounds`, so a panel
-    /// drawn over this backdrop matches what the baked background shows.
+    /// This is the image the canvas paints its DMG window from, and the one
+    /// `renderPanelPreview` composites each panel over. The panels themselves are
+    /// deliberately excluded: in the built DMG each panel's blur reads only the content
+    /// composited before `renderItemBackgrounds`, so a panel drawn over this backdrop
+    /// matches what the baked background shows.
     static func renderPanelBackdrop(
         configuration: DMGConfiguration,
         layerImages: [UUID: NSImage],
         scale: CGFloat,
+        excluding: UUID? = nil,
     ) -> CGImage? {
         compositeImage(
             configuration: configuration,
             layerImages: layerImages,
             scale: scale,
             includePanels: false,
+            excluding: excluding,
         )
     }
 
@@ -253,6 +267,7 @@ nonisolated enum CompositeRenderer {
         layerImages: [UUID: NSImage],
         scale: CGFloat,
         includePanels: Bool,
+        excluding: UUID? = nil,
     ) -> CGImage? {
         let pointSize = CGSize(width: configuration.window.width, height: configuration.window.height)
         guard pointSize.width > 0, pointSize.height > 0 else { return nil }
@@ -267,7 +282,7 @@ nonisolated enum CompositeRenderer {
         NSGraphicsContext.current = nsContext
         defer { NSGraphicsContext.restoreGraphicsState() }
 
-        renderBeneathPanels(into: context, configuration: configuration) { layerImages[$0.id] }
+        renderBeneathPanels(into: context, configuration: configuration, excluding: excluding) { layerImages[$0.id] }
         if includePanels {
             renderItemBackgrounds(
                 items: configuration.items,
@@ -352,41 +367,48 @@ nonisolated enum CompositeRenderer {
         canvasHeight: CGFloat,
     ) {
         for textLayer in textLayers {
-            var fontTraits: NSFontDescriptor.SymbolicTraits = []
-            if textLayer.isBold { fontTraits.insert(.bold) }
-            if textLayer.isItalic { fontTraits.insert(.italic) }
-
-            let baseFont = NSFont(name: textLayer.fontFamily, size: textLayer.fontSize)
-                ?? NSFont.systemFont(ofSize: textLayer.fontSize)
-
-            let font: NSFont
-            if !fontTraits.isEmpty {
-                let descriptor = baseFont.fontDescriptor.withSymbolicTraits(fontTraits)
-                font = NSFont(descriptor: descriptor, size: textLayer.fontSize) ?? baseFont
-            } else {
-                font = baseFont
-            }
-
-            let color = NSColor(
-                srgbRed: textLayer.color.red,
-                green: textLayer.color.green,
-                blue: textLayer.color.blue,
-                alpha: 1,
-            )
-
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: font,
-                .foregroundColor: color,
-            ]
-
-            let string = NSAttributedString(string: textLayer.text, attributes: attributes)
+            let string = attributedString(for: textLayer)
             let size = string.size()
-
             let drawX = textLayer.position.x - size.width / 2
             let drawY = canvasHeight - textLayer.position.y - size.height / 2
-
             string.draw(at: NSPoint(x: drawX, y: drawY))
         }
+    }
+
+    // MARK: - Layer Metrics
+
+    /// The font a text layer renders with, resolving family, size, and bold/italic traits.
+    static func font(for layer: TextLayerConfiguration) -> NSFont {
+        let base = NSFont(name: layer.fontFamily, size: layer.fontSize)
+            ?? NSFont.systemFont(ofSize: layer.fontSize)
+
+        var traits: NSFontDescriptor.SymbolicTraits = []
+        if layer.isBold { traits.insert(.bold) }
+        if layer.isItalic { traits.insert(.italic) }
+        guard !traits.isEmpty else { return base }
+
+        let descriptor = base.fontDescriptor.withSymbolicTraits(traits)
+        return NSFont(descriptor: descriptor, size: layer.fontSize) ?? base
+    }
+
+    /// The drawn form of a text layer. Its `size()` is the layer's footprint in canvas
+    /// points, which the canvas uses to place the layer's selection and drag target so
+    /// the handle covers exactly what the background shows.
+    static func attributedString(for layer: TextLayerConfiguration) -> NSAttributedString {
+        NSAttributedString(string: layer.text, attributes: [
+            .font: font(for: layer),
+            .foregroundColor: NSColor(
+                srgbRed: layer.color.red, green: layer.color.green, blue: layer.color.blue, alpha: 1,
+            ),
+        ])
+    }
+
+    /// The template glyph an SF Symbol layer renders, at its configured size and weight.
+    static func symbolImage(for layer: SFSymbolLayerConfiguration) -> NSImage? {
+        NSImage(systemSymbolName: layer.symbolName, accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(
+                pointSize: layer.pointSize, weight: layer.weight.nsFontWeight, scale: .medium,
+            ))
     }
 
     // MARK: - SF Symbol Layers
@@ -397,15 +419,7 @@ nonisolated enum CompositeRenderer {
         canvasHeight: CGFloat,
     ) {
         for symbolLayer in symbolLayers {
-            let config = NSImage.SymbolConfiguration(
-                pointSize: symbolLayer.pointSize,
-                weight: symbolLayer.weight.nsFontWeight,
-                scale: .medium,
-            )
-            guard let symbolImage = NSImage(
-                systemSymbolName: symbolLayer.symbolName,
-                accessibilityDescription: nil,
-            )?.withSymbolConfiguration(config) else { continue }
+            guard let symbolImage = symbolImage(for: symbolLayer) else { continue }
 
             let symbolSize = symbolImage.size
             let originX = symbolLayer.position.x - symbolSize.width / 2

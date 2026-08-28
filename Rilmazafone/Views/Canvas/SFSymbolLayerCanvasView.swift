@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// An SF Symbol layer's handle on the canvas.
+///
+/// The canvas paints the layer from the composite the build bakes, so this view shows
+/// the glyph only while the layer is selected and needs to follow the pointer.
+/// Deselected, it is an invisible target the size of the drawn symbol.
 struct SFSymbolLayerCanvasView: View, Equatable {
     let layer: SFSymbolLayerConfiguration
     let isSelected: Bool
@@ -18,24 +23,37 @@ struct SFSymbolLayerCanvasView: View, Equatable {
     @State private var isDragging = false
 
     var body: some View {
-        Image(systemName: layer.symbolName)
-            .font(.system(size: layer.pointSize * zoom, weight: layer.weight.fontWeight))
-            .foregroundStyle(symbolColor)
-            .padding(4 * zoom)
-            .background {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 2)
-                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                }
+        Group {
+            if isSelected {
+                Image(systemName: layer.symbolName)
+                    .font(.system(size: layer.pointSize * zoom, weight: layer.weight.fontWeight))
+                    .foregroundStyle(symbolColor)
+            } else {
+                Color.clear
+                    .frame(width: drawnSize.width * zoom, height: drawnSize.height * zoom)
             }
-            .position(
-                x: layer.position.x * zoom + dragOffset.width,
-                y: layer.position.y * zoom + dragOffset.height,
-            )
-            .gesture(dragGesture)
-            .onTapGesture {
-                onSelect()
+        }
+        .padding(4 * zoom)
+        .contentShape(Rectangle())
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 2)
+                    .strokeBorder(Color.accentColor, lineWidth: 2)
             }
+        }
+        .position(
+            x: layer.position.x * zoom + dragOffset.width,
+            y: layer.position.y * zoom + dragOffset.height,
+        )
+        .gesture(dragGesture)
+        .onTapGesture {
+            onSelect()
+        }
+    }
+
+    /// The layer's footprint in canvas points, measured the way the renderer draws it.
+    private var drawnSize: CGSize {
+        CompositeRenderer.symbolImage(for: layer)?.size ?? CGSize(width: layer.pointSize, height: layer.pointSize)
     }
 
     private var symbolColor: Color {

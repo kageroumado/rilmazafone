@@ -20,7 +20,7 @@ struct CanvasView: View {
     @State private var isFileImporterPresented = false
     @State private var titleBarIcon: NSImage?
     @State private var activeGuides = AlignmentGuides.none
-    @State private var panelBackdrop: CanvasBackdrop?
+    @State private var backdrop: CanvasBackdrop?
 
     var body: some View {
         GeometryReader { geometry in
@@ -107,28 +107,28 @@ struct CanvasView: View {
         .task(id: firstAppSourcePath) {
             titleBarIcon = await generateTitleBarIcon()
         }
-        .task(id: panelBackdropGeneration) {
-            await refreshPanelBackdrop()
+        .task(id: backdropGeneration) {
+            await refreshBackdrop()
         }
     }
 
     // MARK: - Panel Backdrop
 
-    /// Fingerprint of every background-affecting input to the panel backdrop composite
-    /// (base background, image layers and their loaded images, text, symbols, window
-    /// size), or `nil` when no panel is drawn. Built from the document's slice
-    /// generation counters instead of deep-hashing content, so evaluating it is O(1) in
-    /// document size. Item positions are deliberately excluded (no `itemsGeneration`)
-    /// so drag-moves never re-composite; each panel re-renders over this image itself.
-    private var panelBackdropGeneration: Int? {
-        guard document.items.contains(where: { $0.background?.draws == true }) else { return nil }
-
+    /// Fingerprint of every input to the backdrop composite: the background itself
+    /// (base, image layers and their loaded images, text, symbols, window size) plus
+    /// the selected layer, which is left out of the composite because the canvas draws
+    /// it live. Built from the document's slice generation counters instead of
+    /// deep-hashing content, so evaluating it is O(1) in document size. Item positions
+    /// are deliberately excluded (no `itemsGeneration`) so dragging an icon never
+    /// re-composites; each panel re-renders over this image itself.
+    private var backdropGeneration: Int {
         var hasher = Hasher()
         hasher.combine(document.restGeneration)
         hasher.combine(document.backgroundGeneration)
         hasher.combine(document.textLayersGeneration)
         hasher.combine(document.sfSymbolLayersGeneration)
         hasher.combine(document.imagesGeneration)
+        hasher.combine(selectedItemID)
         return hasher.finalize()
     }
 
@@ -140,38 +140,36 @@ struct CanvasView: View {
         let layerImages: [UUID: NSImage]
     }
 
-    /// Re-composites the shared unblurred backdrop for the current generation. Runs
-    /// only on background-affecting edits; panels re-crop and re-blur the cached image
-    /// on their own. The full-window composite renders off the main thread — at large
-    /// window sizes it costs tens of milliseconds, which hitched editing when it ran
-    /// on the main actor.
-    private func refreshPanelBackdrop() async {
-        guard let generation = panelBackdropGeneration else {
-            panelBackdrop = nil
-            return
-        }
-        guard panelBackdrop?.generation != generation else { return }
+    /// Re-composites the backdrop the canvas paints and panels blur out of. Runs on
+    /// background-affecting edits and on selection changes; the composite renders off
+    /// the main thread because it costs a few milliseconds and would otherwise land in
+    /// the middle of a keystroke.
+    private func refreshBackdrop() async {
+        let generation = backdropGeneration
+        guard backdrop?.generation != generation else { return }
 
         let input = BackdropRenderInput(
             configuration: document.configuration,
             layerImages: document.backgroundImages,
         )
-        let image = await Task.detached(name: "Panel Backdrop Composite", priority: .userInitiated) {
+        let excluded = selectedItemID
+        let image = await Task.detached(name: "Canvas Backdrop Composite", priority: .userInitiated) {
             CompositeRenderer.renderPanelBackdrop(
                 configuration: input.configuration,
                 layerImages: input.layerImages,
                 scale: CanvasBackdrop.renderScale,
+                excluding: excluded,
             )
         }.value
 
         guard !Task.isCancelled else { return }
         guard let image else {
-            panelBackdrop = nil
+            backdrop = nil
             return
         }
         let configuration = input.configuration
 
-        panelBackdrop = CanvasBackdrop(
+        backdrop = CanvasBackdrop(
             image: image,
             pointSize: CGSize(
                 width: configuration.window.width,
@@ -297,43 +295,21 @@ struct CanvasView: View {
         }
     }
 
-    @ViewBuilder
+    /// The DMG window's content, painted from the composite the build bakes rather than
+    /// rebuilt in SwiftUI — so a gradient's interpolation, a layer's effects, and the
+    /// type in a text layer are the ones Finder will show, not a second interpretation
+    /// of them. `windowBackgroundFill` sits underneath for the `.none` background type,
+    /// whose composite is transparent because no background image is written at all.
     private var windowContentBackground: some View {
-        if document.background.type == .gradient,
-           let grad = document.background.gradient {
-            gradientView(for: grad)
-        } else {
+        ZStack {
             Rectangle()
                 .fill(windowBackgroundFill)
-        }
-    }
 
-    @ViewBuilder
-    private func gradientView(for grad: GradientConfiguration) -> some View {
-        let swiftUIStops = grad.swiftUIStops()
-        switch grad.type {
-        case .linear:
-            let radians = grad.angle * .pi / 180
-            let startPoint = UnitPoint(
-                x: 0.5 + cos(radians + .pi) * 0.5,
-                y: 0.5 + sin(radians + .pi) * 0.5,
-            )
-            let endPoint = UnitPoint(
-                x: 0.5 + cos(radians) * 0.5,
-                y: 0.5 + sin(radians) * 0.5,
-            )
-            Rectangle().fill(
-                LinearGradient(stops: swiftUIStops, startPoint: startPoint, endPoint: endPoint),
-            )
-        case .radial:
-            Rectangle().fill(
-                RadialGradient(
-                    stops: swiftUIStops,
-                    center: UnitPoint(x: grad.centerX, y: grad.centerY),
-                    startRadius: grad.startRadius * windowWidth,
-                    endRadius: grad.endRadius * windowWidth,
-                ),
-            )
+            if let backdrop {
+                Image(decorative: backdrop.image, scale: 1)
+                    .resizable()
+                    .interpolation(.high)
+            }
         }
     }
 
@@ -427,7 +403,7 @@ struct CanvasView: View {
                 bg: item.background!,
                 currentZoom: currentZoom,
                 iconSize: iconSize,
-                backdrop: panelBackdrop,
+                backdrop: backdrop,
             )
             .equatable()
         }
