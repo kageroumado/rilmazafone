@@ -52,15 +52,11 @@ struct CanvasItemView: View, Equatable {
         colorScheme == .dark ? .white : .black
     }
 
-    /// Finder draws icon in a cell with 10px padding, then text 4px below.
-    /// The iloc position is the center of the combined icon cell + text area.
-    private static let iconCellPadding: CGFloat = 10
-    private static let textGap: CGFloat = 4
     private static let missingBadgeSize: CGFloat = 22
     private static let missingBadgeMinimumSize: CGFloat = 12
 
     var body: some View {
-        VStack(spacing: Self.textGap * zoom) {
+        VStack(spacing: ItemGeometry.textGap * zoom) {
             iconImage
                 .frame(width: displayIconSize, height: displayIconSize)
                 .overlay(alignment: .bottomTrailing) {
@@ -73,7 +69,7 @@ struct CanvasItemView: View, Equatable {
                         legibilityBadge
                     }
                 }
-                .padding(Self.iconCellPadding * zoom)
+                .padding(ItemGeometry.iconCellPadding * zoom)
 
             Text(displayLabel)
                 .font(.system(size: textSize * zoom))

@@ -533,6 +533,26 @@ nonisolated struct ItemBackground: Codable, Hashable {
     var shadow: ShadowConfiguration?
     var bevel: BevelConfiguration?
 
+    /// Whether this background puts anything on screen. The body, the shadow, and the
+    /// bevel are independently switchable, so a background with `enabled == false` can
+    /// still cast a shadow or carry a bevel.
+    var draws: Bool {
+        enabled || shadow?.enabled == true || bevel?.enabled == true
+    }
+
+    /// How far, in points, the rendered panel spills outside its own rect: the shadow
+    /// reaches beyond it, and the body blur samples the background around it.
+    var renderOutset: CGFloat {
+        var outset: CGFloat = 0
+        if let shadow, shadow.enabled {
+            outset = max(outset, shadow.radius * 3 + max(abs(shadow.offsetX), abs(shadow.offsetY)))
+        }
+        if enabled, blurRadius > 0 {
+            outset = max(outset, blurRadius * 3)
+        }
+        return ceil(outset)
+    }
+
     private enum CodingKeys: String, CodingKey {
         case enabled
         case color

@@ -112,20 +112,16 @@ struct CanvasView: View {
         }
     }
 
-    // MARK: - Panel Backdrop (public glass preview)
+    // MARK: - Panel Backdrop
 
     /// Fingerprint of every background-affecting input to the panel backdrop composite
     /// (base background, image layers and their loaded images, text, symbols, window
-    /// size), or `nil` when no panel needs the glass preview. Built from the document's
-    /// slice generation counters instead of deep-hashing content, so evaluating it is
-    /// O(1) in document size. Item positions are deliberately excluded (no
-    /// `itemsGeneration`) so drag-moves never re-composite.
+    /// size), or `nil` when no panel is drawn. Built from the document's slice
+    /// generation counters instead of deep-hashing content, so evaluating it is O(1) in
+    /// document size. Item positions are deliberately excluded (no `itemsGeneration`)
+    /// so drag-moves never re-composite; each panel re-renders over this image itself.
     private var panelBackdropGeneration: Int? {
-        guard document.items.contains(where: { item in
-            guard let bg = item.background else { return false }
-            return bg.enabled && bg.blurRadius > 0
-        })
-        else { return nil }
+        guard document.items.contains(where: { $0.background?.draws == true }) else { return nil }
 
         var hasher = Hasher()
         hasher.combine(document.restGeneration)
@@ -164,7 +160,7 @@ struct CanvasView: View {
             CompositeRenderer.renderPanelBackdrop(
                 configuration: input.configuration,
                 layerImages: input.layerImages,
-                scale: 2,
+                scale: CanvasBackdrop.renderScale,
             )
         }.value
 
@@ -181,6 +177,7 @@ struct CanvasView: View {
                 width: configuration.window.width,
                 height: configuration.window.height,
             ),
+            scale: CanvasBackdrop.renderScale,
             generation: generation,
         )
     }
@@ -424,10 +421,7 @@ struct CanvasView: View {
     private func itemBackgroundsOverlay(zoom currentZoom: CGFloat) -> some View {
         let iconSize = document.iconSize
 
-        return ForEach(document.items.filter { item in
-            guard let bg = item.background else { return false }
-            return bg.enabled || bg.shadow?.enabled == true || bg.bevel?.enabled == true
-        }) { item in
+        return ForEach(document.items.filter { $0.background?.draws == true }) { item in
             ItemBackgroundPanel(
                 item: item,
                 bg: item.background!,

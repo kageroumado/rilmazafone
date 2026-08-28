@@ -5,7 +5,7 @@ import CoreImage.CIFilterBuiltins
 nonisolated enum CompositeRenderer {
     /// Fixed sRGB color space used for every offscreen bitmap and CoreImage pass, so
     /// output does not depend on the display or working-space defaults. Shared by the
-    /// other deterministic renderers (thumbnails, legibility analysis, glass preview).
+    /// other deterministic renderers (thumbnails, legibility analysis, canvas panels).
     static let sRGB = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
 
     /// Software CoreImage renderer with fixed sRGB working/output spaces. The software
@@ -153,10 +153,10 @@ nonisolated enum CompositeRenderer {
     /// Renders the composite that sits beneath item panels at `scale`× pixel density,
     /// sourcing layer images from memory instead of an on-disk assets directory.
     ///
-    /// This is the image the public glass preview (`CanvasBackdropBlurView`) crops and
-    /// blurs. The panels themselves are deliberately excluded: in the built DMG each
-    /// panel's blur reads only the content composited before `renderItemBackgrounds`,
-    /// so blurring this backdrop matches what the baked background shows.
+    /// This is the image `renderPanelPreview` composites each canvas panel over. The
+    /// panels themselves are deliberately excluded: in the built DMG each panel's blur
+    /// reads only the content composited before `renderItemBackgrounds`, so a panel
+    /// drawn over this backdrop matches what the baked background shows.
     static func renderPanelBackdrop(
         configuration: DMGConfiguration,
         layerImages: [UUID: NSImage],
@@ -168,6 +168,59 @@ nonisolated enum CompositeRenderer {
             scale: scale,
             includePanels: false,
         )
+    }
+
+    /// Renders one item panel exactly as it is baked into the DMG background, composited
+    /// over the matching crop of `backdrop`.
+    ///
+    /// The canvas displays this image instead of reconstructing the panel in SwiftUI.
+    /// The shadow, the body blur, the blend mode, and the bevel all come out of the same
+    /// `renderItemLayers` the build calls, so the editor cannot disagree with the DMG.
+    ///
+    /// - Parameters:
+    ///   - bg: The panel's configuration.
+    ///   - panelRect: The panel's own rect in the canvas's y-down point space.
+    ///   - backdrop: The composite beneath panels, from `renderPanelBackdrop`.
+    ///   - backdropPointSize: The canvas point size `backdrop` covers.
+    ///   - scale: Pixels per point of `backdrop`, and of the returned image.
+    /// - Returns: The region the panel renders into, in canvas points, and the image
+    ///   filling it — or `nil` if the panel draws nothing or the inputs are degenerate.
+    static func renderPanelPreview(
+        bg: ItemBackground,
+        panelRect: CGRect,
+        backdrop: CGImage,
+        backdropPointSize: CGSize,
+        scale: CGFloat,
+    ) -> (region: CGRect, image: CGImage)? {
+        guard bg.draws, backdropPointSize.width > 0, backdropPointSize.height > 0 else { return nil }
+
+        let region = panelRect.insetBy(dx: -bg.renderOutset, dy: -bg.renderOutset)
+        let pixelsWide = Int((region.width * scale).rounded())
+        let pixelsHigh = Int((region.height * scale).rounded())
+        guard pixelsWide > 0, pixelsHigh > 0,
+              let context = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh)
+        else { return nil }
+
+        // Work in the y-up point space the baked background uses, with the origin moved
+        // onto `region`, so one panel rect addresses the same content in both.
+        func flipped(_ rect: CGRect) -> CGRect {
+            CGRect(
+                x: rect.minX,
+                y: backdropPointSize.height - rect.maxY,
+                width: rect.width,
+                height: rect.height,
+            )
+        }
+
+        let origin = flipped(region).origin
+        context.scaleBy(x: scale, y: scale)
+        context.translateBy(x: -origin.x, y: -origin.y)
+        context.draw(backdrop, in: CGRect(origin: .zero, size: backdropPointSize))
+
+        renderItemLayers(bg: bg, rect: flipped(panelRect), in: context, scale: scale)
+
+        guard let image = context.makeImage() else { return nil }
+        return (region, image)
     }
 
     // MARK: - Analysis Composite
@@ -381,7 +434,6 @@ nonisolated enum CompositeRenderer {
 
     // MARK: - Item Backgrounds
 
-    /// Dimensions match CanvasView: icon cell (iconSize + 20) + text gap (4) + text (~20)
     private static func renderItemBackgrounds(
         items: [CanvasItem],
         iconSize: CGFloat,
@@ -389,27 +441,36 @@ nonisolated enum CompositeRenderer {
         canvasHeight: CGFloat,
         scale: CGFloat,
     ) {
-        let iconCellPadding: CGFloat = 10
-        let textGap: CGFloat = 4
-        let estimatedTextHeight: CGFloat = 20
-
         for item in items {
-            guard let bg = item.background,
-                  bg.enabled || bg.shadow?.enabled == true || bg.bevel?.enabled == true
-            else { continue }
+            guard let bg = item.background, bg.draws else { continue }
 
-            let contentHeight = iconSize + iconCellPadding * 2 + textGap + estimatedTextHeight
-            let bgSide = contentHeight + bg.padding * 2
-            let originX = item.position.x - bgSide / 2
-            let originY = canvasHeight - item.position.y - bgSide / 2
-            let bgRect = CGRect(x: originX, y: originY, width: bgSide, height: bgSide)
+            let bgRect = ItemGeometry.panelRectFlipped(
+                center: item.position,
+                iconSize: iconSize,
+                padding: bg.padding,
+                canvasHeight: canvasHeight,
+            )
+            renderItemLayers(bg: bg, rect: bgRect, in: context, scale: scale)
+        }
+    }
 
-            renderItemShadow(bg: bg, rect: bgRect, in: context)
-            renderItemPanel(bg: bg, rect: bgRect, in: context, scale: scale)
+    /// Draws one panel's shadow, body, and bevel in that order. The single place the
+    /// panel's appearance is defined: the canvas preview renders through here too, so
+    /// what the editor shows and what the DMG bakes cannot drift apart.
+    private static func renderItemLayers(
+        bg: ItemBackground,
+        rect: CGRect,
+        in context: CGContext,
+        scale: CGFloat,
+    ) {
+        renderItemShadow(bg: bg, rect: rect, in: context, scale: scale)
+        renderItemPanel(bg: bg, rect: rect, in: context, scale: scale)
 
-            if let bevel = bg.bevel, bevel.enabled {
-                renderBevel(context: context, rect: bgRect, cornerRadius: bg.cornerRadius, bevel: bevel)
-            }
+        if let bevel = bg.bevel, bevel.enabled {
+            renderBevel(
+                context: context, rect: rect,
+                cornerRadius: bg.cornerRadius, bevel: bevel, scale: scale,
+            )
         }
     }
 
@@ -417,6 +478,7 @@ nonisolated enum CompositeRenderer {
         bg: ItemBackground,
         rect: CGRect,
         in context: CGContext,
+        scale: CGFloat,
     ) {
         guard let shadow = bg.shadow, shadow.enabled else { return }
 
@@ -438,9 +500,12 @@ nonisolated enum CompositeRenderer {
         context.saveGState()
         context.beginTransparencyLayer(auxiliaryInfo: nil)
 
+        // Core Graphics reads the shadow offset and blur in device space, ignoring the
+        // CTM, so both are scaled by hand — otherwise the @2x representation would carry
+        // a shadow half as far and half as soft as the @1x one drawn from the same points.
         context.setShadow(
-            offset: CGSize(width: shadow.offsetX, height: -shadow.offsetY),
-            blur: shadow.radius,
+            offset: CGSize(width: shadow.offsetX * scale, height: -shadow.offsetY * scale),
+            blur: shadow.radius * scale,
             color: shadowColor,
         )
         context.addPath(shadowPath)
@@ -736,50 +801,62 @@ nonisolated enum CompositeRenderer {
 
     // MARK: - Bevel Rendering
 
+    /// Renders the panel's bevel as a soft-light overlay of its rounded rectangle: a
+    /// shaded relief along the edge, transparent outside the shape and neutral mid-gray
+    /// across the flat interior, so compositing it changes the edge and nothing else.
+    ///
+    /// - Parameter scale: Pixels per point, so the relief is drawn on the same pixel grid
+    ///   as the background it lands in rather than being resampled up from 1×.
     static func renderBevelImage(
         size: CGSize,
         cornerRadius: CGFloat,
         bevel: BevelConfiguration,
-    ) -> NSImage? {
-        guard size.width > 0, size.height > 0 else { return nil }
+        scale: CGFloat = 1,
+    ) -> CGImage? {
+        let pixelsWide = Int((size.width * scale).rounded())
+        let pixelsHigh = Int((size.height * scale).rounded())
+        guard pixelsWide > 0, pixelsHigh > 0 else { return nil }
 
-        // 1. Create white rounded rect mask on black background (deterministic bitmap).
         let bounds = CGRect(origin: .zero, size: size)
-        guard let maskContext = makeBitmapContext(
-            pixelsWide: Int(size.width.rounded()),
-            pixelsHigh: Int(size.height.rounded()),
-        ) else { return nil }
+        let shape = CGPath(
+            roundedRect: bounds, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil,
+        )
+
+        // 1. White rounded rect on black — the mask the height field is raised from.
+        guard let maskContext = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh) else { return nil }
+        maskContext.scaleBy(x: scale, y: scale)
         maskContext.setFillColor(CGColor(gray: 0, alpha: 1))
         maskContext.fill(bounds)
         maskContext.setFillColor(CGColor(gray: 1, alpha: 1))
-        maskContext.addPath(CGPath(
-            roundedRect: bounds, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil,
-        ))
+        maskContext.addPath(shape)
         maskContext.fillPath()
 
         guard let maskCG = maskContext.makeImage() else { return nil }
         let ciMask = CIImage(cgImage: maskCG)
 
-        // 2. CIHeightFieldFromMask
+        // 2. Raise the mask into a height field and light it through the shading sphere.
         let heightField = CIFilter.heightFieldFromMask()
         heightField.inputImage = ciMask
-        heightField.radius = Float(bevel.depth)
+        heightField.radius = Float(bevel.depth * scale)
         guard let heightOutput = heightField.outputImage else { return nil }
 
-        // 3. Generate shading sphere
-        let shadingSphere = generateShadingSphere(lightAngle: bevel.lightAngle, size: 128)
-
-        // 4. CIShadedMaterial
         let shaded = CIFilter.shadedMaterial()
         shaded.inputImage = heightOutput
-        shaded.shadingImage = shadingSphere
+        shaded.shadingImage = generateShadingSphere(lightAngle: bevel.lightAngle, size: 128)
         shaded.scale = Float(bevel.intensity * 20)
-        guard let shadedOutput = shaded.outputImage?.cropped(to: ciMask.extent) else { return nil }
+        guard let shadedOutput = shaded.outputImage?.cropped(to: ciMask.extent),
+              let shadedCG = ciContext.createCGImage(shadedOutput, from: ciMask.extent)
+        else { return nil }
 
-        // 5. Convert to NSImage
-        let ciContext = Self.ciContext
-        guard let cgBevel = ciContext.createCGImage(shadedOutput, from: ciMask.extent) else { return nil }
-        return NSImage(cgImage: cgBevel, size: size)
+        // 3. Clip the shading to the panel's own shape. `CIShadedMaterial` returns an
+        // opaque square, and a soft-light overlay of that square tints the full bounding
+        // box — which is how the corner radius went missing from built backgrounds.
+        guard let output = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh) else { return nil }
+        output.scaleBy(x: scale, y: scale)
+        output.addPath(shape)
+        output.clip()
+        output.draw(shadedCG, in: bounds)
+        return output.makeImage()
     }
 
     static func renderBevel(
@@ -787,19 +864,26 @@ nonisolated enum CompositeRenderer {
         rect: CGRect,
         cornerRadius: CGFloat,
         bevel: BevelConfiguration,
+        scale: CGFloat,
     ) {
         guard let bevelImage = renderBevelImage(
             size: rect.size,
             cornerRadius: cornerRadius,
             bevel: bevel,
-        ), let cgBevel = bevelImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
+            scale: scale,
+        ) else { return }
 
         context.saveGState()
         context.setBlendMode(.softLight)
-        context.draw(cgBevel, in: rect)
+        context.draw(bevelImage, in: rect)
         context.restoreGState()
     }
 
+    /// The lit hemisphere `CIShadedMaterial` indexes by surface normal.
+    ///
+    /// The whole response curve is biased so a surface facing the viewer reads exactly
+    /// mid-gray, which is the identity under soft light: the relief then lights and
+    /// shades the panel's edge while leaving its flat interior untouched.
     static func generateShadingSphere(lightAngle: CGFloat, size: Int = 128) -> CIImage {
         let radians = lightAngle * .pi / 180
         let lightX = cos(radians)
@@ -809,6 +893,14 @@ nonisolated enum CompositeRenderer {
         let lx = lightX / lightLen
         let ly = lightY / lightLen
         let lz = lightZ / lightLen
+
+        func response(toLight dot: CGFloat) -> CGFloat {
+            let diffuse = max(dot, 0)
+            return 0.3 + 0.5 * diffuse + 0.2 * pow(diffuse, 4)
+        }
+
+        let neutral: CGFloat = 0.5
+        let bias = neutral - response(toLight: lz)
 
         var pixels = [UInt8](repeating: 0, count: size * size * 4)
         let center = CGFloat(size) / 2
@@ -823,16 +915,13 @@ nonisolated enum CompositeRenderer {
                 let intensity: CGFloat
                 if dist2 <= 1.0 {
                     let nz = sqrt(1.0 - dist2)
-                    let dot = dx * lx + dy * ly + nz * lz
-                    let diffuse = max(dot, 0)
-                    let specular = pow(max(dot, 0), 4)
-                    intensity = min(0.3 + 0.5 * diffuse + 0.2 * specular, 1.0)
+                    intensity = min(max(response(toLight: dx * lx + dy * ly + nz * lz) + bias, 0), 1)
                 } else {
-                    intensity = 0.5
+                    intensity = neutral
                 }
 
                 let idx = (y * size + x) * 4
-                let byte = UInt8(intensity * 255)
+                let byte = UInt8((intensity * 255).rounded())
                 pixels[idx] = byte // R
                 pixels[idx + 1] = byte // G
                 pixels[idx + 2] = byte // B
@@ -862,10 +951,12 @@ nonisolated enum CompositeRenderer {
         // `context.makeImage()` returns the full backing at pixel resolution, so the
         // point-space panel rect and blur radius are mapped into pixels before cropping
         // and blurring, then the result is drawn back in points under the scaled CTM.
+        // The mapping goes through the CTM rather than `scale` alone, because the live
+        // panel preview renders into a translated context covering just one panel.
         guard let currentBitmap = context.makeImage() else { return }
         let ciImage = CIImage(cgImage: currentBitmap)
 
-        let rectPx = rect.applying(CGAffineTransform(scaleX: scale, y: scale))
+        let rectPx = rect.applying(context.ctm)
         let paddingPx = blurRadius * scale * 3
         let expandedPx = rectPx.insetBy(dx: -paddingPx, dy: -paddingPx)
         let cropped = ciImage.cropped(to: expandedPx)
@@ -901,7 +992,7 @@ nonisolated enum CompositeRenderer {
         guard let currentBitmap = context.makeImage() else { return }
         let ciImage = CIImage(cgImage: currentBitmap)
 
-        let rectPx = rect.applying(CGAffineTransform(scaleX: scale, y: scale))
+        let rectPx = rect.applying(context.ctm)
         let paddingPx = blurRadius * scale * 3
         let expandedPx = rectPx.insetBy(dx: -paddingPx, dy: -paddingPx)
         let cropped = ciImage.cropped(to: expandedPx)

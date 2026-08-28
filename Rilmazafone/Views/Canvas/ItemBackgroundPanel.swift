@@ -1,5 +1,13 @@
+import CoreGraphics
 import SwiftUI
 
+/// One item's panel on the canvas, drawn by the renderer that bakes it into the DMG.
+///
+/// The panel is not reconstructed in SwiftUI. `CompositeRenderer.renderPanelPreview`
+/// composites it over the shared canvas backdrop using the build's own drawing code,
+/// and this view scales the result to the current zoom. The shadow's shape, the body's
+/// blend against the background, and the bevel's clip are therefore exactly what the
+/// built DMG will show, instead of a second implementation that drifts from it.
 struct ItemBackgroundPanel: View, Equatable {
     let item: CanvasItem
     let bg: ItemBackground
@@ -15,149 +23,126 @@ struct ItemBackgroundPanel: View, Equatable {
             && lhs.backdrop == rhs.backdrop
     }
 
-    @State private var bevelImage: NSImage?
+    @State private var rendered: RenderedPanel?
 
-    private static let iconCellPadding: CGFloat = 10
-    private static let textGap: CGFloat = 4
-    private static let estimatedTextHeight: CGFloat = 20
-
-    private var contentHeight: CGFloat {
-        iconSize + Self.iconCellPadding * 2 + Self.textGap + Self.estimatedTextHeight
-    }
-
-    private var bgSide: CGFloat {
-        (contentHeight + bg.padding * 2) * currentZoom
-    }
-
-    private var cr: CGFloat {
-        bg.cornerRadius * currentZoom
-    }
-
-    private var panelShadowColor: Color {
-        guard let shadow = bg.shadow, shadow.enabled else { return .clear }
-        return Color(
-            red: shadow.color.red,
-            green: shadow.color.green,
-            blue: shadow.color.blue,
-        ).opacity(shadow.opacity)
-    }
-
-    private var panelShadowRadius: CGFloat {
-        guard let shadow = bg.shadow, shadow.enabled else { return 0 }
-        return shadow.radius * currentZoom
-    }
-
-    private var panelShadowOffset: CGSize {
-        guard let shadow = bg.shadow, shadow.enabled else { return .zero }
-        return CGSize(
-            width: shadow.offsetX * currentZoom,
-            height: shadow.offsetY * currentZoom,
-        )
-    }
-
-    /// Panel rect in canvas points (top-left origin), the crop the public glass
-    /// preview blurs out of the composited backdrop.
+    /// The panel's own rect in canvas points, top-left origin.
     private var panelRect: CGRect {
-        let side = contentHeight + bg.padding * 2
-        return CGRect(
-            x: item.position.x - side / 2,
-            y: item.position.y - side / 2,
-            width: side,
-            height: side,
-        )
+        ItemGeometry.panelRect(center: item.position, iconSize: iconSize, padding: bg.padding)
     }
 
-    /// The unmasked blur layer: crops the composited canvas background under the
-    /// panel and blurs it with `CIGaussianBlur`, matching the built DMG's baked panel.
-    private var blurSource: some View {
-        CanvasBackdropBlurView(backdrop: backdrop, rect: panelRect, blurRadius: bg.blurRadius)
-    }
-
-    private var bevelFingerprint: Int {
-        var hasher = Hasher()
-        hasher.combine(bg.bevel)
-        hasher.combine(Int(bgSide))
-        hasher.combine(Int(bg.cornerRadius * 100))
-        return hasher.finalize()
+    private var cacheKey: PanelRenderCache.Key? {
+        backdrop.map { PanelRenderCache.Key(backdrop: $0, panelRect: panelRect, background: bg) }
     }
 
     var body: some View {
-        ZStack {
-            if bg.enabled {
-                if bg.blurRadius > 0 {
-                    if bg.blurFeather > 0 {
-                        let featherPx = bgSide * bg.blurFeather * 0.5
-                        blurSource
-                            .mask {
-                                RoundedRectangle(cornerRadius: max(cr - featherPx, 0))
-                                    .fill(.white)
-                                    .padding(featherPx)
-                                    .blur(radius: featherPx)
-                            }
-                    } else {
-                        // Shape the blur at its source rather than relying on the ancestor
-                        // `.clipShape`: this subtree contains `.blendMode` children, which the
-                        // compositor may hoist past an ancestor mask (square panels on macOS 27),
-                        // so every layer must carry its own shape.
-                        blurSource
-                            .clipShape(RoundedRectangle(cornerRadius: cr))
-                    }
-                }
-
-                RoundedRectangle(cornerRadius: cr)
-                    .fill(Color(
-                        red: bg.color.red,
-                        green: bg.color.green,
-                        blue: bg.color.blue,
-                    ).opacity(bg.opacity))
-                    .blendMode(bg.blendMode.swiftUIBlendMode)
-                    .mask {
-                        if bg.blurFeather > 0 {
-                            let featherPx = bgSide * bg.blurFeather * 0.5
-                            RoundedRectangle(cornerRadius: max(cr - featherPx, 0))
-                                .fill(.white)
-                                .padding(featherPx)
-                                .blur(radius: featherPx)
-                        } else {
-                            Rectangle()
-                        }
-                    }
-            }
-
-            if let bevelImg = bevelImage {
-                // Carries `.blendMode`, so it too must be shaped intrinsically (see blurSource).
-                Image(nsImage: bevelImg)
+        Group {
+            if let rendered {
+                Image(decorative: rendered.image, scale: 1)
                     .resizable()
-                    .frame(width: bgSide, height: bgSide)
-                    .clipShape(RoundedRectangle(cornerRadius: cr))
-                    .blendMode(.softLight)
+                    .interpolation(.high)
+                    .frame(
+                        width: rendered.region.width * currentZoom,
+                        height: rendered.region.height * currentZoom,
+                    )
+                    .position(
+                        x: rendered.region.midX * currentZoom,
+                        y: rendered.region.midY * currentZoom,
+                    )
             }
         }
-        .frame(width: bgSide, height: bgSide)
-        .clipShape(RoundedRectangle(cornerRadius: cr))
-        .shadow(
-            color: panelShadowColor,
-            radius: panelShadowRadius,
-            x: panelShadowOffset.width,
-            y: panelShadowOffset.height,
-        )
-        .position(
-            x: item.position.x * currentZoom,
-            y: item.position.y * currentZoom,
-        )
         .allowsHitTesting(false)
-        .task(id: bevelFingerprint) {
-            guard let bevel = bg.bevel, bevel.enabled else {
-                bevelImage = nil
-                return
-            }
-            let logicalSide = contentHeight + bg.padding * 2
-            let size = CGSize(width: logicalSide, height: logicalSide)
-            bevelImage = CompositeRenderer.renderBevelImage(
-                size: size,
-                cornerRadius: bg.cornerRadius,
-                bevel: bevel,
+        .task(id: cacheKey) {
+            await refresh()
+        }
+    }
+
+    private func refresh() async {
+        guard let backdrop, let cacheKey else {
+            rendered = nil
+            return
+        }
+
+        if let cached = PanelRenderCache.panel(for: cacheKey) {
+            rendered = cached
+            return
+        }
+
+        let request = (backdrop: backdrop, bg: bg, panelRect: panelRect)
+        let result = await Task.detached(name: "Item Panel Preview", priority: .userInitiated) {
+            CompositeRenderer.renderPanelPreview(
+                bg: request.bg,
+                panelRect: request.panelRect,
+                backdrop: request.backdrop.image,
+                backdropPointSize: request.backdrop.pointSize,
+                scale: request.backdrop.scale,
             )
+        }.value
+
+        guard let result else { return }
+        let panel = RenderedPanel(region: result.region, image: result.image)
+        PanelRenderCache.insert(panel, for: cacheKey)
+        if !Task.isCancelled {
+            rendered = panel
+        }
+    }
+}
+
+// MARK: - Rendered Panel
+
+/// A composited panel and the canvas-point region it fills. The region is wider than the
+/// panel itself wherever the shadow or the body blur reaches outside it.
+private struct RenderedPanel {
+    let region: CGRect
+    let image: CGImage
+}
+
+// MARK: - Cache
+
+/// Caches composited panels keyed on (generation, panel rect rounded to pixels,
+/// configuration), so a panel that is not being edited costs a dictionary lookup per
+/// body evaluation and nothing per frame. A generation bump (any background edit)
+/// invalidates everything.
+@MainActor
+private enum PanelRenderCache {
+    struct Key: Hashable {
+        let generation: Int
+        let xPx: Int
+        let yPx: Int
+        let widthPx: Int
+        let heightPx: Int
+        let background: ItemBackground
+
+        init(backdrop: CanvasBackdrop, panelRect: CGRect, background: ItemBackground) {
+            generation = backdrop.generation
+            let scale = backdrop.scale
+            let rectPx = panelRect.applying(CGAffineTransform(scaleX: scale, y: scale)).integral
+            xPx = Int(rectPx.minX)
+            yPx = Int(rectPx.minY)
+            widthPx = Int(rectPx.width)
+            heightPx = Int(rectPx.height)
+            self.background = background
+        }
+    }
+
+    private static let capacity = 96
+    private static var store: [Key: RenderedPanel] = [:]
+    private static var insertionOrder: [Key] = []
+
+    static func panel(for key: Key) -> RenderedPanel? {
+        store[key]
+    }
+
+    static func insert(_ panel: RenderedPanel, for key: Key) {
+        if let latest = insertionOrder.last, latest.generation != key.generation {
+            store.removeAll(keepingCapacity: true)
+            insertionOrder.removeAll(keepingCapacity: true)
+        }
+        guard store[key] == nil else { return }
+        store[key] = panel
+        insertionOrder.append(key)
+        if insertionOrder.count > capacity {
+            let evicted = insertionOrder.removeFirst()
+            store[evicted] = nil
         }
     }
 }

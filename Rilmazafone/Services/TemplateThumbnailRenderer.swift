@@ -5,13 +5,10 @@ import AppKit
 /// on top — real icons where the registry could resolve them, and the same
 /// dashed generic-app tile the canvas shows for an unfilled placeholder.
 nonisolated enum TemplateThumbnailRenderer {
-    /// Geometry mirrors `CanvasItemView`/`CompositeRenderer`: the iloc position
-    /// is the center of icon cell + text, so the icon sits above it.
+    /// The iloc position is the center of icon cell + text (see `ItemGeometry`), so
+    /// the icon sits above it.
     private enum Metrics {
         static let scale: CGFloat = 2
-        static let iconCellPadding: CGFloat = 10
-        static let textGap: CGFloat = 4
-        static let estimatedTextHeight: CGFloat = 20
         static let placeholderLineWidth: CGFloat = 2
         static let placeholderDash: [CGFloat] = [6, 4]
         static let placeholderCornerRadiusRatio: CGFloat = 0.2
@@ -84,22 +81,17 @@ nonisolated enum TemplateThumbnailRenderer {
         iconSize: CGFloat,
         textSize: CGFloat,
     ) -> TemplateEntry.LabelPill {
-        let contentHeight = iconSize
-            + Metrics.iconCellPadding * 2
-            + Metrics.textGap
-            + Metrics.estimatedTextHeight
         let labelTop = item.position.y
-            - contentHeight / 2
-            + iconSize
-            + Metrics.iconCellPadding * 2
-            + Metrics.textGap
+            - ItemGeometry.blockHeight(iconSize: iconSize) / 2
+            + ItemGeometry.cellHeight(iconSize: iconSize)
+            + ItemGeometry.textGap
         let height = textSize + Metrics.pillVerticalPadding
         let width = min(
             max(
                 CGFloat(item.label.count) * textSize * Metrics.pillCharacterWidthFactor,
                 Metrics.pillMinimumWidth,
             ),
-            iconSize + Metrics.iconCellPadding * 4,
+            iconSize + ItemGeometry.iconCellPadding * 4,
         )
         return TemplateEntry.LabelPill(
             x: item.position.x,
@@ -117,13 +109,9 @@ nonisolated enum TemplateThumbnailRenderer {
         iconSize: CGFloat,
         canvasHeight: CGFloat,
     ) -> CGRect {
-        let contentHeight = iconSize
-            + Metrics.iconCellPadding * 2
-            + Metrics.textGap
-            + Metrics.estimatedTextHeight
         let iconCenterYTopDown = item.position.y
-            - contentHeight / 2
-            + Metrics.iconCellPadding
+            - ItemGeometry.blockHeight(iconSize: iconSize) / 2
+            + ItemGeometry.iconCellPadding
             + iconSize / 2
         return CGRect(
             x: item.position.x - iconSize / 2,

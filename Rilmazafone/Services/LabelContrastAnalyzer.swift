@@ -102,15 +102,9 @@ nonisolated enum LabelContrastAnalyzer {
 
     // MARK: - Label Geometry
 
-    /// Label-rect geometry, mirroring `CanvasItemView` and
-    /// `CompositeRenderer.renderItemBackgrounds`: an icon cell with 10 pt padding,
-    /// a 4 pt gap, then up to two lines of label text.
+    /// What `ItemGeometry` does not cover: how wide the label runs and how many of
+    /// its lines are worth sampling.
     enum LabelGeometry {
-        static let iconCellPadding: CGFloat = 10
-        static let textGap: CGFloat = 4
-        /// Single-line text-height estimate used for vertical block centering —
-        /// the same value `CompositeRenderer.renderItemBackgrounds` uses.
-        static let estimatedTextHeight: CGFloat = 20
         /// `maxLabelWidth = iconSize + 40` in `CanvasItemView`.
         static let labelWidthMargin: CGFloat = 40
         /// Approximate line height as a multiple of the font point size.
@@ -126,9 +120,9 @@ nonisolated enum LabelContrastAnalyzer {
         iconSize: CGFloat,
         textSize: CGFloat,
     ) -> CGRect {
-        let cellHeight = iconSize + LabelGeometry.iconCellPadding * 2
-        let blockHeight = cellHeight + LabelGeometry.textGap + LabelGeometry.estimatedTextHeight
-        let labelTop = position.y - blockHeight / 2 + cellHeight + LabelGeometry.textGap
+        let cellHeight = ItemGeometry.cellHeight(iconSize: iconSize)
+        let blockHeight = ItemGeometry.blockHeight(iconSize: iconSize)
+        let labelTop = position.y - blockHeight / 2 + cellHeight + ItemGeometry.textGap
         let width = iconSize + LabelGeometry.labelWidthMargin
         let lineHeight = (textSize * LabelGeometry.lineHeightFactor).rounded(.up)
         return CGRect(
