@@ -49,6 +49,27 @@
             /// Delay between scripted events; keep short in previews.
             var pace: Duration = .milliseconds(350)
 
+            /// What the slow stages say while they work. Shaped like the output the real
+            /// tools produce, so the demo rehearses the interface honestly.
+            private static let stageLogs: [ReleaseStage.ID: [String]] = [
+                .archive: [
+                    "xcodebuild archive -scheme Demo -configuration Release",
+                    "Compiling 214 Swift source files",
+                    "Archive succeeded",
+                ],
+                .notarizeApp: [
+                    "notarytool submit Demo.app.zip --keychain-profile demo --wait",
+                    "id: 4f2a90c1-6b3d-4a19-9f27-a1c4e6b28e91",
+                    "status: In Progress",
+                    "status: Accepted",
+                ],
+                .notarizeDMG: [
+                    "notarytool submit Demo-1.3.dmg --keychain-profile demo --wait",
+                    "status: Accepted",
+                    "stapler staple Demo-1.3.dmg",
+                ],
+            ]
+
             private static let stageDetails: [ReleaseStage.ID: String] = [
                 .preflight: "Xcode · identity · notary profile",
                 .versionBump: "1.2 → 1.3 · build 41 → 42",
@@ -93,8 +114,13 @@
                         throw ReleasePipelineError(message)
                     }
 
-                    if stage.id == .archive || stage.id == .notarizeApp || stage.id == .notarizeDMG {
-                        await emit(.log(stage.id, "…"))
+                    // The stages that take real time in a real run stream tool output
+                    // while they work. The demo streams plausible lines so the log tail
+                    // shows what it shows in earnest — a bare ellipsis reads as a
+                    // rendering fault rather than as progress.
+                    for line in Self.stageLogs[stage.id] ?? [] {
+                        try Task.checkCancellation()
+                        await emit(.log(stage.id, line))
                         try? await Task.sleep(for: pace)
                     }
 
