@@ -24,13 +24,14 @@ struct BackgroundSection: View {
                     }
                 },
             )) {
-                Text("None").tag(BackgroundType.none)
-                Text("Color").tag(BackgroundType.color)
-                Text("Gradient").tag(BackgroundType.gradient)
-                Text("Mesh").tag(BackgroundType.mesh)
-                Text("Image").tag(BackgroundType.image)
+                ForEach(BackgroundType.allCases, id: \.self) { type in
+                    Text(type.displayName).tag(type)
+                }
             }
-            .pickerStyle(.segmented)
+            // A pop-up rather than a segmented control: five labels of uneven width do
+            // not fit the inspector's column, and a segmented control clips rather than
+            // compresses — the leading segment loses its label entirely.
+            .pickerStyle(.menu)
 
             switch document.background.type {
             case .none:
