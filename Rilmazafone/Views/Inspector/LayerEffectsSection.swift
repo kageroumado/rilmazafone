@@ -9,6 +9,7 @@ struct LayerEffectsSection: View {
 
     @State private var variableBlurExpanded: Bool
     @State private var colorAdjustmentsExpanded: Bool
+    @State private var gradientMapExpanded: Bool
     @State private var vignetteExpanded: Bool
     @State private var bloomExpanded: Bool
 
@@ -16,6 +17,7 @@ struct LayerEffectsSection: View {
         self.layer = layer
         _variableBlurExpanded = State(initialValue: layer.variableBlur != nil)
         _colorAdjustmentsExpanded = State(initialValue: layer.colorAdjustments != nil)
+        _gradientMapExpanded = State(initialValue: layer.gradientMap != nil)
         _vignetteExpanded = State(initialValue: layer.vignette != nil)
         _bloomExpanded = State(initialValue: layer.bloom != nil)
     }
@@ -25,6 +27,7 @@ struct LayerEffectsSection: View {
 
         Section("Effects") {
             colorAdjustmentsGroup
+            gradientMapGroup
             vignetteGroup
             bloomGroup
         }
@@ -34,14 +37,26 @@ struct LayerEffectsSection: View {
                 // the disclosure state for the new layer without animating.
                 variableBlurExpanded = new.variableBlur
                 colorAdjustmentsExpanded = new.colorAdjustments
+                gradientMapExpanded = new.gradientMap
                 vignetteExpanded = new.vignette
                 bloomExpanded = new.bloom
             } else {
                 let animation: Animation? = reduceMotion ? nil : .default
-                if old.variableBlur != new.variableBlur { withAnimation(animation) { variableBlurExpanded = new.variableBlur } }
-                if old.colorAdjustments != new.colorAdjustments { withAnimation(animation) { colorAdjustmentsExpanded = new.colorAdjustments } }
-                if old.vignette != new.vignette { withAnimation(animation) { vignetteExpanded = new.vignette } }
-                if old.bloom != new.bloom { withAnimation(animation) { bloomExpanded = new.bloom } }
+                if old.variableBlur != new.variableBlur {
+                    withAnimation(animation) { variableBlurExpanded = new.variableBlur }
+                }
+                if old.colorAdjustments != new.colorAdjustments {
+                    withAnimation(animation) { colorAdjustmentsExpanded = new.colorAdjustments }
+                }
+                if old.gradientMap != new.gradientMap {
+                    withAnimation(animation) { gradientMapExpanded = new.gradientMap }
+                }
+                if old.vignette != new.vignette {
+                    withAnimation(animation) { vignetteExpanded = new.vignette }
+                }
+                if old.bloom != new.bloom {
+                    withAnimation(animation) { bloomExpanded = new.bloom }
+                }
             }
         }
     }
@@ -53,6 +68,7 @@ struct LayerEffectsSection: View {
         let layerID: UUID
         let variableBlur: Bool
         let colorAdjustments: Bool
+        let gradientMap: Bool
         let vignette: Bool
         let bloom: Bool
     }
@@ -62,6 +78,7 @@ struct LayerEffectsSection: View {
             layerID: layer.id,
             variableBlur: layer.variableBlur != nil,
             colorAdjustments: layer.colorAdjustments != nil,
+            gradientMap: layer.gradientMap != nil,
             vignette: layer.vignette != nil,
             bloom: layer.bloom != nil,
         )
@@ -215,6 +232,69 @@ struct LayerEffectsSection: View {
             Toggle("Vignette", isOn: vignetteEnabledBinding)
                 .toggleStyle(.switch)
         }
+    }
+
+    // MARK: - Gradient Map
+
+    private var gradientMapGroup: some View {
+        let map = layer.gradientMap ?? GradientMapConfiguration()
+        let isOn = layer.gradientMap != nil
+
+        return DisclosureGroup(isExpanded: $gradientMapExpanded) {
+            Group {
+                ColorPicker("Shadows", selection: gradientMapColorBinding(map, index: 0), supportsOpacity: false)
+                ColorPicker("Highlights", selection: gradientMapColorBinding(map, index: map.stops.count - 1), supportsOpacity: false)
+                InspectorSliderRow(label: "Amount", value: gradientMapAmountBinding(map), range: 0 ... 1, format: .percent)
+
+                Text("Re-colors the layer by its own brightness. The darkest pixels take the first color, the brightest the last.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .disabled(!isOn)
+            .padding(.top, 16)
+        } label: {
+            Toggle("Gradient Map", isOn: gradientMapEnabledBinding)
+                .toggleStyle(.switch)
+        }
+    }
+
+    private var gradientMapEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { layer.gradientMap != nil },
+            set: { enabled in
+                document.setLayerGradientMap(
+                    layer.id,
+                    to: enabled ? GradientMapConfiguration() : nil,
+                    undoManager: undoManager,
+                )
+            },
+        )
+    }
+
+    private func updateGradientMap(_ transform: (inout GradientMapConfiguration) -> Void) {
+        guard var map = layer.gradientMap else { return }
+        transform(&map)
+        document.setLayerGradientMap(layer.id, to: map, undoManager: undoManager)
+    }
+
+    private func gradientMapAmountBinding(_ map: GradientMapConfiguration) -> Binding<Double> {
+        Binding(
+            get: { map.amount },
+            set: { value in updateGradientMap { $0.amount = value } },
+        )
+    }
+
+    private func gradientMapColorBinding(_ map: GradientMapConfiguration, index: Int) -> Binding<Color> {
+        Binding(
+            get: { map.stops.indices.contains(index) ? map.stops[index].color.swiftUIColor : .black },
+            set: { newColor in
+                guard let rgb = RGBColor(swiftUIColor: newColor) else { return }
+                updateGradientMap { config in
+                    guard config.stops.indices.contains(index) else { return }
+                    config.stops[index].color = rgb
+                }
+            },
+        )
     }
 
     // MARK: - Bloom

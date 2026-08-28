@@ -12,12 +12,14 @@ struct ItemInspector: View {
     @State private var backgroundExpanded: Bool
     @State private var shadowExpanded: Bool
     @State private var bevelExpanded: Bool
+    @State private var glassExpanded: Bool
 
     init(item: CanvasItem) {
         self.item = item
         _backgroundExpanded = State(initialValue: item.background?.enabled ?? false)
         _shadowExpanded = State(initialValue: item.background?.shadow?.enabled ?? false)
         _bevelExpanded = State(initialValue: item.background?.bevel?.enabled ?? false)
+        _glassExpanded = State(initialValue: item.background?.glass?.enabled ?? false)
     }
 
     /// One equatable fingerprint for everything that drives disclosure-group
@@ -28,6 +30,7 @@ struct ItemInspector: View {
         let background: Bool
         let shadow: Bool
         let bevel: Bool
+        let glass: Bool
     }
 
     private var expansionKey: EffectExpansionKey {
@@ -36,6 +39,7 @@ struct ItemInspector: View {
             background: item.background?.enabled ?? false,
             shadow: item.background?.shadow?.enabled ?? false,
             bevel: item.background?.bevel?.enabled ?? false,
+            glass: item.background?.glass?.enabled ?? false,
         )
     }
 
@@ -157,6 +161,7 @@ struct ItemInspector: View {
             shadowGroup
                 .disabled(!(item.background?.enabled ?? false))
             bevelGroup
+            glassGroup
 
             if document.items.count > 1 {
                 Button("Apply to All") {
@@ -179,11 +184,21 @@ struct ItemInspector: View {
                 backgroundExpanded = new.background
                 shadowExpanded = new.shadow
                 bevelExpanded = new.bevel
+                glassExpanded = new.glass
             } else {
                 let animation: Animation? = reduceMotion ? nil : .default
-                if old.background != new.background { withAnimation(animation) { backgroundExpanded = new.background } }
-                if old.shadow != new.shadow { withAnimation(animation) { shadowExpanded = new.shadow } }
-                if old.bevel != new.bevel { withAnimation(animation) { bevelExpanded = new.bevel } }
+                if old.background != new.background {
+                    withAnimation(animation) { backgroundExpanded = new.background }
+                }
+                if old.shadow != new.shadow {
+                    withAnimation(animation) { shadowExpanded = new.shadow }
+                }
+                if old.bevel != new.bevel {
+                    withAnimation(animation) { bevelExpanded = new.bevel }
+                }
+                if old.glass != new.glass {
+                    withAnimation(animation) { glassExpanded = new.glass }
+                }
             }
         }
     }
@@ -282,6 +297,84 @@ struct ItemInspector: View {
             Toggle("Bevel", isOn: bevelEnabledBinding)
                 .toggleStyle(.switch)
         }
+    }
+
+    // MARK: - Glass Group
+
+    private var glassGroup: some View {
+        let glass = item.background?.glass ?? GlassConfiguration()
+        let isOn = item.background?.glass?.enabled ?? false
+
+        return DisclosureGroup(isExpanded: $glassExpanded) {
+            Group {
+                InspectorSliderRow(label: "Border Width", value: glassBorderWidthBinding(glass), range: 0 ... 4, unit: "px", format: .decimal)
+                InspectorSliderRow(label: "Border Opacity", value: glassBorderOpacityBinding(glass), range: 0 ... 1, format: .percent)
+                InspectorSliderRow(label: "Light Angle", value: glassLightAngleBinding(glass), range: 0 ... 360, unit: "\u{00B0}")
+                InspectorSliderRow(label: "Inner Shadow", value: glassInnerShadowRadiusBinding(glass), range: 0 ... 40, unit: "px")
+                InspectorSliderRow(label: "Inner Opacity", value: glassInnerShadowOpacityBinding(glass), range: 0 ... 1, format: .percent)
+                InspectorSliderRow(label: "Saturation", value: glassSaturationBinding(glass), range: 0.5 ... 2, format: .decimal)
+
+                Text("A lit rim and a shadow pooled under the opposite edge. Where Bevel lights a raised surface, this reads as a pane of glass over the background.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .disabled(!isOn)
+            .padding(.top, 16)
+        } label: {
+            Toggle("Glass", isOn: glassEnabledBinding)
+                .toggleStyle(.switch)
+        }
+    }
+
+    // MARK: - Glass Bindings
+
+    private var glassEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { item.background?.glass?.enabled ?? false },
+            set: { enabled in
+                if item.background == nil {
+                    var bg = ItemBackground()
+                    bg.enabled = false
+                    bg.glass = GlassConfiguration()
+                    bg.glass?.enabled = enabled
+                    document.setItemBackground(item.id, to: bg, undoManager: undoManager)
+                } else {
+                    var glass = item.background?.glass ?? GlassConfiguration()
+                    glass.enabled = enabled
+                    document.setItemGlass(item.id, to: glass, undoManager: undoManager)
+                }
+            },
+        )
+    }
+
+    private func updateGlass(_ transform: (inout GlassConfiguration) -> Void) {
+        guard var glass = item.background?.glass else { return }
+        transform(&glass)
+        document.setItemGlass(item.id, to: glass, undoManager: undoManager)
+    }
+
+    private func glassBorderWidthBinding(_ glass: GlassConfiguration) -> Binding<Double> {
+        Binding(get: { glass.borderWidth }, set: { value in updateGlass { $0.borderWidth = value } })
+    }
+
+    private func glassBorderOpacityBinding(_ glass: GlassConfiguration) -> Binding<Double> {
+        Binding(get: { glass.borderOpacity }, set: { value in updateGlass { $0.borderOpacity = value } })
+    }
+
+    private func glassLightAngleBinding(_ glass: GlassConfiguration) -> Binding<Double> {
+        Binding(get: { glass.lightAngle }, set: { value in updateGlass { $0.lightAngle = value } })
+    }
+
+    private func glassInnerShadowRadiusBinding(_ glass: GlassConfiguration) -> Binding<Double> {
+        Binding(get: { glass.innerShadowRadius }, set: { value in updateGlass { $0.innerShadowRadius = value } })
+    }
+
+    private func glassInnerShadowOpacityBinding(_ glass: GlassConfiguration) -> Binding<Double> {
+        Binding(get: { glass.innerShadowOpacity }, set: { value in updateGlass { $0.innerShadowOpacity = value } })
+    }
+
+    private func glassSaturationBinding(_ glass: GlassConfiguration) -> Binding<Double> {
+        Binding(get: { glass.saturation }, set: { value in updateGlass { $0.saturation = value } })
     }
 
     // MARK: - Path Helpers

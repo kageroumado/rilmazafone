@@ -497,6 +497,24 @@ final class RilmazafoneDocument: ReferenceFileDocument, ObservableObject, @unche
         }
     }
 
+    func setMeshConfiguration(to newValue: MeshGradientConfiguration?, undoManager: UndoManager?) {
+        let oldValue = background.mesh
+        background.mesh = newValue
+        objectWillChange.send()
+        withUndo(undoManager, "Change Mesh Gradient") { doc, um in
+            doc.setMeshConfiguration(to: oldValue, undoManager: um)
+        }
+    }
+
+    func setGrainConfiguration(to newValue: GrainConfiguration?, undoManager: UndoManager?) {
+        let oldValue = background.grain
+        background.grain = newValue
+        objectWillChange.send()
+        withUndo(undoManager, newValue != nil ? "Add Grain" : "Remove Grain") { doc, um in
+            doc.setGrainConfiguration(to: oldValue, undoManager: um)
+        }
+    }
+
     // MARK: - Background Import Convenience
 
     func importBackgroundImage(from url: URL, undoManager: UndoManager?) throws {

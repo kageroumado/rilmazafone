@@ -288,6 +288,8 @@ struct CanvasView: View {
 
                 itemBackgroundsOverlay(zoom: currentZoom)
 
+                grainOverlay
+
                 iconsOverlay(zoom: currentZoom)
 
                 alignmentGuidesOverlay(zoom: currentZoom, geoSize: geo.size)
@@ -404,6 +406,19 @@ struct CanvasView: View {
                 currentZoom: currentZoom,
                 iconSize: iconSize,
                 backdrop: backdrop,
+            )
+            .equatable()
+        }
+    }
+
+    // MARK: - Grain
+
+    @ViewBuilder
+    private var grainOverlay: some View {
+        if let grain = document.background.grain, grain.enabled {
+            GrainOverlayView(
+                grain: grain,
+                pointSize: CGSize(width: windowWidth, height: windowHeight),
             )
             .equatable()
         }
@@ -572,7 +587,7 @@ struct CanvasView: View {
             return prefersDarkAppearance
                 ? ChromeColors.darkWindowContent
                 : ChromeColors.lightWindowContent
-        case .image, .gradient:
+        case .image, .gradient, .mesh:
             return Color.white
         case .color:
             let c = document.background.color

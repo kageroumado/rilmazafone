@@ -23,6 +23,31 @@ nonisolated struct DMGConfiguration: Codable, Hashable {
     var filesystem: DMGFilesystem = .apfs
     var windowPosition: WindowPosition = .init()
     
+    /// Whether the DMG needs a composite background image written to the volume.
+    ///
+    /// A flat color is the only background Finder can draw from the `.DS_Store` alone;
+    /// everything else — a ramp, a mesh, image layers, type, symbols, item panels, grain
+    /// — has to be baked into a picture. Every surface that decides whether to render one
+    /// asks here, so a new effect cannot be added and then silently left out of a build.
+    var needsCompositeBackground: Bool {
+        if !textLayers.isEmpty || !sfSymbolLayers.isEmpty {
+            return true
+        }
+        if items.contains(where: { $0.background?.draws == true }) {
+            return true
+        }
+        if background.grain?.enabled == true {
+            return true
+        }
+
+        switch background.type {
+        case .none, .color: return false
+        case .gradient: return background.gradient != nil
+        case .mesh: return background.mesh != nil
+        case .image: return !background.layers.isEmpty
+        }
+    }
+
     var effectiveGridSpacing: CGFloat {
         let raw = isGridSpacingAuto ? round(window.width / 6) : gridSpacing
         return min(raw, 100)
@@ -112,13 +137,17 @@ nonisolated struct BackgroundConfiguration: Codable, Hashable {
     var type: BackgroundType = .none
     var color: RGBColor = .init(red: 0.92, green: 0.92, blue: 0.92)
     var gradient: GradientConfiguration?
+    var mesh: MeshGradientConfiguration?
     var layers: [BackgroundLayer] = []
+    var grain: GrainConfiguration?
 
     private enum CodingKeys: String, CodingKey {
         case type
         case color
         case gradient
+        case mesh
         case layers
+        case grain
     }
 
     init() {}
@@ -128,7 +157,9 @@ nonisolated struct BackgroundConfiguration: Codable, Hashable {
         self.type = try container.decodeIfPresent(BackgroundType.self, forKey: .type) ?? .none
         self.color = try container.decodeIfPresent(RGBColor.self, forKey: .color) ?? RGBColor(red: 0.92, green: 0.92, blue: 0.92)
         self.gradient = try container.decodeIfPresent(GradientConfiguration.self, forKey: .gradient)
+        self.mesh = try container.decodeIfPresent(MeshGradientConfiguration.self, forKey: .mesh)
         self.layers = try container.decodeIfPresent([BackgroundLayer].self, forKey: .layers) ?? []
+        self.grain = try container.decodeIfPresent(GrainConfiguration.self, forKey: .grain)
     }
 }
 
@@ -136,7 +167,168 @@ nonisolated enum BackgroundType: String, Codable, CaseIterable {
     case none
     case color
     case gradient
+    case mesh
     case image
+
+    var displayName: String {
+        switch self {
+        case .none: "None"
+        case .color: "Color"
+        case .gradient: "Gradient"
+        case .mesh: "Mesh"
+        case .image: "Image"
+        }
+    }
+}
+
+// MARK: - Grain
+
+/// A speckle laid over the finished background.
+///
+/// At small amounts it is a dither: an 8-bit gradient across a window this size bands
+/// visibly, and the disk image is compressed losslessly, so nothing downstream hides it.
+/// A per-pixel perturbation smaller than one step breaks the banding up. Turned up, the
+/// same mechanism reads as film grain.
+nonisolated struct GrainConfiguration: Codable, Hashable {
+    var enabled: Bool = true
+    /// How far a grain sample can push a pixel, 0...1. Around 0.02 dithers; 0.1 and up
+    /// reads as texture.
+    var amount: CGFloat = 0.02
+    /// Grain cell size in points. 1 is per-pixel; larger values read as coarser film.
+    var size: CGFloat = 1
+    /// Whether grain moves the channels independently rather than all three together.
+    var isColored: Bool = false
+
+    init() {}
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        self.amount = try container.decodeIfPresent(CGFloat.self, forKey: .amount) ?? 0.02
+        self.size = try container.decodeIfPresent(CGFloat.self, forKey: .size) ?? 1
+        self.isColored = try container.decodeIfPresent(Bool.self, forKey: .isColored) ?? false
+    }
+}
+
+// MARK: - Mesh Gradient
+
+/// A grid of colored control points the background is interpolated between — the look a
+/// linear or radial ramp cannot reach, because color varies in two directions at once.
+nonisolated struct MeshGradientConfiguration: Codable, Hashable {
+    var columns: Int = 3
+    var rows: Int = 3
+    /// Control points in row-major order, `columns * rows` of them.
+    var points: [MeshControlPoint] = MeshGradientConfiguration.defaultPoints
+    /// Whether to interpolate with a smoothstep ramp rather than linearly, which hides
+    /// the seams between patches.
+    var smoothsColors: Bool = true
+
+    /// A three-by-three grid on an even lattice, running violet through pink to amber.
+    static let defaultPoints: [MeshControlPoint] = [
+        .init(color: .init(red: 0.24, green: 0.11, blue: 0.44)),
+        .init(color: .init(red: 0.42, green: 0.16, blue: 0.60)),
+        .init(color: .init(red: 0.62, green: 0.22, blue: 0.62)),
+        .init(color: .init(red: 0.44, green: 0.20, blue: 0.66)),
+        .init(color: .init(red: 0.79, green: 0.35, blue: 0.62)),
+        .init(color: .init(red: 0.95, green: 0.48, blue: 0.52)),
+        .init(color: .init(red: 0.70, green: 0.30, blue: 0.60)),
+        .init(color: .init(red: 0.96, green: 0.55, blue: 0.45)),
+        .init(color: .init(red: 0.99, green: 0.76, blue: 0.44)),
+    ]
+
+    init() {}
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.columns = try container.decodeIfPresent(Int.self, forKey: .columns) ?? 3
+        self.rows = try container.decodeIfPresent(Int.self, forKey: .rows) ?? 3
+        self.points = try container.decodeIfPresent([MeshControlPoint].self, forKey: .points)
+            ?? MeshGradientConfiguration.defaultPoints
+        self.smoothsColors = try container.decodeIfPresent(Bool.self, forKey: .smoothsColors) ?? true
+    }
+
+    /// The control point at a grid position, or `nil` when `points` is the wrong length
+    /// for `columns` × `rows`.
+    func point(column: Int, row: Int) -> MeshControlPoint? {
+        let index = row * columns + column
+        guard points.indices.contains(index) else { return nil }
+        return points[index]
+    }
+
+    /// Whether the grid is large enough and fully populated to be drawn.
+    var isDrawable: Bool {
+        columns >= 2 && rows >= 2 && points.count >= columns * rows
+    }
+
+    /// The mesh's color at parameter (`u`, `v`) in the unit square, where (0, 0) is the
+    /// window's top-left corner.
+    ///
+    /// The inspector previews through this and resizing the grid re-samples through it,
+    /// so the mesh has one definition of what it looks like. The renderer inlines the
+    /// same arithmetic across whole rows, which is the only reason it does not call here.
+    func color(u: CGFloat, v: CGFloat) -> RGBColor? {
+        guard isDrawable else { return nil }
+
+        let scaledU = min(max(u, 0), 1) * CGFloat(columns - 1)
+        let scaledV = min(max(v, 0), 1) * CGFloat(rows - 1)
+        let cellColumn = min(Int(scaledU), columns - 2)
+        let cellRow = min(Int(scaledV), rows - 2)
+
+        guard let topLeft = point(column: cellColumn, row: cellRow),
+              let topRight = point(column: cellColumn + 1, row: cellRow),
+              let bottomLeft = point(column: cellColumn, row: cellRow + 1),
+              let bottomRight = point(column: cellColumn + 1, row: cellRow + 1)
+        else { return nil }
+
+        let weightU = Self.weight(scaledU - CGFloat(cellColumn), smoothed: smoothsColors)
+        let weightV = Self.weight(scaledV - CGFloat(cellRow), smoothed: smoothsColors)
+
+        func channel(_ component: (RGBColor) -> CGFloat) -> CGFloat {
+            let top = Self.lerp(component(topLeft.color), component(topRight.color), weightU)
+            let bottom = Self.lerp(component(bottomLeft.color), component(bottomRight.color), weightU)
+            return Self.lerp(top, bottom, weightV)
+        }
+
+        return RGBColor(red: channel(\.red), green: channel(\.green), blue: channel(\.blue))
+    }
+
+    /// The same mesh on a grid of a different size, re-sampled so the look survives the
+    /// resize instead of resetting to the default palette.
+    func resized(columns newColumns: Int, rows newRows: Int) -> MeshGradientConfiguration {
+        let clampedColumns = min(max(newColumns, 2), 8)
+        let clampedRows = min(max(newRows, 2), 8)
+
+        var resized = self
+        resized.columns = clampedColumns
+        resized.rows = clampedRows
+        resized.points = (0 ..< clampedRows).flatMap { row in
+            (0 ..< clampedColumns).map { column in
+                MeshControlPoint(color: color(
+                    u: CGFloat(column) / CGFloat(clampedColumns - 1),
+                    v: CGFloat(row) / CGFloat(clampedRows - 1),
+                ) ?? RGBColor(red: 0.5, green: 0.5, blue: 0.5))
+            }
+        }
+        return resized
+    }
+
+    /// The interpolation weight for a position across one patch. A smoothstep ramp is
+    /// what hides the seams where patches meet.
+    static func weight(_ t: CGFloat, smoothed: Bool) -> CGFloat {
+        let clamped = min(max(t, 0), 1)
+        return smoothed ? clamped * clamped * (3 - 2 * clamped) : clamped
+    }
+
+    static func lerp(_ from: CGFloat, _ to: CGFloat, _ t: CGFloat) -> CGFloat {
+        from + (to - from) * t
+    }
+}
+
+/// One node of the mesh. Nodes sit on an even lattice: the grid is the geometry, and
+/// what an author sets is the color at each intersection.
+nonisolated struct MeshControlPoint: Codable, Hashable, Identifiable {
+    var id: UUID = .init()
+    var color: RGBColor
 }
 
 nonisolated struct BackgroundLayer: Codable, Hashable, Identifiable {
@@ -150,6 +342,7 @@ nonisolated struct BackgroundLayer: Codable, Hashable, Identifiable {
     var colorAdjustments: ColorAdjustments?
     var vignette: VignetteConfiguration?
     var bloom: BloomConfiguration?
+    var gradientMap: GradientMapConfiguration?
 
     init(id: UUID = UUID(), imageName: String, label: String, position: CGPoint = CGPoint(x: 330, y: 200), scale: CGFloat = 1.0, blurRadius: CGFloat = 0) {
         self.id = id
@@ -172,6 +365,34 @@ nonisolated struct BackgroundLayer: Codable, Hashable, Identifiable {
         self.colorAdjustments = try container.decodeIfPresent(ColorAdjustments.self, forKey: .colorAdjustments)
         self.vignette = try container.decodeIfPresent(VignetteConfiguration.self, forKey: .vignette)
         self.bloom = try container.decodeIfPresent(BloomConfiguration.self, forKey: .bloom)
+        self.gradientMap = try container.decodeIfPresent(GradientMapConfiguration.self, forKey: .gradientMap)
+    }
+}
+
+// MARK: - Gradient Map
+
+/// Re-colors an image by its own brightness: the darkest pixels take the first stop, the
+/// brightest the last. One control turns a photograph into a two- or three-tone image in
+/// the document's palette.
+nonisolated struct GradientMapConfiguration: Codable, Hashable {
+    var enabled: Bool = true
+    var stops: [GradientStop] = [
+        .init(color: .init(red: 0.05, green: 0.03, blue: 0.16), location: 0),
+        .init(color: .init(red: 1.0, green: 0.47, blue: 0.66), location: 1),
+    ]
+    /// How far to carry the image toward the mapped colors, 0...1.
+    var amount: CGFloat = 1
+
+    init() {}
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        self.stops = try container.decodeIfPresent([GradientStop].self, forKey: .stops) ?? [
+            GradientStop(color: RGBColor(red: 0.05, green: 0.03, blue: 0.16), location: 0),
+            GradientStop(color: RGBColor(red: 1.0, green: 0.47, blue: 0.66), location: 1),
+        ]
+        self.amount = try container.decodeIfPresent(CGFloat.self, forKey: .amount) ?? 1
     }
 }
 
@@ -521,12 +742,13 @@ nonisolated struct ItemBackground: Codable, Hashable {
     var blendMode: ItemBlendMode = .normal
     var shadow: ShadowConfiguration?
     var bevel: BevelConfiguration?
+    var glass: GlassConfiguration?
 
     /// Whether this background puts anything on screen. The body, the shadow, and the
     /// bevel are independently switchable, so a background with `enabled == false` can
     /// still cast a shadow or carry a bevel.
     var draws: Bool {
-        enabled || shadow?.enabled == true || bevel?.enabled == true
+        enabled || shadow?.enabled == true || bevel?.enabled == true || glass?.enabled == true
     }
 
     /// How far, in points, the rendered panel spills outside its own rect: the shadow
@@ -553,6 +775,7 @@ nonisolated struct ItemBackground: Codable, Hashable {
         case blendMode
         case shadow
         case bevel
+        case glass
     }
 
     init(
@@ -566,6 +789,7 @@ nonisolated struct ItemBackground: Codable, Hashable {
         blendMode: ItemBlendMode = .normal,
         shadow: ShadowConfiguration? = nil,
         bevel: BevelConfiguration? = nil,
+        glass: GlassConfiguration? = nil,
     ) {
         self.enabled = enabled
         self.color = color
@@ -577,6 +801,7 @@ nonisolated struct ItemBackground: Codable, Hashable {
         self.blendMode = blendMode
         self.shadow = shadow
         self.bevel = bevel
+        self.glass = glass
     }
 
     init(from decoder: any Decoder) throws {
@@ -591,6 +816,40 @@ nonisolated struct ItemBackground: Codable, Hashable {
         self.blendMode = try container.decodeIfPresent(ItemBlendMode.self, forKey: .blendMode) ?? .normal
         self.shadow = try container.decodeIfPresent(ShadowConfiguration.self, forKey: .shadow)
         self.bevel = try container.decodeIfPresent(BevelConfiguration.self, forKey: .bevel)
+        self.glass = try container.decodeIfPresent(GlassConfiguration.self, forKey: .glass)
+    }
+}
+
+// MARK: - Glass
+
+/// The edge treatment that reads as glass rather than as embossed plastic: a hairline
+/// border brightest where the light falls, a shadow cast inward from the opposite edge,
+/// and a saturation lift on whatever shows through the panel.
+nonisolated struct GlassConfiguration: Codable, Hashable {
+    var enabled: Bool = true
+    /// Hairline border width in points.
+    var borderWidth: CGFloat = 1
+    /// Border opacity at the lit edge. The far edge fades to a quarter of it.
+    var borderOpacity: CGFloat = 0.55
+    /// Where the light comes from, in degrees.
+    var lightAngle: CGFloat = 90
+    /// How far the inner shadow reaches in from the unlit edge, in points.
+    var innerShadowRadius: CGFloat = 12
+    var innerShadowOpacity: CGFloat = 0.22
+    /// Saturation applied to what shows through the panel, where 1 leaves it alone.
+    var saturation: CGFloat = 1.2
+
+    init() {}
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        self.borderWidth = try container.decodeIfPresent(CGFloat.self, forKey: .borderWidth) ?? 1
+        self.borderOpacity = try container.decodeIfPresent(CGFloat.self, forKey: .borderOpacity) ?? 0.55
+        self.lightAngle = try container.decodeIfPresent(CGFloat.self, forKey: .lightAngle) ?? 90
+        self.innerShadowRadius = try container.decodeIfPresent(CGFloat.self, forKey: .innerShadowRadius) ?? 12
+        self.innerShadowOpacity = try container.decodeIfPresent(CGFloat.self, forKey: .innerShadowOpacity) ?? 0.22
+        self.saturation = try container.decodeIfPresent(CGFloat.self, forKey: .saturation) ?? 1.2
     }
 }
 

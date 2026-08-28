@@ -114,8 +114,12 @@ nonisolated enum DMGBuildPipeline {
             // Step 4: Copy content
             await progress(Progress(step: "Copying files\u{2026}", stepIndex: 4, totalSteps: total))
             let validItems = configuration.items.filter { item in
-                if item.kind == .applicationsSymlink { return true }
-                if item.linkType == .symlink, let target = item.sourcePath, !target.isEmpty { return true }
+                if item.kind == .applicationsSymlink {
+                    return true
+                }
+                if item.linkType == .symlink, let target = item.sourcePath, !target.isEmpty {
+                    return true
+                }
                 return item.requiresSource
             }
             try DMGBuilder.copyItems(validItems, to: mountPoint, documentURL: documentURL)
@@ -224,13 +228,7 @@ nonisolated enum DMGBuildPipeline {
         assetsDirectory: URL,
         mountPoint: URL,
     ) async throws -> (alias: Data?, bookmark: Data?) {
-        let needsComposite = (configuration.background.type == .image && !configuration.background.layers.isEmpty)
-            || !configuration.textLayers.isEmpty
-            || !configuration.sfSymbolLayers.isEmpty
-            || configuration.items.contains(where: { $0.background != nil })
-            || (configuration.background.type == .gradient && configuration.background.gradient != nil)
-
-        guard needsComposite else { return (nil, nil) }
+        guard configuration.needsCompositeBackground else { return (nil, nil) }
 
         guard let tiffData = CompositeRenderer.renderBackgroundTIFF(
             configuration: configuration, assetsDirectory: assetsDirectory,

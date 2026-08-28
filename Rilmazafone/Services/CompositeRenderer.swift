@@ -108,7 +108,7 @@ nonisolated enum CompositeRenderer {
         NSGraphicsContext.current = nsContext
         defer { NSGraphicsContext.restoreGraphicsState() }
 
-        renderBeneathPanels(into: context, configuration: configuration, excluding: nil) { layer in
+        renderBeneathPanels(into: context, configuration: configuration, excluding: nil, scale: scale) { layer in
             NSImage(contentsOf: assetsDirectory.appending(path: layer.imageName))
         }
         renderItemBackgrounds(
@@ -116,6 +116,28 @@ nonisolated enum CompositeRenderer {
             iconSize: configuration.iconSize,
             in: context,
             canvasHeight: configuration.window.height,
+            scale: scale,
+        )
+        renderGrainFinish(into: context, configuration: configuration, scale: scale)
+    }
+
+    /// Lays the document's grain over the finished composite — after the panels, because
+    /// grain is a film over the whole background rather than something the panels' glass
+    /// picks up and blurs.
+    private static func renderGrainFinish(
+        into context: CGContext,
+        configuration: DMGConfiguration,
+        scale: CGFloat,
+    ) {
+        guard let grain = configuration.background.grain, grain.enabled else { return }
+        renderGrain(
+            context: context,
+            grain: grain,
+            rect: CGRect(
+                x: 0, y: 0,
+                width: configuration.window.width,
+                height: configuration.window.height,
+            ),
             scale: scale,
         )
     }
@@ -131,13 +153,14 @@ nonisolated enum CompositeRenderer {
         into context: CGContext,
         configuration: DMGConfiguration,
         excluding: UUID?,
+        scale: CGFloat,
         imageProvider: (BackgroundLayer) -> NSImage?,
     ) {
         let width = configuration.window.width
         let height = configuration.window.height
         let fullRect = CGRect(x: 0, y: 0, width: width, height: height)
 
-        renderBaseBackground(context: context, configuration: configuration, rect: fullRect)
+        renderBaseBackground(context: context, configuration: configuration, rect: fullRect, scale: scale)
 
         if configuration.background.type == .image {
             renderImageLayers(
@@ -215,8 +238,8 @@ nonisolated enum CompositeRenderer {
               let context = makeBitmapContext(pixelsWide: pixelsWide, pixelsHigh: pixelsHigh)
         else { return nil }
 
-        // Work in the y-up point space the baked background uses, with the origin moved
-        // onto `region`, so one panel rect addresses the same content in both.
+        /// Work in the y-up point space the baked background uses, with the origin moved
+        /// onto `region`, so one panel rect addresses the same content in both.
         func flipped(_ rect: CGRect) -> CGRect {
             CGRect(
                 x: rect.minX,
@@ -282,7 +305,14 @@ nonisolated enum CompositeRenderer {
         NSGraphicsContext.current = nsContext
         defer { NSGraphicsContext.restoreGraphicsState() }
 
-        renderBeneathPanels(into: context, configuration: configuration, excluding: excluding) { layerImages[$0.id] }
+        renderBeneathPanels(
+            into: context, configuration: configuration, excluding: excluding, scale: scale,
+        ) { layerImages[$0.id] }
+
+        // The backdrop stops short of the panels and the grain on purpose: it is the
+        // content a panel's blur reads, and in the baked background that blur sees
+        // neither. The analysis composite goes all the way, because it stands in for
+        // what Finder puts behind a label.
         if includePanels {
             renderItemBackgrounds(
                 items: configuration.items,
@@ -291,6 +321,7 @@ nonisolated enum CompositeRenderer {
                 canvasHeight: configuration.window.height,
                 scale: scale,
             )
+            renderGrainFinish(into: context, configuration: configuration, scale: scale)
         }
 
         return context.makeImage()
@@ -302,6 +333,7 @@ nonisolated enum CompositeRenderer {
         context: CGContext,
         configuration: DMGConfiguration,
         rect: CGRect,
+        scale: CGFloat,
     ) {
         switch configuration.background.type {
         case .none:
@@ -315,6 +347,12 @@ nonisolated enum CompositeRenderer {
         case .gradient:
             if let grad = configuration.background.gradient {
                 renderGradient(context: context, gradient: grad, rect: rect)
+            } else {
+                context.clear(rect)
+            }
+        case .mesh:
+            if let mesh = configuration.background.mesh {
+                renderMesh(context: context, mesh: mesh, rect: rect, scale: scale)
             } else {
                 context.clear(rect)
             }
@@ -383,8 +421,12 @@ nonisolated enum CompositeRenderer {
             ?? NSFont.systemFont(ofSize: layer.fontSize)
 
         var traits: NSFontDescriptor.SymbolicTraits = []
-        if layer.isBold { traits.insert(.bold) }
-        if layer.isItalic { traits.insert(.italic) }
+        if layer.isBold {
+            traits.insert(.bold)
+        }
+        if layer.isItalic {
+            traits.insert(.italic)
+        }
         guard !traits.isEmpty else { return base }
 
         let descriptor = base.fontDescriptor.withSymbolicTraits(traits)
@@ -486,6 +528,13 @@ nonisolated enum CompositeRenderer {
                 cornerRadius: bg.cornerRadius, bevel: bevel, scale: scale,
             )
         }
+
+        if let glass = bg.glass, glass.enabled {
+            renderGlassEdge(
+                context: context, glass: glass, rect: rect,
+                cornerRadius: bg.cornerRadius, scale: scale,
+            )
+        }
     }
 
     private static func renderItemShadow(
@@ -545,16 +594,21 @@ nonisolated enum CompositeRenderer {
 
         let cornerRadius = bg.cornerRadius
 
+        // Glass lifts the saturation of what shows through it; without a glass edge the
+        // body passes the background's own color straight through.
+        let saturation = bg.glass?.enabled == true ? (bg.glass?.saturation ?? 1) : 1
+
         if bg.blurRadius > 0 {
             if bg.blurFeather > 0 {
                 renderFeatheredBlurRegion(
                     context: context, rect: rect, cornerRadius: cornerRadius,
-                    blurRadius: bg.blurRadius, feather: bg.blurFeather, scale: scale,
+                    blurRadius: bg.blurRadius, feather: bg.blurFeather,
+                    saturation: saturation, scale: scale,
                 )
             } else {
                 renderBlurredRegion(
                     context: context, rect: rect, cornerRadius: cornerRadius,
-                    blurRadius: bg.blurRadius, scale: scale,
+                    blurRadius: bg.blurRadius, saturation: saturation, scale: scale,
                 )
             }
         }
@@ -629,7 +683,12 @@ nonisolated enum CompositeRenderer {
             ciImage = applyColorAdjustments(to: ciImage, adjustments: ca)
         }
 
-        // 3. Vignette
+        // 3. Gradient map
+        if let map = layer.gradientMap {
+            ciImage = applyGradientMap(to: ciImage, config: map).cropped(to: extent)
+        }
+
+        // 4. Vignette
         if let v = layer.vignette {
             let f = CIFilter.vignette()
             f.inputImage = ciImage
@@ -640,7 +699,7 @@ nonisolated enum CompositeRenderer {
             }
         }
 
-        // 4. Bloom
+        // 5. Bloom
         if let b = layer.bloom {
             let f = CIFilter.bloom()
             f.inputImage = ciImage
@@ -666,19 +725,25 @@ nonisolated enum CompositeRenderer {
             f.brightness = Float(ca.brightness)
             f.contrast = Float(ca.contrast)
             f.saturation = Float(ca.saturation)
-            if let out = f.outputImage { result = out.cropped(to: extent) }
+            if let out = f.outputImage {
+                result = out.cropped(to: extent)
+            }
         }
         if ca.hueRotation != 0 {
             let f = CIFilter.hueAdjust()
             f.inputImage = result
             f.angle = Float(ca.hueRotation * .pi / 180)
-            if let out = f.outputImage { result = out.cropped(to: extent) }
+            if let out = f.outputImage {
+                result = out.cropped(to: extent)
+            }
         }
         if ca.exposure != 0 {
             let f = CIFilter.exposureAdjust()
             f.inputImage = result
             f.ev = Float(ca.exposure)
-            if let out = f.outputImage { result = out.cropped(to: extent) }
+            if let out = f.outputImage {
+                result = out.cropped(to: extent)
+            }
         }
 
         return result
@@ -960,6 +1025,7 @@ nonisolated enum CompositeRenderer {
         rect: CGRect,
         cornerRadius: CGFloat,
         blurRadius: CGFloat,
+        saturation: CGFloat = 1,
         scale: CGFloat,
     ) {
         // `context.makeImage()` returns the full backing at pixel resolution, so the
@@ -980,7 +1046,8 @@ nonisolated enum CompositeRenderer {
         filter.radius = Float(blurRadius * scale)
 
         guard let blurred = filter.outputImage?.cropped(to: rectPx),
-              let cgBlurred = ciContext.createCGImage(blurred, from: rectPx) else { return }
+              let saturated = applySaturation(saturation, to: blurred, extent: rectPx),
+              let cgBlurred = ciContext.createCGImage(saturated, from: rectPx) else { return }
 
         let path = CGPath(
             roundedRect: rect,
@@ -1001,6 +1068,7 @@ nonisolated enum CompositeRenderer {
         cornerRadius: CGFloat,
         blurRadius: CGFloat,
         feather: CGFloat,
+        saturation: CGFloat = 1,
         scale: CGFloat,
     ) {
         guard let currentBitmap = context.makeImage() else { return }
@@ -1028,7 +1096,8 @@ nonisolated enum CompositeRenderer {
         filter.radius = Float(blurRadius * scale)
 
         guard let blurred = filter.outputImage?.cropped(to: rectPx),
-              let cgBlurred = ciContext.createCGImage(blurred, from: rectPx) else { return }
+              let saturated = applySaturation(saturation, to: blurred, extent: rectPx),
+              let cgBlurred = ciContext.createCGImage(saturated, from: rectPx) else { return }
 
         // Draw with the same contour mask for the edge fade. `clip(to:mask:)` stretches the
         // mask image over `rect`, so the pixel-resolution mask maps correctly in point space.
@@ -1036,6 +1105,15 @@ nonisolated enum CompositeRenderer {
         context.clip(to: rect, mask: maskImage)
         context.draw(cgBlurred, in: rect)
         context.restoreGState()
+    }
+
+    /// Lifts an image's saturation, leaving it untouched at 1.
+    private static func applySaturation(_ saturation: CGFloat, to image: CIImage, extent: CGRect) -> CIImage? {
+        guard saturation != 1 else { return image }
+        let filter = CIFilter.colorControls()
+        filter.inputImage = image
+        filter.saturation = Float(saturation)
+        return filter.outputImage?.cropped(to: extent)
     }
 
     /// Generates a contour-following mask: white at center, black at edges,

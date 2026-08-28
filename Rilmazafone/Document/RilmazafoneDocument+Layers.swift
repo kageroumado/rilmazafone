@@ -148,6 +148,16 @@ extension RilmazafoneDocument {
         }
     }
 
+    func setLayerGradientMap(_ id: UUID, to newValue: GradientMapConfiguration?, undoManager: UndoManager?) {
+        guard let index = background.layers.firstIndex(where: { $0.id == id }) else { return }
+        let oldValue = background.layers[index].gradientMap
+        background.layers[index].gradientMap = newValue
+        objectWillChange.send()
+        withUndo(undoManager, newValue != nil ? "Add Gradient Map" : "Remove Gradient Map") { doc, um in
+            doc.setLayerGradientMap(id, to: oldValue, undoManager: um)
+        }
+    }
+
     // MARK: - Text Layer Management
 
     func addTextLayer(undoManager: UndoManager?) {

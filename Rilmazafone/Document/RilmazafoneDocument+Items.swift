@@ -184,6 +184,18 @@ extension RilmazafoneDocument {
         }
     }
 
+    func setItemGlass(_ id: UUID, to newValue: GlassConfiguration?, undoManager: UndoManager?) {
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              var bg = items[index].background else { return }
+        let oldValue = bg.glass
+        bg.glass = newValue
+        items[index].background = bg
+        objectWillChange.send()
+        withUndo(undoManager, newValue != nil ? "Add Glass" : "Remove Glass") { doc, um in
+            doc.setItemGlass(id, to: oldValue, undoManager: um)
+        }
+    }
+
     func setItemBackgroundEnabled(_ id: UUID, _ enabled: Bool, undoManager: UndoManager?) {
         guard let index = items.firstIndex(where: { $0.id == id }),
               var bg = items[index].background else { return }

@@ -55,7 +55,9 @@ nonisolated enum DSStoreWriter {
         static func < (lhs: Record, rhs: Record) -> Bool {
             let lName = lhs.filename.lowercased()
             let rName = rhs.filename.lowercased()
-            if lName != rName { return lName < rName }
+            if lName != rName {
+                return lName < rName
+            }
             return lhs.typeCode < rhs.typeCode
         }
 
@@ -231,8 +233,8 @@ nonisolated enum DSStoreWriter {
             plist["backgroundColorGreen"] = Double(configuration.background.color.green)
             plist["backgroundColorBlue"] = Double(configuration.background.color.blue)
 
-        case .gradient:
-            // Gradient gets composited into a PNG by BuildManager, which
+        case .gradient, .mesh:
+            // A ramp or a mesh is composited into a picture by BuildManager, which
             // overrides the type to .image before calling DSStoreWriter.
             // If we reach here directly, treat as no background.
             plist["backgroundType"] = 0
