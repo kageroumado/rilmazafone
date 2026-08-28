@@ -502,6 +502,15 @@
                     at: searchDir, includingPropertiesForKeys: nil,
                 ) else { continue }
                 for entry in entries.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+                    if let profileURL = context.resolved.nestedProvisioningProfileURLs[entry.lastPathComponent] {
+                        guard FileManager.default.fileExists(atPath: profileURL.path) else {
+                            throw ReleasePipelineError("Nested provisioning profile not found at \(profileURL.path)")
+                        }
+                        let nestedDestination = entry.appending(path: "Contents/embedded.provisionprofile")
+                        try? FileManager.default.removeItem(at: nestedDestination)
+                        try FileManager.default.copyItem(at: profileURL, to: nestedDestination)
+                        await emit(.log(.sign, "Embedded: \(profileURL.lastPathComponent) → \(entry.lastPathComponent)"))
+                    }
                     await emit(.log(.sign, "Signing: \(entry.lastPathComponent)"))
                     try await signBinary(entry, identity: context.signingIdentity)
                     signedCount += 1

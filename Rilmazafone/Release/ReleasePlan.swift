@@ -99,6 +99,14 @@
             /// restricted entitlements on Developer ID builds.
             var provisioningProfile: String?
 
+            /// Provisioning profiles embedded into nested bundles, keyed by
+            /// bundle file name (e.g. `RefraxCredentialProvider.appex`). Each is
+            /// written to that bundle's own `Contents/embedded.provisionprofile`
+            /// before it is signed — required for AMFI to honor a restricted
+            /// entitlement on a nested Developer ID bundle such as a credential
+            /// provider extension.
+            var nestedProvisioningProfiles: [String: String]?
+
             init() {}
 
             init(from decoder: any Decoder) throws {
@@ -106,6 +114,9 @@
                 self.identity = try container.decodeIfPresent(String.self, forKey: .identity)
                 self.entitlements = try container.decodeIfPresent(String.self, forKey: .entitlements)
                 self.provisioningProfile = try container.decodeIfPresent(String.self, forKey: .provisioningProfile)
+                self.nestedProvisioningProfiles = try container.decodeIfPresent(
+                    [String: String].self, forKey: .nestedProvisioningProfiles,
+                )
             }
         }
 
@@ -299,6 +310,11 @@
 
         var provisioningProfileURL: URL? {
             plan.signing.provisioningProfile.map { ReleasePlan.resolve($0, against: repoRoot) }
+        }
+
+        var nestedProvisioningProfileURLs: [String: URL] {
+            (plan.signing.nestedProvisioningProfiles ?? [:])
+                .mapValues { ReleasePlan.resolve($0, against: repoRoot) }
         }
 
         var eddsaKeyURL: URL? {
