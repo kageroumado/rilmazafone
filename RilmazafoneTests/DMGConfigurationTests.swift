@@ -168,4 +168,47 @@ struct DMGConfigurationTests {
         #expect(gradient.type == .linear)
         #expect(gradient.angle == 180)
     }
+
+    // MARK: - Finder Background Color
+
+    /// Finder reads an icon view's `backgroundColor*` keys as calibrated RGB — Generic
+    /// RGB, gamma 1.8 — while the document holds sRGB. Written through unconverted, a
+    /// mid-gray background ships eighteen levels lighter than the canvas showed it.
+    @Test
+    func `A mid-gray background stores darker than its sRGB value`() {
+        let stored = RGBColor(red: 0.5, green: 0.5, blue: 0.5).finderStoredComponents
+
+        #expect(abs(stored.red - 0.42468) < 0.0001)
+        #expect(stored.red == stored.green)
+        #expect(stored.green == stored.blue)
+    }
+
+    /// Reading is the same conversion backwards, so an imported DMG shows the color
+    /// Finder was actually drawing rather than a darker one.
+    @Test
+    func `A Finder-stored background reads back as the color Finder draws`() {
+        let read = RGBColor(finderStoredRed: 0.42468, green: 0.42468, blue: 0.42468)
+
+        #expect(abs(read.red - 0.5) < 0.0001)
+        #expect(abs(read.green - 0.5) < 0.0001)
+        #expect(abs(read.blue - 0.5) < 0.0001)
+    }
+
+    @Test(arguments: [
+        RGBColor(red: 0, green: 0, blue: 0),
+        RGBColor(red: 1, green: 1, blue: 1),
+        RGBColor(red: 0.5, green: 0.5, blue: 0.5),
+        RGBColor(red: 0.07, green: 0.07, blue: 0.09),
+        RGBColor(red: 0.2, green: 0.8, blue: 0.3),
+    ])
+    func `Writing a background color and reading it back is lossless`(color: RGBColor) {
+        let stored = color.finderStoredComponents
+        let read = RGBColor(finderStoredRed: stored.red, green: stored.green, blue: stored.blue)
+
+        // One 8-bit step of slack: the conversion runs through a narrower gamut, so an
+        // exact match is not available for every color the document can hold.
+        #expect(abs(read.red - color.red) < 1.0 / 255)
+        #expect(abs(read.green - color.green) < 1.0 / 255)
+        #expect(abs(read.blue - color.blue) < 1.0 / 255)
+    }
 }

@@ -268,9 +268,14 @@ struct DSStoreWriterTests {
         ) as? [String: Any])
 
         #expect(plist["backgroundType"] as? Int == 1)
-        #expect(plist["backgroundColorRed"] as? Double == 0.5)
-        #expect(plist["backgroundColorGreen"] as? Double == 0.6)
-        #expect(plist["backgroundColorBlue"] as? Double == 0.7)
+
+        // Finder reads these as calibrated (Generic RGB, gamma 1.8), so the sRGB the
+        // document holds is converted on the way out rather than written through.
+        let expected = RGBColor(red: 0.5, green: 0.6, blue: 0.7).finderStoredComponents
+        #expect(expected.red < 0.5, "the conversion should darken the stored number")
+        #expect(plist["backgroundColorRed"] as? Double == expected.red)
+        #expect(plist["backgroundColorGreen"] as? Double == expected.green)
+        #expect(plist["backgroundColorBlue"] as? Double == expected.blue)
     }
 
     @Test

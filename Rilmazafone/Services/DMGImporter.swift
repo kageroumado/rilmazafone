@@ -294,7 +294,7 @@ nonisolated enum DMGImporter {
             assets[imageName] = background.data
         } else if case let .color(red, green, blue) = dsStore?.backgroundKind {
             configuration.background.type = .color
-            configuration.background.color = RGBColor(red: red, green: green, blue: blue)
+            configuration.background.color = RGBColor(finderStoredRed: red, green: green, blue: blue)
         }
     }
 

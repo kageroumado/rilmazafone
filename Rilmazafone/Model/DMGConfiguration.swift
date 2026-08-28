@@ -413,6 +413,52 @@ extension RGBColor {
         guard let srgb = NSColor(swiftUIColor).usingColorSpace(.sRGB) else { return nil }
         self.init(red: srgb.redComponent, green: srgb.greenComponent, blue: srgb.blueComponent)
     }
+
+    /// The components Finder stores in an icon view's `backgroundColor*` keys.
+    ///
+    /// Those keys are calibrated RGB — Generic RGB, gamma 1.8 — which is what an
+    /// `NSColor` carried before sRGB became the default, and Finder still reads them
+    /// that way. Everything else here works in sRGB, so a component written straight
+    /// through ships a background lighter than the canvas showed: mid-gray leaves as
+    /// 0.5 and Finder draws it at sRGB 0.572, eighteen levels off.
+    ///
+    /// Never reduce this to a gamma adjustment. Generic RGB differs from sRGB in its
+    /// primaries as well as its transfer function, and `pow(linear, 1/1.8)` misses the
+    /// green of a saturated red by 33 of 255 while agreeing exactly on every gray — so a
+    /// change tested on neutrals alone looks correct and is not. Finder's own stored
+    /// triple for sRGB (0.9, 0.1, 0.1) is (0.863525, 0, 0.083), which is what this
+    /// conversion returns to five decimal places.
+    ///
+    /// Generic RGB also has the smaller gamut, so a saturated color clips on the way in:
+    /// that same red stores a green of exactly 0 and reads back eight levels off. A limit
+    /// of the record's colorspace, not a rounding loss.
+    nonisolated var finderStoredComponents: (red: Double, green: Double, blue: Double) {
+        guard let generic = NSColor(srgbRed: red, green: green, blue: blue, alpha: 1)
+            .usingColorSpace(.genericRGB)
+        else { return (Double(red), Double(green), Double(blue)) }
+
+        func clamped(_ value: CGFloat) -> Double { Double(min(max(value, 0), 1)) }
+        return (clamped(generic.redComponent), clamped(generic.greenComponent), clamped(generic.blueComponent))
+    }
+
+    /// Reads back a color Finder stored in its `backgroundColor*` keys, so an imported
+    /// DMG shows in the canvas as the color Finder was drawing.
+    nonisolated init(finderStoredRed red: Double, green: Double, blue: Double) {
+        let generic = NSColor(
+            colorSpace: .genericRGB,
+            components: [CGFloat(red), CGFloat(green), CGFloat(blue), 1],
+            count: 4,
+        )
+        guard let srgb = generic.usingColorSpace(.sRGB) else {
+            self.init(red: red, green: green, blue: blue)
+            return
+        }
+        self.init(
+            red: min(max(srgb.redComponent, 0), 1),
+            green: min(max(srgb.greenComponent, 0), 1),
+            blue: min(max(srgb.blueComponent, 0), 1),
+        )
+    }
 }
 
 // MARK: - Gradient

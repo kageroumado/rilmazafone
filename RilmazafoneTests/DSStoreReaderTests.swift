@@ -80,11 +80,26 @@ struct DSStoreReaderTests {
     func `Round-trips a color background`() throws {
         var config = Self.minimalConfiguration()
         config.background.type = .color
-        config.background.color = RGBColor(red: 0.5, green: 0.6, blue: 0.7)
+        let designed = RGBColor(red: 0.5, green: 0.6, blue: 0.7)
+        config.background.color = designed
 
         let contents = try DSStoreReader.read(DSStoreWriter.write(configuration: config))
 
-        #expect(contents.backgroundKind == .color(red: 0.5, green: 0.6, blue: 0.7))
+        // The record carries calibrated components, which are darker numbers than the
+        // sRGB ones the document holds — that difference is the whole point of the
+        // conversion, so assert it rather than the raw sRGB values.
+        guard case let .color(red, green, blue) = contents.backgroundKind else {
+            Issue.record("expected a color background, got \(String(describing: contents.backgroundKind))")
+            return
+        }
+        #expect(red < designed.red)
+        #expect(green < designed.green)
+        #expect(blue < designed.blue)
+
+        let recovered = RGBColor(finderStoredRed: red, green: green, blue: blue)
+        #expect(abs(recovered.red - designed.red) < 1.0 / 255)
+        #expect(abs(recovered.green - designed.green) < 1.0 / 255)
+        #expect(abs(recovered.blue - designed.blue) < 1.0 / 255)
     }
 
     @Test

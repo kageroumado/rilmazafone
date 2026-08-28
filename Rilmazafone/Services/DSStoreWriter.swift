@@ -229,9 +229,10 @@ nonisolated enum DSStoreWriter {
 
         case .color:
             plist["backgroundType"] = 1
-            plist["backgroundColorRed"] = Double(configuration.background.color.red)
-            plist["backgroundColorGreen"] = Double(configuration.background.color.green)
-            plist["backgroundColorBlue"] = Double(configuration.background.color.blue)
+            let stored = configuration.background.color.finderStoredComponents
+            plist["backgroundColorRed"] = stored.red
+            plist["backgroundColorGreen"] = stored.green
+            plist["backgroundColorBlue"] = stored.blue
 
         case .gradient, .mesh:
             // A ramp or a mesh is composited into a picture by BuildManager, which
