@@ -16,13 +16,13 @@
 
 <table>
   <tr>
-    <td align="center"><img src="screenshot.png" alt="The Rilmazafone canvas — an app icon and Applications folder arranged over a blue gradient, with the layers sidebar and the background/window/icon inspector" width="840"><br><sub><b>the canvas</b> ・ drag icons where they'll sit in Finder; the inspector drives background, window, and icon layout</sub></td>
+    <td align="center"><img src="screenshot.png" alt="The Rilmazafone canvas — an app icon and Applications folder on glass panels over a mesh gradient, with the layers sidebar and the background/window/icon inspector" width="840"><br><sub><b>the canvas</b> ・ drag icons where they'll sit in Finder; the inspector drives background, window, and icon layout</sub></td>
   </tr>
   <tr>
     <td align="center"><img src=".github/rilmazafone-releaseplan.png" alt="A release plan — the pipeline stages and latest build in the center, with the Project inspector showing signing, notarization, artifacts, and the embedded DMG design" width="840"><br><sub><b>the release plan</b> (2.0) ・ archive, sign, notarize, DMG, verify, GitHub release — one Publish button, live stage view</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src=".github/rilmazafone-templates.png" alt="The Choose a Template gallery — Blank, Aurora, Classic, Compact, Cosmos, and Editorial starting points" width="560"><br><sub><b>templates</b> ・ start from Aurora, Classic, Cosmos, Editorial… or a blank canvas</sub></td>
+    <td align="center"><img src=".github/rilmazafone-templates.png" alt="The Choose a Template gallery — Blank, Aurora, Classic, Compact, Cosmos, Editorial, Glass, Graphite, Risograph, and Snow Leopard starting points" width="560"><br><sub><b>templates</b> ・ start from Aurora, Glass, Risograph, Snow Leopard… or a blank canvas</sub></td>
   </tr>
 </table>
 
@@ -48,7 +48,7 @@ A native macOS app for creating beautifully styled DMG disk images — and, sinc
 ## Features
 
 - **WYSIWYG Canvas** — Drag and position icons exactly as they'll appear in Finder
-- **Background Layers** — Images, gradients, or solid colors with blur, color adjustments, vignette, and bloom effects
+- **Background Layers** — Images, mesh gradients, gradient maps, or solid colors with blur, color adjustments, vignette, bloom, and grain effects
 - **Variable Blur** — Linear or radial blur masks with live preview
 - **Text & Symbol Layers** — Add styled text and SF Symbols composited into the background
 - **Item Backgrounds** — Per-icon frosted glass panels with shadow, bevel, and blend modes
