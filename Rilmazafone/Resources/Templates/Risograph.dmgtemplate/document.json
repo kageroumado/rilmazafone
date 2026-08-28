@@ -1,0 +1,204 @@
+{
+  "background" : {
+    "color" : {
+      "blue" : 0.92,
+      "green" : 0.95,
+      "red" : 0.96
+    },
+    "grain" : {
+      "amount" : 0.1,
+      "enabled" : true,
+      "isColored" : true,
+      "size" : 1.6
+    },
+    "layers" : [
+      {
+        "blurRadius" : 0,
+        "colorAdjustments" : {
+          "brightness" : 0.02,
+          "contrast" : 1.18,
+          "exposure" : 0,
+          "hueRotation" : 0,
+          "saturation" : 1
+        },
+        "gradientMap" : {
+          "amount" : 1,
+          "enabled" : true,
+          "stops" : [
+            {
+              "color" : {
+                "blue" : 0.42,
+                "green" : 0.13,
+                "red" : 0.09
+              },
+              "id" : "2DA2DE08-6DA9-4080-96AF-DF08347A2197",
+              "location" : 0
+            },
+            {
+              "color" : {
+                "blue" : 0.38,
+                "green" : 0.35,
+                "red" : 0.98
+              },
+              "id" : "49F5DAB8-0006-43B9-8EAD-C86B89D375FE",
+              "location" : 0.62
+            },
+            {
+              "color" : {
+                "blue" : 0.86,
+                "green" : 0.94,
+                "red" : 0.99
+              },
+              "id" : "4F024799-53AE-424F-B825-CC6FE11894A9",
+              "location" : 1
+            }
+          ]
+        },
+        "id" : "4B082DDE-1EF5-4D2B-B7CB-ACD918D6C6DB",
+        "imageName" : "aurora.jpg",
+        "label" : "Duotone plate",
+        "position" : [
+          340,
+          220
+        ],
+        "scale" : 1
+      }
+    ],
+    "type" : "image"
+  },
+  "codeSign" : {
+    "enabled" : false
+  },
+  "dmgFormat" : "ULFO",
+  "filesystem" : "APFS",
+  "gridSpacing" : 100,
+  "hideExtensions" : true,
+  "iconSize" : 120,
+  "isGridSpacingAuto" : true,
+  "items" : [
+    {
+      "background" : {
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 0,
+        "color" : {
+          "blue" : 0.93,
+          "green" : 0.97,
+          "red" : 0.99
+        },
+        "cornerRadius" : 6,
+        "enabled" : true,
+        "opacity" : 0.92,
+        "padding" : 16,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 2,
+          "opacity" : 0.22,
+          "radius" : 2
+        }
+      },
+      "id" : "EB7A9818-B00B-45EE-8F42-CDBEABB40BB6",
+      "isPlaceholder" : true,
+      "kind" : "app",
+      "label" : "Your App",
+      "linkType" : "copy",
+      "position" : [
+        200,
+        286
+      ]
+    },
+    {
+      "background" : {
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 0,
+        "color" : {
+          "blue" : 0.93,
+          "green" : 0.97,
+          "red" : 0.99
+        },
+        "cornerRadius" : 6,
+        "enabled" : true,
+        "opacity" : 0.92,
+        "padding" : 16,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 2,
+          "opacity" : 0.22,
+          "radius" : 2
+        }
+      },
+      "id" : "63FD88B5-0C1B-4331-B673-581B7F888DE7",
+      "isPlaceholder" : false,
+      "kind" : "applicationsSymlink",
+      "label" : "Applications",
+      "linkType" : "copy",
+      "position" : [
+        480,
+        286
+      ]
+    }
+  ],
+  "sfSymbolLayers" : [
+    {
+      "color" : {
+        "blue" : 0.86,
+        "green" : 0.94,
+        "red" : 0.99
+      },
+      "id" : "EC407EFC-8D35-441F-BCB0-1FE370737878",
+      "pointSize" : 34,
+      "position" : [
+        340,
+        278
+      ],
+      "symbolName" : "arrow.right",
+      "weight" : "semibold"
+    }
+  ],
+  "textLayers" : [
+    {
+      "color" : {
+        "blue" : 0.86,
+        "green" : 0.94,
+        "red" : 0.99
+      },
+      "fontFamily" : "Helvetica Neue",
+      "fontSize" : 34,
+      "id" : "652F72A0-9E3F-4B60-BD32-B9B98E71B485",
+      "isBold" : true,
+      "isItalic" : false,
+      "position" : [
+        340,
+        86
+      ],
+      "text" : "YOUR APP"
+    }
+  ],
+  "textSize" : 13,
+  "version" : 1,
+  "volumeIcon" : {
+    "type" : "composed"
+  },
+  "volumeName" : "Install",
+  "window" : {
+    "height" : 440,
+    "width" : 680
+  },
+  "windowPosition" : {
+    "x" : 200,
+    "y" : 120
+  }
+}

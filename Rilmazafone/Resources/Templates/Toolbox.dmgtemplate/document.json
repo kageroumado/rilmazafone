@@ -8,7 +8,7 @@
     "layers" : [
       {
         "blurRadius" : 0,
-        "id" : "E4B979A6-DE06-4C61-B23F-5389CD1B9623",
+        "id" : "21C73A5D-5ABA-4A2E-9556-83FC5E998E3B",
         "imageName" : "aqua-pinstripes.png",
         "label" : "Aqua pinstripes",
         "position" : [
@@ -33,22 +33,22 @@
     {
       "background" : {
         "bevel" : {
-          "depth" : 4,
+          "depth" : 5,
           "enabled" : true,
-          "intensity" : 0.35,
-          "lightAngle" : 125
+          "intensity" : 0.55,
+          "lightAngle" : 120
         },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 30,
+        "blurRadius" : 0,
         "color" : {
-          "blue" : 0.18,
-          "green" : 0.14,
-          "red" : 0.12
+          "blue" : 0.99,
+          "green" : 0.97,
+          "red" : 0.96
         },
-        "cornerRadius" : 22,
+        "cornerRadius" : 10,
         "enabled" : true,
-        "opacity" : 0.6,
+        "opacity" : 0.82,
         "padding" : 16,
         "shadow" : {
           "color" : {
@@ -58,12 +58,12 @@
           },
           "enabled" : true,
           "offsetX" : 0,
-          "offsetY" : 7,
-          "opacity" : 0.42,
-          "radius" : 12
+          "offsetY" : 3,
+          "opacity" : 0.3,
+          "radius" : 6
         }
       },
-      "id" : "F93D51E7-F5A6-48F8-9A8E-E071801E3994",
+      "id" : "A796F66A-B639-4BAD-8B48-FC158ECB227C",
       "isPlaceholder" : true,
       "kind" : "app",
       "label" : "Your App",
@@ -76,22 +76,22 @@
     {
       "background" : {
         "bevel" : {
-          "depth" : 4,
+          "depth" : 5,
           "enabled" : true,
-          "intensity" : 0.35,
-          "lightAngle" : 125
+          "intensity" : 0.55,
+          "lightAngle" : 120
         },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 30,
+        "blurRadius" : 0,
         "color" : {
-          "blue" : 0.18,
-          "green" : 0.14,
-          "red" : 0.12
+          "blue" : 0.99,
+          "green" : 0.97,
+          "red" : 0.96
         },
-        "cornerRadius" : 22,
+        "cornerRadius" : 10,
         "enabled" : true,
-        "opacity" : 0.6,
+        "opacity" : 0.82,
         "padding" : 16,
         "shadow" : {
           "color" : {
@@ -101,12 +101,12 @@
           },
           "enabled" : true,
           "offsetX" : 0,
-          "offsetY" : 7,
-          "opacity" : 0.42,
-          "radius" : 12
+          "offsetY" : 3,
+          "opacity" : 0.3,
+          "radius" : 6
         }
       },
-      "id" : "3E9DA054-5EF2-453D-9A7C-2CE909DCC48A",
+      "id" : "24DC751A-23DB-4369-A963-DAE42767692A",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",
       "label" : "Applications",
@@ -119,22 +119,22 @@
     {
       "background" : {
         "bevel" : {
-          "depth" : 4,
+          "depth" : 5,
           "enabled" : true,
-          "intensity" : 0.35,
-          "lightAngle" : 125
+          "intensity" : 0.55,
+          "lightAngle" : 120
         },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 30,
+        "blurRadius" : 0,
         "color" : {
-          "blue" : 0.18,
-          "green" : 0.14,
-          "red" : 0.12
+          "blue" : 0.99,
+          "green" : 0.97,
+          "red" : 0.96
         },
-        "cornerRadius" : 22,
+        "cornerRadius" : 10,
         "enabled" : true,
-        "opacity" : 0.6,
+        "opacity" : 0.82,
         "padding" : 16,
         "shadow" : {
           "color" : {
@@ -144,12 +144,12 @@
           },
           "enabled" : true,
           "offsetX" : 0,
-          "offsetY" : 7,
-          "opacity" : 0.42,
-          "radius" : 12
+          "offsetY" : 3,
+          "opacity" : 0.3,
+          "radius" : 6
         }
       },
-      "id" : "0E393D2D-A3D9-45BB-9CF2-59309ED03E4F",
+      "id" : "98B92869-50AF-463D-8EDC-E50D15FB61D2",
       "isPlaceholder" : true,
       "kind" : "folder",
       "label" : "Documentation",
@@ -162,22 +162,22 @@
     {
       "background" : {
         "bevel" : {
-          "depth" : 4,
+          "depth" : 5,
           "enabled" : true,
-          "intensity" : 0.35,
-          "lightAngle" : 125
+          "intensity" : 0.55,
+          "lightAngle" : 120
         },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 30,
+        "blurRadius" : 0,
         "color" : {
-          "blue" : 0.18,
-          "green" : 0.14,
-          "red" : 0.12
+          "blue" : 0.99,
+          "green" : 0.97,
+          "red" : 0.96
         },
-        "cornerRadius" : 22,
+        "cornerRadius" : 10,
         "enabled" : true,
-        "opacity" : 0.6,
+        "opacity" : 0.82,
         "padding" : 16,
         "shadow" : {
           "color" : {
@@ -187,12 +187,12 @@
           },
           "enabled" : true,
           "offsetX" : 0,
-          "offsetY" : 7,
-          "opacity" : 0.42,
-          "radius" : 12
+          "offsetY" : 3,
+          "opacity" : 0.3,
+          "radius" : 6
         }
       },
-      "id" : "876C6F27-8FC8-4C52-805C-5C0A68FDA083",
+      "id" : "4690A692-9CF6-4139-B105-65DCC7AF0B4D",
       "isPlaceholder" : true,
       "kind" : "file",
       "label" : "Read Me",
@@ -210,7 +210,7 @@
         "green" : 0.32,
         "red" : 0.28
       },
-      "id" : "0A5E2846-2C55-4FB2-A8F5-B34F7A1A48DE",
+      "id" : "2180E67D-7316-406B-BEC0-E8D4AABA0378",
       "pointSize" : 34,
       "position" : [
         350,

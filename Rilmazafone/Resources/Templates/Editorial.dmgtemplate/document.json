@@ -1,69 +1,99 @@
 {
   "background" : {
     "color" : {
-      "blue" : 0.925,
-      "green" : 0.953,
-      "red" : 0.965
+      "blue" : 0.92,
+      "green" : 0.92,
+      "red" : 0.92
     },
-    "gradient" : {
-      "angle" : 90,
-      "centerX" : 0.5,
-      "centerY" : 0.5,
-      "endRadius" : 0.5,
-      "startRadius" : 0,
-      "stops" : [
-        {
-          "color" : {
-            "blue" : 0.925,
-            "green" : 0.953,
-            "red" : 0.965
-          },
-          "id" : "2B0305F4-C6E5-4695-8986-4206CB048103",
-          "location" : 0
-        },
-        {
-          "color" : {
-            "blue" : 0.875,
-            "green" : 0.91,
-            "red" : 0.93
-          },
-          "id" : "01D665EB-CC22-40A1-890F-BFE72DB8FAA0",
-          "location" : 0.42
-        },
-        {
-          "color" : {
-            "blue" : 0.45,
-            "green" : 0.54,
-            "red" : 0.6
-          },
-          "id" : "0785516E-FEE7-43DD-95FB-BFCBBCDC15F7",
-          "location" : 0.66
-        },
-        {
-          "color" : {
-            "blue" : 0.38,
-            "green" : 0.46,
-            "red" : 0.52
-          },
-          "id" : "36BD4751-2A5D-478A-8C89-20350AA54699",
-          "location" : 0.82
-        },
-        {
-          "color" : {
-            "blue" : 0.33,
-            "green" : 0.4,
-            "red" : 0.46
-          },
-          "id" : "6678278B-026B-4C1A-ABF9-20F812A515AD",
-          "location" : 1
-        }
-      ],
-      "type" : "linear"
+    "grain" : {
+      "amount" : 0.018,
+      "enabled" : true,
+      "isColored" : false,
+      "size" : 1
     },
     "layers" : [
 
     ],
-    "type" : "gradient"
+    "mesh" : {
+      "columns" : 3,
+      "points" : [
+        {
+          "color" : {
+            "blue" : 0.92,
+            "green" : 0.96,
+            "red" : 0.98
+          },
+          "id" : "58CCB2A8-CC96-48D7-8CDD-752F62D059AD"
+        },
+        {
+          "color" : {
+            "blue" : 0.89,
+            "green" : 0.94,
+            "red" : 0.97
+          },
+          "id" : "D673989E-F491-40C8-B85D-3DD1DBD5747E"
+        },
+        {
+          "color" : {
+            "blue" : 0.85,
+            "green" : 0.91,
+            "red" : 0.95
+          },
+          "id" : "F9597590-6E6A-411C-8DBB-0032D9BD8F32"
+        },
+        {
+          "color" : {
+            "blue" : 0.89,
+            "green" : 0.94,
+            "red" : 0.97
+          },
+          "id" : "8B674A29-8AEB-4847-A51D-763E7FD6542A"
+        },
+        {
+          "color" : {
+            "blue" : 0.85,
+            "green" : 0.91,
+            "red" : 0.95
+          },
+          "id" : "15D38D42-7F8E-43AF-9FF2-FE520417346C"
+        },
+        {
+          "color" : {
+            "blue" : 0.8,
+            "green" : 0.87,
+            "red" : 0.92
+          },
+          "id" : "CDB87AF5-1BBA-4FF5-96C0-08C6A4603832"
+        },
+        {
+          "color" : {
+            "blue" : 0.86,
+            "green" : 0.92,
+            "red" : 0.95
+          },
+          "id" : "853BF97E-CC91-4665-B2B3-20131CDF7C11"
+        },
+        {
+          "color" : {
+            "blue" : 0.81,
+            "green" : 0.88,
+            "red" : 0.92
+          },
+          "id" : "4D02D454-DE12-484A-82D2-F18C397E0F8C"
+        },
+        {
+          "color" : {
+            "blue" : 0.75,
+            "green" : 0.83,
+            "red" : 0.88
+          },
+          "id" : "118FA166-A2DF-4E0C-B797-12DCE16A78FE"
+        }
+      ],
+      "rows" : 3,
+      "smoothsColors" : true
+    },
+    "type" : "mesh"
   },
   "codeSign" : {
     "enabled" : false
@@ -72,67 +102,81 @@
   "filesystem" : "APFS",
   "gridSpacing" : 100,
   "hideExtensions" : true,
-  "iconSize" : 96,
+  "iconSize" : 120,
   "isGridSpacingAuto" : true,
   "items" : [
     {
-      "id" : "38B4B924-0BEF-4D9E-BF61-923EFBBE0A1E",
+      "id" : "E5037A98-AD1B-4CDC-BC9E-E35F67CFDB3D",
       "isPlaceholder" : true,
       "kind" : "app",
       "label" : "Your App",
       "linkType" : "copy",
       "position" : [
-        185,
-        305
+        235,
+        296
       ]
     },
     {
-      "id" : "4216D79E-8D08-4A60-ABFB-2D77FEFD6C1D",
+      "id" : "B35778CC-7F75-4AA1-A862-4E1626E0010E",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",
       "label" : "Applications",
       "linkType" : "copy",
       "position" : [
-        455,
-        305
+        485,
+        296
       ]
     }
   ],
   "sfSymbolLayers" : [
-
+    {
+      "color" : {
+        "blue" : 0.4,
+        "green" : 0.48,
+        "red" : 0.55
+      },
+      "id" : "BD694211-F23F-46F0-885F-63C86D6B9FA0",
+      "pointSize" : 34,
+      "position" : [
+        360,
+        288
+      ],
+      "symbolName" : "arrow.right",
+      "weight" : "semibold"
+    }
   ],
   "textLayers" : [
     {
       "color" : {
-        "blue" : 0.09,
-        "green" : 0.102,
-        "red" : 0.11
+        "blue" : 0.1,
+        "green" : 0.13,
+        "red" : 0.16
       },
       "fontFamily" : "Helvetica Neue",
-      "fontSize" : 56,
-      "id" : "48C17739-526C-4C50-9162-612791CDAF9F",
+      "fontSize" : 38,
+      "id" : "C9A81832-8409-4578-8948-25BCF66FC85A",
       "isBold" : true,
       "isItalic" : false,
       "position" : [
-        320,
-        108
+        360,
+        96
       ],
       "text" : "Your App"
     },
     {
       "color" : {
-        "blue" : 0.36,
-        "green" : 0.4,
+        "blue" : 0.31,
+        "green" : 0.37,
         "red" : 0.42
       },
       "fontFamily" : "Helvetica Neue",
       "fontSize" : 15,
-      "id" : "06073B50-63C0-490D-B3D2-C7F32B454961",
+      "id" : "A8069790-1C55-4B85-8360-45083AAF8C5D",
       "isBold" : false,
       "isItalic" : false,
       "position" : [
-        320,
-        164
+        360,
+        138
       ],
       "text" : "Drag it into Applications to install."
     }
@@ -144,8 +188,8 @@
   },
   "volumeName" : "Install",
   "window" : {
-    "height" : 440,
-    "width" : 640
+    "height" : 460,
+    "width" : 720
   },
   "windowPosition" : {
     "x" : 200,

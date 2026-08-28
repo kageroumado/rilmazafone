@@ -31,12 +31,28 @@ struct TemplateAuthoring {
     @Test
     func `generate raster-backed templates and report legibility`() throws {
         try writePinstripes()
+        try copyRisographSource()
+
+        // Mesh + grain + glass: what a window looks like on macOS 26.
+        try write("Aurora", aurora())
+        try write("Glass", glass())
+        try write("Graphite", graphite())
+        try write("Classic", classic())
+        try write("Compact", compact())
+        try write("Editorial", editorial())
+
+        // Photographs, with the same glass treatment over them.
         try write("Snow Leopard", snowLeopard())
         try write("Cosmos", cosmos())
+
+        // The one retro template. Bevel belongs here and nowhere else now.
         try write("Toolbox", toolbox())
 
+        // The unexpected one.
+        try write("Risograph", risograph())
+
         for name in [
-            "Snow Leopard", "Cosmos", "Toolbox",
+            "Snow Leopard", "Cosmos", "Toolbox", "Risograph",
             "Classic", "Graphite", "Aurora", "Editorial", "Glass", "Compact",
         ] {
             report(name)
@@ -150,7 +166,7 @@ struct TemplateAuthoring {
         c.background.color = RGBColor(red: 0.86, green: 0.88, blue: 0.9)
         c.background.layers = [fullBleedLayer(imageName: "snow-leopard.jpg", label: "Snow leopard", window: c.window)]
 
-        let panel = darkGlass(color: RGBColor(red: 0.10, green: 0.11, blue: 0.13), opacity: 0.52, padding: 18)
+        let panel = liquidGlass(padding: 18)
         c.items = [
             placeholderApp(position: CGPoint(x: 195, y: 312), panel: panel),
             applications(position: CGPoint(x: 465, y: 312), panel: panel),
@@ -178,7 +194,9 @@ struct TemplateAuthoring {
 
         // Inverted triangle: two-panel install row up top, Read Me centered below
         // with a clear vertical gap (no panel overlaps another).
-        let panel = coolFrost(color: RGBColor(red: 0.40, green: 0.43, blue: 0.51), opacity: 0.76, padding: 16)
+        c.background.grain = grain(0.018)
+
+        let panel = liquidGlass(padding: 16)
         c.items = [
             placeholderApp(position: CGPoint(x: 210, y: 170), panel: panel),
             applications(position: CGPoint(x: 530, y: 170), panel: panel),
@@ -200,7 +218,7 @@ struct TemplateAuthoring {
         c.background.color = RGBColor(red: 0.90, green: 0.92, blue: 0.95)
         c.background.layers = [fullBleedLayer(imageName: "aqua-pinstripes.png", label: "Aqua pinstripes", window: c.window)]
 
-        let panel = darkGlass(color: RGBColor(red: 0.12, green: 0.14, blue: 0.18), opacity: 0.6, padding: 16)
+        let panel = embossed(color: RGBColor(red: 0.96, green: 0.97, blue: 0.99), opacity: 0.82, padding: 16)
         c.items = [
             placeholderApp(position: CGPoint(x: 205, y: 150), panel: panel),
             applications(position: CGPoint(x: 495, y: 150), panel: panel),
@@ -208,12 +226,220 @@ struct TemplateAuthoring {
             placeholderFile(position: CGPoint(x: 495, y: 350), panel: panel),
         ]
         c.sfSymbolLayers = [arrow(at: CGPoint(x: 350, y: 142), color: RGBColor(red: 0.28, green: 0.32, blue: 0.4))]
+        // No grain: the pinstripes are the texture, and 2003 had no dither to spare.
+        return c
+    }
+
+    // MARK: - Modern templates
+
+    /// Violet through magenta to amber, the palette the mesh editor opens on.
+    private func aurora() -> DMGConfiguration {
+        var c = DMGConfiguration()
+        c.volumeName = "Install"
+        c.window = WindowConfiguration(width: 660, height: 430)
+        c.iconSize = 128
+        c.textSize = 13
+        c.background.type = .mesh
+        // The top row carries the title, so it stays dark enough to hold white type.
+        c.background.mesh = mesh([
+            [rgb(0.20, 0.10, 0.36), rgb(0.31, 0.13, 0.46), rgb(0.44, 0.17, 0.47)],
+            [rgb(0.45, 0.22, 0.60), rgb(0.72, 0.37, 0.60), rgb(0.92, 0.50, 0.53)],
+            [rgb(0.72, 0.35, 0.58), rgb(0.95, 0.59, 0.48), rgb(0.99, 0.77, 0.50)],
+        ])
+        c.background.grain = grain(0.020)
+
+        let panel = liquidGlass(padding: 18)
+        c.items = [
+            placeholderApp(position: CGPoint(x: 195, y: 300), panel: panel),
+            applications(position: CGPoint(x: 465, y: 300), panel: panel),
+        ]
+        c.textLayers = [title("Drag to Install", at: CGPoint(x: 330, y: 84), size: 30, color: rgb(1, 1, 1))]
+        c.sfSymbolLayers = [arrow(at: CGPoint(x: 330, y: 292), color: rgb(1, 1, 1))]
+        return c
+    }
+
+    /// Cool and bright — the palest of the set, and the one that shows the glass
+    /// rim most clearly.
+    private func glass() -> DMGConfiguration {
+        var c = DMGConfiguration()
+        c.volumeName = "Install"
+        c.window = WindowConfiguration(width: 660, height: 400)
+        c.iconSize = 128
+        c.textSize = 13
+        c.background.type = .mesh
+        c.background.mesh = mesh([
+            [rgb(0.16, 0.35, 0.62), rgb(0.22, 0.50, 0.76), rgb(0.35, 0.66, 0.86)],
+            [rgb(0.26, 0.52, 0.78), rgb(0.46, 0.71, 0.89), rgb(0.66, 0.84, 0.94)],
+            [rgb(0.42, 0.68, 0.86), rgb(0.68, 0.85, 0.94), rgb(0.86, 0.94, 0.98)],
+        ])
+        c.background.grain = grain(0.016)
+
+        let panel = liquidGlass(padding: 18)
+        c.items = [
+            placeholderApp(position: CGPoint(x: 195, y: 232), panel: panel),
+            applications(position: CGPoint(x: 465, y: 232), panel: panel),
+        ]
+        c.sfSymbolLayers = [arrow(at: CGPoint(x: 330, y: 224), color: rgb(1, 1, 1))]
+        return c
+    }
+
+    /// Near-monochrome and dark, to show light glass carrying dark labels over a
+    /// dark ground — the combination Finder actually renders.
+    private func graphite() -> DMGConfiguration {
+        var c = DMGConfiguration()
+        c.volumeName = "Install"
+        c.window = WindowConfiguration(width: 640, height: 400)
+        c.iconSize = 120
+        c.textSize = 13
+        c.background.type = .mesh
+        c.background.mesh = mesh([
+            [rgb(0.10, 0.11, 0.13), rgb(0.15, 0.16, 0.19), rgb(0.11, 0.12, 0.15)],
+            [rgb(0.16, 0.17, 0.21), rgb(0.24, 0.26, 0.31), rgb(0.17, 0.19, 0.23)],
+            [rgb(0.12, 0.13, 0.16), rgb(0.18, 0.20, 0.24), rgb(0.13, 0.14, 0.17)],
+        ])
+        c.background.grain = grain(0.024)
+
+        let panel = liquidGlass(padding: 16, opacity: 0.68)
+        c.items = [
+            placeholderApp(position: CGPoint(x: 190, y: 232), panel: panel),
+            applications(position: CGPoint(x: 450, y: 232), panel: panel),
+        ]
+        c.sfSymbolLayers = [arrow(at: CGPoint(x: 320, y: 224), color: rgb(0.78, 0.80, 0.85))]
+        return c
+    }
+
+    /// The restrained default: a pale ground, no panels, nothing to explain.
+    private func classic() -> DMGConfiguration {
+        var c = DMGConfiguration()
+        c.volumeName = "Install"
+        c.window = WindowConfiguration(width: 660, height: 400)
+        c.iconSize = 128
+        c.textSize = 13
+        c.background.type = .mesh
+        // Deep enough that white glass reads against it — most installers are light,
+        // and this is the one that shows what a panel does there.
+        c.background.mesh = mesh([
+            [rgb(0.83, 0.86, 0.91), rgb(0.79, 0.83, 0.89), rgb(0.74, 0.79, 0.86)],
+            [rgb(0.79, 0.83, 0.89), rgb(0.74, 0.79, 0.86), rgb(0.69, 0.75, 0.83)],
+            [rgb(0.74, 0.79, 0.86), rgb(0.69, 0.75, 0.83), rgb(0.63, 0.70, 0.80)],
+        ])
+        c.background.grain = grain(0.014)
+
+        let panel = liquidGlass(padding: 18, opacity: 0.62)
+        c.items = [
+            placeholderApp(position: CGPoint(x: 195, y: 220), panel: panel),
+            applications(position: CGPoint(x: 465, y: 220), panel: panel),
+        ]
+        c.sfSymbolLayers = [arrow(at: CGPoint(x: 330, y: 212), color: rgb(0.34, 0.38, 0.46))]
+        return c
+    }
+
+    /// Small window, one row, nothing else.
+    private func compact() -> DMGConfiguration {
+        var c = DMGConfiguration()
+        c.volumeName = "Install"
+        c.window = WindowConfiguration(width: 500, height: 340)
+        c.iconSize = 96
+        c.textSize = 12
+        c.background.type = .mesh
+        // Warm and bare — the small, quiet one, and visibly not Classic at another size.
+        c.background.mesh = mesh([
+            [rgb(0.97, 0.95, 0.92), rgb(0.96, 0.93, 0.89), rgb(0.94, 0.90, 0.85)],
+            [rgb(0.96, 0.93, 0.89), rgb(0.94, 0.90, 0.85), rgb(0.91, 0.87, 0.81)],
+            [rgb(0.94, 0.90, 0.85), rgb(0.91, 0.87, 0.81), rgb(0.88, 0.83, 0.77)],
+        ])
+        c.background.grain = grain(0.014)
+
+        c.items = [
+            placeholderApp(position: CGPoint(x: 145, y: 185)),
+            applications(position: CGPoint(x: 355, y: 185)),
+        ]
+        c.sfSymbolLayers = [arrow(at: CGPoint(x: 250, y: 178), color: rgb(0.52, 0.45, 0.37))]
+        return c
+    }
+
+    /// Type-led: a warm ground, a title, and room around everything.
+    private func editorial() -> DMGConfiguration {
+        var c = DMGConfiguration()
+        c.volumeName = "Install"
+        c.window = WindowConfiguration(width: 720, height: 460)
+        c.iconSize = 120
+        c.textSize = 13
+        c.background.type = .mesh
+        c.background.mesh = mesh([
+            [rgb(0.98, 0.96, 0.92), rgb(0.97, 0.94, 0.89), rgb(0.95, 0.91, 0.85)],
+            [rgb(0.97, 0.94, 0.89), rgb(0.95, 0.91, 0.85), rgb(0.92, 0.87, 0.80)],
+            [rgb(0.95, 0.92, 0.86), rgb(0.92, 0.88, 0.81), rgb(0.88, 0.83, 0.75)],
+        ])
+        c.background.grain = grain(0.018)
+
+        c.textLayers = [
+            title("Your App", at: CGPoint(x: 360, y: 96), size: 38, color: rgb(0.16, 0.13, 0.10)),
+            body("Drag it into Applications to install.", at: CGPoint(x: 360, y: 138), color: rgb(0.42, 0.37, 0.31)),
+        ]
+        c.items = [
+            placeholderApp(position: CGPoint(x: 235, y: 296)),
+            applications(position: CGPoint(x: 485, y: 296)),
+        ]
+        c.sfSymbolLayers = [arrow(at: CGPoint(x: 360, y: 288), color: rgb(0.55, 0.48, 0.40))]
+        return c
+    }
+
+    // MARK: - Risograph (the unexpected one)
+
+    /// A duotone print: the aurora photograph pushed through a gradient map into
+    /// two inks, with grain heavy enough to read as paper rather than as noise.
+    /// The one template that uses neither a ramp nor the photograph's own colors.
+    private func risograph() -> DMGConfiguration {
+        var c = DMGConfiguration()
+        c.volumeName = "Install"
+        c.window = WindowConfiguration(width: 680, height: 440)
+        c.iconSize = 120
+        c.textSize = 13
+        c.background.type = .image
+        c.background.color = rgb(0.96, 0.95, 0.92)
+
+        var ink = fullBleedLayer(imageName: "aurora.jpg", label: "Duotone plate", window: c.window)
+        var map = GradientMapConfiguration()
+        map.stops = [
+            GradientStop(color: rgb(0.09, 0.13, 0.42), location: 0),
+            GradientStop(color: rgb(0.98, 0.35, 0.38), location: 0.62),
+            GradientStop(color: rgb(0.99, 0.94, 0.86), location: 1),
+        ]
+        ink.gradientMap = map
+        ink.colorAdjustments = ColorAdjustments(
+            brightness: 0.02, contrast: 1.18, saturation: 1, hueRotation: 0, exposure: 0,
+        )
+        c.background.layers = [ink]
+
+        // Coarse and colored: the misregistered ink of a risograph, not a dither.
+        var paper = GrainConfiguration()
+        paper.amount = 0.10
+        paper.size = 1.6
+        paper.isColored = true
+        c.background.grain = paper
+
+        // Flat paper panels — no blur, no glass. A print has no depth.
+        var panel = ItemBackground(
+            enabled: true, color: rgb(0.99, 0.97, 0.93), opacity: 0.92,
+            cornerRadius: 6, padding: 16, blurRadius: 0, blurFeather: 0, blendMode: .normal,
+        )
+        panel.shadow = shadow(opacity: 0.22, radius: 2, y: 2)
+
+        c.items = [
+            placeholderApp(position: CGPoint(x: 200, y: 286), panel: panel),
+            applications(position: CGPoint(x: 480, y: 286), panel: panel),
+        ]
+        c.textLayers = [
+            title("YOUR APP", at: CGPoint(x: 340, y: 86), size: 34, color: rgb(0.99, 0.94, 0.86)),
+        ]
+        c.sfSymbolLayers = [arrow(at: CGPoint(x: 340, y: 278), color: rgb(0.99, 0.94, 0.86))]
         return c
     }
 
     // MARK: - Item builders
 
-    private func placeholderApp(position: CGPoint, panel: ItemBackground) -> CanvasItem {
+    private func placeholderApp(position: CGPoint, panel: ItemBackground? = nil) -> CanvasItem {
         var item = CanvasItem.appPlaceholder(position: position)
         item.background = panel
         return item
@@ -231,7 +457,7 @@ struct TemplateAuthoring {
         return item
     }
 
-    private func applications(position: CGPoint, panel: ItemBackground) -> CanvasItem {
+    private func applications(position: CGPoint, panel: ItemBackground? = nil) -> CanvasItem {
         var item = CanvasItem(kind: .applicationsSymlink, label: "Applications", position: position)
         item.background = panel
         return item
@@ -239,24 +465,85 @@ struct TemplateAuthoring {
 
     // MARK: - Panel presets
 
-    private func darkGlass(color: RGBColor, opacity: CGFloat, padding: CGFloat) -> ItemBackground {
+    /// The modern panel: light, translucent, lit along its top rim, shadowed under
+    /// the opposite edge.
+    ///
+    /// Light rather than dark on purpose. Finder draws icon labels dark whatever the
+    /// system appearance — a window with a background picture keeps its Light Mode
+    /// rendering — so the panel behind a label has to raise the ground under it, not
+    /// lower it.
+    private func liquidGlass(padding: CGFloat, opacity: CGFloat = 0.58) -> ItemBackground {
+        var panel = ItemBackground(
+            enabled: true, color: RGBColor(red: 1, green: 1, blue: 1), opacity: opacity,
+            cornerRadius: 24, padding: padding, blurRadius: 30, blurFeather: 0,
+            blendMode: .normal,
+        )
+        panel.shadow = shadow(opacity: 0.28, radius: 16, y: 8)
+        var glass = GlassConfiguration()
+        glass.borderWidth = 1
+        glass.borderOpacity = 0.6
+        glass.lightAngle = 105
+        glass.innerShadowRadius = 14
+        glass.innerShadowOpacity = 0.14
+        glass.saturation = 1.25
+        panel.glass = glass
+        return panel
+    }
+
+    /// The retro panel, kept for Toolbox alone: an embossed edge, which is what a
+    /// raised surface looked like before glass.
+    private func embossed(color: RGBColor, opacity: CGFloat, padding: CGFloat) -> ItemBackground {
         ItemBackground(
             enabled: true, color: color, opacity: opacity,
-            cornerRadius: 22, padding: padding, blurRadius: 30, blurFeather: 0,
+            cornerRadius: 10, padding: padding, blurRadius: 0, blurFeather: 0,
             blendMode: .normal,
-            shadow: shadow(opacity: 0.42, radius: 12, y: 7),
-            bevel: BevelConfiguration(enabled: true, depth: 4, lightAngle: 125, intensity: 0.35),
+            shadow: shadow(opacity: 0.3, radius: 6, y: 3),
+            bevel: BevelConfiguration(enabled: true, depth: 5, lightAngle: 120, intensity: 0.55),
         )
     }
 
-    private func coolFrost(color: RGBColor, opacity: CGFloat, padding: CGFloat) -> ItemBackground {
-        ItemBackground(
-            enabled: true, color: color, opacity: opacity,
-            cornerRadius: 20, padding: padding, blurRadius: 34, blurFeather: 0,
-            blendMode: .normal,
-            shadow: shadow(opacity: 0.5, radius: 16, y: 8),
-            bevel: BevelConfiguration(enabled: true, depth: 4, lightAngle: 120, intensity: 0.3),
+    private func rgb(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat) -> RGBColor {
+        RGBColor(red: r, green: g, blue: b)
+    }
+
+    /// A three-by-three mesh from a row-major palette.
+    private func mesh(_ palette: [[RGBColor]]) -> MeshGradientConfiguration {
+        var config = MeshGradientConfiguration()
+        config.columns = palette.first?.count ?? 3
+        config.rows = palette.count
+        config.points = palette.flatMap { $0 }.map { MeshControlPoint(color: $0) }
+        config.smoothsColors = true
+        return config
+    }
+
+    /// Enough grain to break the banding an 8-bit mesh shows across a window this
+    /// size, and not enough to read as texture.
+    private func grain(_ amount: CGFloat) -> GrainConfiguration {
+        var grain = GrainConfiguration()
+        grain.amount = amount
+        grain.size = 1
+        grain.isColored = false
+        return grain
+    }
+
+    private func title(_ text: String, at position: CGPoint, size: CGFloat, color: RGBColor) -> TextLayerConfiguration {
+        TextLayerConfiguration(
+            text: text, position: position, fontSize: size, isBold: true, color: color,
         )
+    }
+
+    private func body(_ text: String, at position: CGPoint, color: RGBColor) -> TextLayerConfiguration {
+        TextLayerConfiguration(text: text, position: position, fontSize: 15, color: color)
+    }
+
+    /// Risograph prints the same photograph Cosmos does, so it gets its own copy.
+    private func copyRisographSource() throws {
+        let source = Self.templatesDir.appending(path: "Cosmos.dmgtemplate/Assets/aurora.jpg")
+        let assets = Self.templatesDir.appending(path: "Risograph.dmgtemplate/Assets")
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        let destination = assets.appending(path: "aurora.jpg")
+        try? FileManager.default.removeItem(at: destination)
+        try FileManager.default.copyItem(at: source, to: destination)
     }
 
     private func shadow(opacity: CGFloat, radius: CGFloat, y: CGFloat) -> ShadowConfiguration {

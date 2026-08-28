@@ -5,65 +5,95 @@
       "green" : 0.92,
       "red" : 0.92
     },
-    "gradient" : {
-      "angle" : 90,
-      "centerX" : 0.5,
-      "centerY" : 0.5,
-      "endRadius" : 0.5,
-      "startRadius" : 0,
-      "stops" : [
-        {
-          "color" : {
-            "blue" : 0.965,
-            "green" : 0.94,
-            "red" : 0.93
-          },
-          "id" : "352B7A84-395B-40FA-8B69-128EBCE6EB29",
-          "location" : 0
-        },
-        {
-          "color" : {
-            "blue" : 0.91,
-            "green" : 0.87,
-            "red" : 0.85
-          },
-          "id" : "0548F03D-9F47-4422-8AF1-1B137C5AA292",
-          "location" : 0.3
-        },
-        {
-          "color" : {
-            "blue" : 0.62,
-            "green" : 0.54,
-            "red" : 0.5
-          },
-          "id" : "9BB94D4E-3E75-4C56-B89C-DEB2D066C70D",
-          "location" : 0.55
-        },
-        {
-          "color" : {
-            "blue" : 0.56,
-            "green" : 0.48,
-            "red" : 0.44
-          },
-          "id" : "972813B8-434C-46A5-AE9C-226747B91C47",
-          "location" : 0.72
-        },
-        {
-          "color" : {
-            "blue" : 0.52,
-            "green" : 0.44,
-            "red" : 0.4
-          },
-          "id" : "41559A38-0513-4928-85C2-85244DF78AA3",
-          "location" : 1
-        }
-      ],
-      "type" : "linear"
+    "grain" : {
+      "amount" : 0.014,
+      "enabled" : true,
+      "isColored" : false,
+      "size" : 1
     },
     "layers" : [
 
     ],
-    "type" : "gradient"
+    "mesh" : {
+      "columns" : 3,
+      "points" : [
+        {
+          "color" : {
+            "blue" : 0.91,
+            "green" : 0.86,
+            "red" : 0.83
+          },
+          "id" : "2B04DAF1-5E4A-4CE3-8896-53821491609F"
+        },
+        {
+          "color" : {
+            "blue" : 0.89,
+            "green" : 0.83,
+            "red" : 0.79
+          },
+          "id" : "3F07107F-563E-4E7F-9531-55AF4F69276A"
+        },
+        {
+          "color" : {
+            "blue" : 0.86,
+            "green" : 0.79,
+            "red" : 0.74
+          },
+          "id" : "2E23C1BA-B979-48AA-8D02-B57018BF0200"
+        },
+        {
+          "color" : {
+            "blue" : 0.89,
+            "green" : 0.83,
+            "red" : 0.79
+          },
+          "id" : "670E7008-A086-4C98-9CDB-30431349C5DF"
+        },
+        {
+          "color" : {
+            "blue" : 0.86,
+            "green" : 0.79,
+            "red" : 0.74
+          },
+          "id" : "DE126C09-3F8F-44CC-BB8E-4CF6EAD9A381"
+        },
+        {
+          "color" : {
+            "blue" : 0.83,
+            "green" : 0.75,
+            "red" : 0.69
+          },
+          "id" : "B4206E85-E20C-4A9F-941D-8FF07580FAA1"
+        },
+        {
+          "color" : {
+            "blue" : 0.86,
+            "green" : 0.79,
+            "red" : 0.74
+          },
+          "id" : "09CB5658-8C75-4B19-8136-1F7D1832E57B"
+        },
+        {
+          "color" : {
+            "blue" : 0.83,
+            "green" : 0.75,
+            "red" : 0.69
+          },
+          "id" : "DF4D2ABA-0E62-4483-A902-D9E3D7D7A623"
+        },
+        {
+          "color" : {
+            "blue" : 0.8,
+            "green" : 0.7,
+            "red" : 0.63
+          },
+          "id" : "F2E62531-1ED3-4E3F-81A5-54AA321D71F4"
+        }
+      ],
+      "rows" : 3,
+      "smoothsColors" : true
+    },
+    "type" : "mesh"
   },
   "codeSign" : {
     "enabled" : false
@@ -76,43 +106,113 @@
   "isGridSpacingAuto" : true,
   "items" : [
     {
-      "id" : "E057FC37-AFB2-418C-9493-332893B3729A",
+      "background" : {
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 30,
+        "color" : {
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "cornerRadius" : 24,
+        "enabled" : true,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.62,
+        "padding" : 18,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.28,
+          "radius" : 16
+        }
+      },
+      "id" : "C36DAF74-8D4D-4B4C-A8B2-B4970B84982D",
       "isPlaceholder" : true,
       "kind" : "app",
       "label" : "Your App",
       "linkType" : "copy",
       "position" : [
-        200,
-        195
+        195,
+        220
       ]
     },
     {
-      "id" : "2C552695-ED35-44B9-81AE-09E3457BDB0E",
+      "background" : {
+        "blendMode" : "normal",
+        "blurFeather" : 0,
+        "blurRadius" : 30,
+        "color" : {
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "cornerRadius" : 24,
+        "enabled" : true,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.62,
+        "padding" : 18,
+        "shadow" : {
+          "color" : {
+            "blue" : 0,
+            "green" : 0,
+            "red" : 0
+          },
+          "enabled" : true,
+          "offsetX" : 0,
+          "offsetY" : 8,
+          "opacity" : 0.28,
+          "radius" : 16
+        }
+      },
+      "id" : "01128F3B-B2BF-4488-A793-DA763AD1A99E",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",
       "label" : "Applications",
       "linkType" : "copy",
       "position" : [
-        460,
-        195
+        465,
+        220
       ]
     }
   ],
   "sfSymbolLayers" : [
     {
       "color" : {
-        "blue" : 0.58,
-        "green" : 0.52,
-        "red" : 0.52
+        "blue" : 0.46,
+        "green" : 0.38,
+        "red" : 0.34
       },
-      "id" : "EB148D3B-599D-41C7-996C-415B7DC79358",
-      "pointSize" : 40,
+      "id" : "65487AF9-E4FC-4075-A263-BEE7412E2F1C",
+      "pointSize" : 34,
       "position" : [
         330,
-        183
+        212
       ],
       "symbolName" : "arrow.right",
-      "weight" : "regular"
+      "weight" : "semibold"
     }
   ],
   "textLayers" : [

@@ -8,7 +8,7 @@
     "layers" : [
       {
         "blurRadius" : 0,
-        "id" : "2831D693-F6DE-4D36-9180-1491DE75EA99",
+        "id" : "D18393D4-7246-41CD-9F84-2D26F2ED554C",
         "imageName" : "snow-leopard.jpg",
         "label" : "Snow leopard",
         "position" : [
@@ -32,23 +32,26 @@
   "items" : [
     {
       "background" : {
-        "bevel" : {
-          "depth" : 4,
-          "enabled" : true,
-          "intensity" : 0.35,
-          "lightAngle" : 125
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
         "blurRadius" : 30,
         "color" : {
-          "blue" : 0.13,
-          "green" : 0.11,
-          "red" : 0.1
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
-        "cornerRadius" : 22,
+        "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.52,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.58,
         "padding" : 18,
         "shadow" : {
           "color" : {
@@ -58,12 +61,12 @@
           },
           "enabled" : true,
           "offsetX" : 0,
-          "offsetY" : 7,
-          "opacity" : 0.42,
-          "radius" : 12
+          "offsetY" : 8,
+          "opacity" : 0.28,
+          "radius" : 16
         }
       },
-      "id" : "78FEDFA7-D779-4A75-9C77-A913AF47B658",
+      "id" : "5F0EB465-E6F3-46CF-BF3A-F96444F53B5A",
       "isPlaceholder" : true,
       "kind" : "app",
       "label" : "Your App",
@@ -75,23 +78,26 @@
     },
     {
       "background" : {
-        "bevel" : {
-          "depth" : 4,
-          "enabled" : true,
-          "intensity" : 0.35,
-          "lightAngle" : 125
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
         "blurRadius" : 30,
         "color" : {
-          "blue" : 0.13,
-          "green" : 0.11,
-          "red" : 0.1
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
-        "cornerRadius" : 22,
+        "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.52,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.58,
         "padding" : 18,
         "shadow" : {
           "color" : {
@@ -101,12 +107,12 @@
           },
           "enabled" : true,
           "offsetX" : 0,
-          "offsetY" : 7,
-          "opacity" : 0.42,
-          "radius" : 12
+          "offsetY" : 8,
+          "opacity" : 0.28,
+          "radius" : 16
         }
       },
-      "id" : "F3D7704F-8342-4A1F-976E-D7AE894D875D",
+      "id" : "013AB7D3-8B82-4CC6-85BA-BD1AA635897D",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",
       "label" : "Applications",
@@ -124,7 +130,7 @@
         "green" : 0.96,
         "red" : 0.95
       },
-      "id" : "1D0B1B35-94D7-4F47-AA81-40402617F683",
+      "id" : "5C8803E1-2E63-4150-A9BB-C0AA5497ECBE",
       "pointSize" : 34,
       "position" : [
         330,

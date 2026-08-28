@@ -30,6 +30,12 @@ Apple; the "Snow Leopard" template is named for the animal (*Panthera uncia*).
   NASA imagery is not protected by copyright. No attribution required.
 - **Processing:** downscaled to 1800×1197, re-encoded JPEG q0.85, metadata stripped.
 
+## Risograph — `Risograph.dmgtemplate/Assets/aurora.jpg`
+
+The same NASA photograph Cosmos uses, credited above, carried through a gradient
+map into two inks so the source is unrecognizable. Public domain; no attribution
+required. Kept as its own copy because a template owns its assets.
+
 ## Toolbox — `Toolbox.dmgtemplate/Assets/aqua-pinstripes.png`
 
 - **Subject:** An Aqua-era horizontal pinstripe field (pale blue-gray base with

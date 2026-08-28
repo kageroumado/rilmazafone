@@ -5,47 +5,95 @@
       "green" : 0.92,
       "red" : 0.92
     },
-    "gradient" : {
-      "angle" : 180,
-      "centerX" : 0.5,
-      "centerY" : 0.42,
-      "endRadius" : 0.92,
-      "startRadius" : 0,
-      "stops" : [
-        {
-          "color" : {
-            "blue" : 0.243,
-            "green" : 0.216,
-            "red" : 0.216
-          },
-          "id" : "C037836B-8D81-4A46-A2F7-3199D1BF9122",
-          "location" : 0
-        },
-        {
-          "color" : {
-            "blue" : 0.157,
-            "green" : 0.137,
-            "red" : 0.137
-          },
-          "id" : "4659CFDD-318D-486D-ACFA-214FB26196DB",
-          "location" : 0.55
-        },
-        {
-          "color" : {
-            "blue" : 0.071,
-            "green" : 0.055,
-            "red" : 0.055
-          },
-          "id" : "508EF0A4-14F8-4EC4-92F3-D3DCBDFF057C",
-          "location" : 1
-        }
-      ],
-      "type" : "radial"
+    "grain" : {
+      "amount" : 0.024,
+      "enabled" : true,
+      "isColored" : false,
+      "size" : 1
     },
     "layers" : [
 
     ],
-    "type" : "gradient"
+    "mesh" : {
+      "columns" : 3,
+      "points" : [
+        {
+          "color" : {
+            "blue" : 0.13,
+            "green" : 0.11,
+            "red" : 0.1
+          },
+          "id" : "E82E611D-411D-4938-A683-CD1325370B66"
+        },
+        {
+          "color" : {
+            "blue" : 0.19,
+            "green" : 0.16,
+            "red" : 0.15
+          },
+          "id" : "4F5CBB22-8937-41D6-A1F2-CF6D3DDFE347"
+        },
+        {
+          "color" : {
+            "blue" : 0.15,
+            "green" : 0.12,
+            "red" : 0.11
+          },
+          "id" : "C98BBA15-C307-4C0C-9387-F490A48C6737"
+        },
+        {
+          "color" : {
+            "blue" : 0.21,
+            "green" : 0.17,
+            "red" : 0.16
+          },
+          "id" : "36B5775C-1707-45F5-A813-B8C82E173951"
+        },
+        {
+          "color" : {
+            "blue" : 0.31,
+            "green" : 0.26,
+            "red" : 0.24
+          },
+          "id" : "09C3D1A8-1FDB-4C0E-8860-C360A6DE3350"
+        },
+        {
+          "color" : {
+            "blue" : 0.23,
+            "green" : 0.19,
+            "red" : 0.17
+          },
+          "id" : "9826D090-30DA-4C5B-9F91-2CAD7A0513ED"
+        },
+        {
+          "color" : {
+            "blue" : 0.16,
+            "green" : 0.13,
+            "red" : 0.12
+          },
+          "id" : "A69F5271-0691-4333-9B43-5F5899E63F97"
+        },
+        {
+          "color" : {
+            "blue" : 0.24,
+            "green" : 0.2,
+            "red" : 0.18
+          },
+          "id" : "EF6E55B3-839E-4EE1-A409-E99BFEAFEA34"
+        },
+        {
+          "color" : {
+            "blue" : 0.17,
+            "green" : 0.14,
+            "red" : 0.13
+          },
+          "id" : "4D6D11A7-0443-4F31-85FA-010C453902A3"
+        }
+      ],
+      "rows" : 3,
+      "smoothsColors" : true
+    },
+    "type" : "mesh"
   },
   "codeSign" : {
     "enabled" : false
@@ -54,29 +102,32 @@
   "filesystem" : "APFS",
   "gridSpacing" : 100,
   "hideExtensions" : true,
-  "iconSize" : 128,
+  "iconSize" : 120,
   "isGridSpacingAuto" : true,
   "items" : [
     {
       "background" : {
-        "bevel" : {
-          "depth" : 3,
-          "enabled" : true,
-          "intensity" : 0.25,
-          "lightAngle" : 120
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 22,
+        "blurRadius" : 30,
         "color" : {
-          "blue" : 0.63,
-          "green" : 0.6,
-          "red" : 0.6
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
         "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.62,
-        "padding" : 22,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.68,
+        "padding" : 16,
         "shadow" : {
           "color" : {
             "blue" : 0,
@@ -86,40 +137,43 @@
           "enabled" : true,
           "offsetX" : 0,
           "offsetY" : 8,
-          "opacity" : 0.45,
-          "radius" : 18
+          "opacity" : 0.28,
+          "radius" : 16
         }
       },
-      "id" : "46B42EBD-EA7F-43B9-B134-FD5F3EAD55B5",
+      "id" : "34EA45A5-B940-480D-8D1C-2C9062A2C52D",
       "isPlaceholder" : true,
       "kind" : "app",
       "label" : "Your App",
       "linkType" : "copy",
       "position" : [
-        200,
-        195
+        190,
+        232
       ]
     },
     {
       "background" : {
-        "bevel" : {
-          "depth" : 3,
-          "enabled" : true,
-          "intensity" : 0.25,
-          "lightAngle" : 120
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 22,
+        "blurRadius" : 30,
         "color" : {
-          "blue" : 0.63,
-          "green" : 0.6,
-          "red" : 0.6
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
         "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.62,
-        "padding" : 22,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.68,
+        "padding" : 16,
         "shadow" : {
           "color" : {
             "blue" : 0,
@@ -129,36 +183,36 @@
           "enabled" : true,
           "offsetX" : 0,
           "offsetY" : 8,
-          "opacity" : 0.45,
-          "radius" : 18
+          "opacity" : 0.28,
+          "radius" : 16
         }
       },
-      "id" : "2B3018EF-593D-4EEB-B116-C03BE1CFB95D",
+      "id" : "E4E0D57F-4716-4FEF-BE20-D9D923B0F9EB",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",
       "label" : "Applications",
       "linkType" : "copy",
       "position" : [
-        460,
-        195
+        450,
+        232
       ]
     }
   ],
   "sfSymbolLayers" : [
     {
       "color" : {
-        "blue" : 0.82,
-        "green" : 0.78,
+        "blue" : 0.85,
+        "green" : 0.8,
         "red" : 0.78
       },
-      "id" : "8BC3C060-0B42-4274-8E8F-6B19FC6CC1CD",
-      "pointSize" : 36,
+      "id" : "15D6B698-BF3B-4A87-BCA9-52342D3B219A",
+      "pointSize" : 34,
       "position" : [
-        330,
-        183
+        320,
+        224
       ],
       "symbolName" : "arrow.right",
-      "weight" : "light"
+      "weight" : "semibold"
     }
   ],
   "textLayers" : [
@@ -172,7 +226,7 @@
   "volumeName" : "Install",
   "window" : {
     "height" : 400,
-    "width" : 660
+    "width" : 640
   },
   "windowPosition" : {
     "x" : 200,

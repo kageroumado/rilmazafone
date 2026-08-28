@@ -5,65 +5,95 @@
       "green" : 0.92,
       "red" : 0.92
     },
-    "gradient" : {
-      "angle" : 270,
-      "centerX" : 0.5,
-      "centerY" : 0.5,
-      "endRadius" : 0.5,
-      "startRadius" : 0,
-      "stops" : [
-        {
-          "color" : {
-            "blue" : 0.157,
-            "green" : 0.106,
-            "red" : 0.043
-          },
-          "id" : "E5CD857D-D371-48BB-A8F8-1C3DC251D86C",
-          "location" : 0
-        },
-        {
-          "color" : {
-            "blue" : 0.302,
-            "green" : 0.239,
-            "red" : 0.055
-          },
-          "id" : "E45A7772-6BF2-42C2-96D3-B5DD45A44E17",
-          "location" : 0.3
-        },
-        {
-          "color" : {
-            "blue" : 0.541,
-            "green" : 0.235,
-            "red" : 0.29
-          },
-          "id" : "BE8D0DC9-ED8A-4CB8-89D5-C937D94D0AC7",
-          "location" : 0.62
-        },
-        {
-          "color" : {
-            "blue" : 0.663,
-            "green" : 0.353,
-            "red" : 0.641
-          },
-          "id" : "3FABBB69-EF1A-411C-A4E0-9E1447742169",
-          "location" : 0.84
-        },
-        {
-          "color" : {
-            "blue" : 0.702,
-            "green" : 0.612,
-            "red" : 0.949
-          },
-          "id" : "CB26F191-D81C-4706-8B3E-249494E42809",
-          "location" : 1
-        }
-      ],
-      "type" : "linear"
+    "grain" : {
+      "amount" : 0.02,
+      "enabled" : true,
+      "isColored" : false,
+      "size" : 1
     },
     "layers" : [
 
     ],
-    "type" : "gradient"
+    "mesh" : {
+      "columns" : 3,
+      "points" : [
+        {
+          "color" : {
+            "blue" : 0.36,
+            "green" : 0.1,
+            "red" : 0.2
+          },
+          "id" : "50E35760-86D4-4550-92AA-A124631314C2"
+        },
+        {
+          "color" : {
+            "blue" : 0.46,
+            "green" : 0.13,
+            "red" : 0.31
+          },
+          "id" : "CDBC7C9C-6958-4546-B219-DAAB71E699A6"
+        },
+        {
+          "color" : {
+            "blue" : 0.47,
+            "green" : 0.17,
+            "red" : 0.44
+          },
+          "id" : "894F48D4-A728-415B-8C41-CECD5CBE14B5"
+        },
+        {
+          "color" : {
+            "blue" : 0.6,
+            "green" : 0.22,
+            "red" : 0.45
+          },
+          "id" : "49ECFD8C-58FF-4FF6-8052-6A07575C12FA"
+        },
+        {
+          "color" : {
+            "blue" : 0.6,
+            "green" : 0.37,
+            "red" : 0.72
+          },
+          "id" : "A48CE99C-DD6A-410B-884B-B15D0AC14273"
+        },
+        {
+          "color" : {
+            "blue" : 0.53,
+            "green" : 0.5,
+            "red" : 0.92
+          },
+          "id" : "21B1D514-EF97-49D0-A42A-4453194FB188"
+        },
+        {
+          "color" : {
+            "blue" : 0.58,
+            "green" : 0.35,
+            "red" : 0.72
+          },
+          "id" : "2B3ACA79-DEDE-4E23-9428-7BB1EAFFD60B"
+        },
+        {
+          "color" : {
+            "blue" : 0.48,
+            "green" : 0.59,
+            "red" : 0.95
+          },
+          "id" : "786F8619-BD83-4C48-8B5A-D502A026933F"
+        },
+        {
+          "color" : {
+            "blue" : 0.5,
+            "green" : 0.77,
+            "red" : 0.99
+          },
+          "id" : "334A98C3-1EA7-4BD3-8A9D-45A5BE96C11C"
+        }
+      ],
+      "rows" : 3,
+      "smoothsColors" : true
+    },
+    "type" : "mesh"
   },
   "codeSign" : {
     "enabled" : false
@@ -77,24 +107,27 @@
   "items" : [
     {
       "background" : {
-        "bevel" : {
-          "depth" : 3,
-          "enabled" : true,
-          "intensity" : 0.3,
-          "lightAngle" : 120
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 26,
+        "blurRadius" : 30,
         "color" : {
-          "blue" : 0.58,
-          "green" : 0.56,
-          "red" : 0.24
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
-        "cornerRadius" : 22,
+        "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.62,
-        "padding" : 22,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.58,
+        "padding" : 18,
         "shadow" : {
           "color" : {
             "blue" : 0,
@@ -104,40 +137,43 @@
           "enabled" : true,
           "offsetX" : 0,
           "offsetY" : 8,
-          "opacity" : 0.35,
+          "opacity" : 0.28,
           "radius" : 16
         }
       },
-      "id" : "3E283770-5060-4D3C-9B21-6FF5603CB828",
+      "id" : "82170900-7287-40D6-90AF-8EEE65F10AB4",
       "isPlaceholder" : true,
       "kind" : "app",
       "label" : "Your App",
       "linkType" : "copy",
       "position" : [
-        200,
-        250
+        195,
+        300
       ]
     },
     {
       "background" : {
-        "bevel" : {
-          "depth" : 3,
-          "enabled" : true,
-          "intensity" : 0.3,
-          "lightAngle" : 120
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 26,
+        "blurRadius" : 30,
         "color" : {
-          "blue" : 0.58,
-          "green" : 0.56,
-          "red" : 0.24
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
-        "cornerRadius" : 22,
+        "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.62,
-        "padding" : 22,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.58,
+        "padding" : 18,
         "shadow" : {
           "color" : {
             "blue" : 0,
@@ -147,39 +183,53 @@
           "enabled" : true,
           "offsetX" : 0,
           "offsetY" : 8,
-          "opacity" : 0.35,
+          "opacity" : 0.28,
           "radius" : 16
         }
       },
-      "id" : "31CCE24A-C612-4E95-8548-236A8259FE30",
+      "id" : "E4A0C1A3-AD73-480E-BD34-AC2F73473650",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",
       "label" : "Applications",
       "linkType" : "copy",
       "position" : [
-        460,
-        250
+        465,
+        300
       ]
     }
   ],
   "sfSymbolLayers" : [
-
+    {
+      "color" : {
+        "blue" : 1,
+        "green" : 1,
+        "red" : 1
+      },
+      "id" : "993D85AF-A275-4B54-B379-20EC82FF2938",
+      "pointSize" : 34,
+      "position" : [
+        330,
+        292
+      ],
+      "symbolName" : "arrow.right",
+      "weight" : "semibold"
+    }
   ],
   "textLayers" : [
     {
       "color" : {
-        "blue" : 0.204,
-        "green" : 0.063,
-        "red" : 0.102
+        "blue" : 1,
+        "green" : 1,
+        "red" : 1
       },
       "fontFamily" : "Helvetica Neue",
-      "fontSize" : 24,
-      "id" : "C3556788-EE95-46AC-82B2-BCE6E8624EBB",
+      "fontSize" : 30,
+      "id" : "381320F2-782D-4908-BD65-1944E06C8026",
       "isBold" : true,
       "isItalic" : false,
       "position" : [
         330,
-        56
+        84
       ],
       "text" : "Drag to Install"
     }
@@ -191,7 +241,7 @@
   },
   "volumeName" : "Install",
   "window" : {
-    "height" : 400,
+    "height" : 430,
     "width" : 660
   },
   "windowPosition" : {

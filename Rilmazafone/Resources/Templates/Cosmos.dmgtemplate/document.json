@@ -5,6 +5,12 @@
       "green" : 0.02,
       "red" : 0.02
     },
+    "grain" : {
+      "amount" : 0.018,
+      "enabled" : true,
+      "isColored" : false,
+      "size" : 1
+    },
     "layers" : [
       {
         "blurRadius" : 0,
@@ -15,7 +21,7 @@
           "hueRotation" : 0,
           "saturation" : 1.05
         },
-        "id" : "0ADEDEB0-A7D6-43F6-910A-4F0EC114C057",
+        "id" : "812EFD28-8BC3-423B-8E37-0463F7378CF7",
         "imageName" : "aurora.jpg",
         "label" : "Aurora from orbit",
         "position" : [
@@ -39,23 +45,26 @@
   "items" : [
     {
       "background" : {
-        "bevel" : {
-          "depth" : 4,
-          "enabled" : true,
-          "intensity" : 0.3,
-          "lightAngle" : 120
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 34,
+        "blurRadius" : 30,
         "color" : {
-          "blue" : 0.51,
-          "green" : 0.43,
-          "red" : 0.4
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
-        "cornerRadius" : 20,
+        "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.76,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.58,
         "padding" : 16,
         "shadow" : {
           "color" : {
@@ -66,11 +75,11 @@
           "enabled" : true,
           "offsetX" : 0,
           "offsetY" : 8,
-          "opacity" : 0.5,
+          "opacity" : 0.28,
           "radius" : 16
         }
       },
-      "id" : "444814B7-E1EB-49F4-BBD0-BFD11C489B31",
+      "id" : "DC577B58-E31C-4A7D-B285-A65B907EB681",
       "isPlaceholder" : true,
       "kind" : "app",
       "label" : "Your App",
@@ -82,23 +91,26 @@
     },
     {
       "background" : {
-        "bevel" : {
-          "depth" : 4,
-          "enabled" : true,
-          "intensity" : 0.3,
-          "lightAngle" : 120
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 34,
+        "blurRadius" : 30,
         "color" : {
-          "blue" : 0.51,
-          "green" : 0.43,
-          "red" : 0.4
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
-        "cornerRadius" : 20,
+        "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.76,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.58,
         "padding" : 16,
         "shadow" : {
           "color" : {
@@ -109,11 +121,11 @@
           "enabled" : true,
           "offsetX" : 0,
           "offsetY" : 8,
-          "opacity" : 0.5,
+          "opacity" : 0.28,
           "radius" : 16
         }
       },
-      "id" : "A6F2DFD0-21A5-450A-8B81-233EBAE40B2C",
+      "id" : "BDD16BD6-406C-4E04-8498-47FCF94D98EF",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",
       "label" : "Applications",
@@ -125,23 +137,26 @@
     },
     {
       "background" : {
-        "bevel" : {
-          "depth" : 4,
-          "enabled" : true,
-          "intensity" : 0.3,
-          "lightAngle" : 120
-        },
         "blendMode" : "normal",
         "blurFeather" : 0,
-        "blurRadius" : 34,
+        "blurRadius" : 30,
         "color" : {
-          "blue" : 0.51,
-          "green" : 0.43,
-          "red" : 0.4
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
         },
-        "cornerRadius" : 20,
+        "cornerRadius" : 24,
         "enabled" : true,
-        "opacity" : 0.76,
+        "glass" : {
+          "borderOpacity" : 0.6,
+          "borderWidth" : 1,
+          "enabled" : true,
+          "innerShadowOpacity" : 0.14,
+          "innerShadowRadius" : 14,
+          "lightAngle" : 105,
+          "saturation" : 1.25
+        },
+        "opacity" : 0.58,
         "padding" : 16,
         "shadow" : {
           "color" : {
@@ -152,11 +167,11 @@
           "enabled" : true,
           "offsetX" : 0,
           "offsetY" : 8,
-          "opacity" : 0.5,
+          "opacity" : 0.28,
           "radius" : 16
         }
       },
-      "id" : "13059A6E-A1F7-42EF-8E44-56A31F3523A4",
+      "id" : "5FB533B1-A0A6-497D-A4B4-2E83F0C60FAB",
       "isPlaceholder" : true,
       "kind" : "file",
       "label" : "Read Me",
@@ -174,7 +189,7 @@
         "green" : 0.92,
         "red" : 0.85
       },
-      "id" : "AD8E889C-7115-4F81-ABD7-21F053E4FC15",
+      "id" : "A110C4E6-70F5-4E77-B691-6CF05A191872",
       "pointSize" : 34,
       "position" : [
         370,

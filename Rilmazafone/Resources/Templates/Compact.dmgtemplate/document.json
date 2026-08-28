@@ -5,65 +5,95 @@
       "green" : 0.92,
       "red" : 0.92
     },
-    "gradient" : {
-      "angle" : 90,
-      "centerX" : 0.5,
-      "centerY" : 0.5,
-      "endRadius" : 0.5,
-      "startRadius" : 0,
-      "stops" : [
-        {
-          "color" : {
-            "blue" : 0.965,
-            "green" : 0.94,
-            "red" : 0.93
-          },
-          "id" : "FD0D8563-0CD3-4F68-98A3-F45E41FF90D6",
-          "location" : 0
-        },
-        {
-          "color" : {
-            "blue" : 0.91,
-            "green" : 0.87,
-            "red" : 0.85
-          },
-          "id" : "D7FE95AA-4929-4934-A7CE-C1E3E1710947",
-          "location" : 0.3
-        },
-        {
-          "color" : {
-            "blue" : 0.62,
-            "green" : 0.54,
-            "red" : 0.5
-          },
-          "id" : "3B7CE9D2-7E31-483B-806F-667621B60B53",
-          "location" : 0.55
-        },
-        {
-          "color" : {
-            "blue" : 0.56,
-            "green" : 0.48,
-            "red" : 0.44
-          },
-          "id" : "3B3A6EB3-EAC5-47C6-9820-21AB0D988D6C",
-          "location" : 0.72
-        },
-        {
-          "color" : {
-            "blue" : 0.52,
-            "green" : 0.44,
-            "red" : 0.4
-          },
-          "id" : "3EAF75A6-E62C-4156-A2CC-2E5AD82C1D87",
-          "location" : 1
-        }
-      ],
-      "type" : "linear"
+    "grain" : {
+      "amount" : 0.014,
+      "enabled" : true,
+      "isColored" : false,
+      "size" : 1
     },
     "layers" : [
 
     ],
-    "type" : "gradient"
+    "mesh" : {
+      "columns" : 3,
+      "points" : [
+        {
+          "color" : {
+            "blue" : 0.92,
+            "green" : 0.95,
+            "red" : 0.97
+          },
+          "id" : "F80BA0B4-F132-45EE-B882-4D7844701627"
+        },
+        {
+          "color" : {
+            "blue" : 0.89,
+            "green" : 0.93,
+            "red" : 0.96
+          },
+          "id" : "6C2A6E73-A352-4898-84C9-641049462A16"
+        },
+        {
+          "color" : {
+            "blue" : 0.85,
+            "green" : 0.9,
+            "red" : 0.94
+          },
+          "id" : "BDBD13C7-5D55-4BD5-8C4A-FBFEBD8061E2"
+        },
+        {
+          "color" : {
+            "blue" : 0.89,
+            "green" : 0.93,
+            "red" : 0.96
+          },
+          "id" : "E32DAD12-30D5-483E-9656-C4C5A1C936C6"
+        },
+        {
+          "color" : {
+            "blue" : 0.85,
+            "green" : 0.9,
+            "red" : 0.94
+          },
+          "id" : "5B8E82C0-8918-4692-A199-F12E47FAB0BD"
+        },
+        {
+          "color" : {
+            "blue" : 0.81,
+            "green" : 0.87,
+            "red" : 0.91
+          },
+          "id" : "8405084E-7685-4ED9-AC75-A0238126E5BE"
+        },
+        {
+          "color" : {
+            "blue" : 0.85,
+            "green" : 0.9,
+            "red" : 0.94
+          },
+          "id" : "4ED94DC0-19C7-48C0-9544-715D7D3E2AD0"
+        },
+        {
+          "color" : {
+            "blue" : 0.81,
+            "green" : 0.87,
+            "red" : 0.91
+          },
+          "id" : "CDE18CE0-ADAC-48D0-9AE6-E60BEC094426"
+        },
+        {
+          "color" : {
+            "blue" : 0.77,
+            "green" : 0.83,
+            "red" : 0.88
+          },
+          "id" : "E678A450-C0F9-4FF5-97AB-BB0818B588C9"
+        }
+      ],
+      "rows" : 3,
+      "smoothsColors" : true
+    },
+    "type" : "mesh"
   },
   "codeSign" : {
     "enabled" : false
@@ -76,43 +106,43 @@
   "isGridSpacingAuto" : true,
   "items" : [
     {
-      "id" : "5A3C73F5-2EDC-41C3-BAA5-8A114E3EC841",
+      "id" : "F86D024C-47B7-4DE1-8AB9-EA39C83E8D41",
       "isPlaceholder" : true,
       "kind" : "app",
       "label" : "Your App",
       "linkType" : "copy",
       "position" : [
-        150,
-        155
+        145,
+        185
       ]
     },
     {
-      "id" : "89FDECF7-01A6-4CB5-9F7C-E84D90E3E6E0",
+      "id" : "38EB8B81-5969-47D3-A460-D05AD707D9ED",
       "isPlaceholder" : false,
       "kind" : "applicationsSymlink",
       "label" : "Applications",
       "linkType" : "copy",
       "position" : [
-        350,
-        155
+        355,
+        185
       ]
     }
   ],
   "sfSymbolLayers" : [
     {
       "color" : {
-        "blue" : 0.6,
-        "green" : 0.55,
-        "red" : 0.55
+        "blue" : 0.37,
+        "green" : 0.45,
+        "red" : 0.52
       },
-      "id" : "8BF59ADA-91C7-42C6-AFF8-DB585E2FB7A1",
-      "pointSize" : 30,
+      "id" : "EAEE2601-B1BE-46C2-8C5A-59D6E93E53A2",
+      "pointSize" : 34,
       "position" : [
         250,
-        143
+        178
       ],
       "symbolName" : "arrow.right",
-      "weight" : "regular"
+      "weight" : "semibold"
     }
   ],
   "textLayers" : [
@@ -125,7 +155,7 @@
   },
   "volumeName" : "Install",
   "window" : {
-    "height" : 320,
+    "height" : 340,
     "width" : 500
   },
   "windowPosition" : {
