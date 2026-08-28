@@ -42,10 +42,11 @@
 
         // MARK: Idle
 
-        /// The pipeline as a promise: what Build and Publish will do, plus
-        /// where the last build stands.
+        /// The pipeline as a promise: whether it can run at all, what Build and Publish
+        /// will do, and where the last build stands.
         @ViewBuilder
         private var idleRail: some View {
+            readinessHeader
             let stages = ReleasePipeline.stagePlan(for: ReleaseRunRequest(
                 plan: document.plan,
                 planURL: document.fileURL ?? URL(fileURLWithPath: "/"),
@@ -82,6 +83,75 @@
                         .textSelection(.enabled)
                 }
             }
+        }
+
+        // MARK: Readiness
+
+        private var readiness: PlanReadiness {
+            PlanReadiness.evaluate(
+                plan: document.plan,
+                detection: document.detection,
+                planURL: document.fileURL,
+            )
+        }
+
+        /// Preflight's answer, before anyone presses a button.
+        ///
+        /// Quiet when the plan is runnable — one line, because "yes" needs no detail.
+        /// When it is not, the checks that stand in the way, each naming what to do.
+        @ViewBuilder
+        private var readinessHeader: some View {
+            let readiness = readiness
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 7) {
+                    Image(systemName: readinessSymbol(readiness))
+                        .foregroundStyle(readinessTint(readiness))
+                        .font(.callout)
+                    Text(readiness.summary)
+                        .font(.callout.weight(.semibold))
+                    Spacer(minLength: 0)
+                }
+
+                if !readiness.isConfigured {
+                    Text("Choose a repository in the Project tab to get started.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    // Passing checks stay silent: the headline already said so.
+                    ForEach(readiness.checks.filter { $0.status != .ok }) { check in
+                        HStack(alignment: .firstTextBaseline, spacing: 7) {
+                            Image(systemName: check.status == .blocked
+                                ? "exclamationmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .foregroundStyle(check.status == .blocked
+                                    ? AnyShapeStyle(.red) : AnyShapeStyle(.orange))
+                                .font(.caption)
+                            Text(check.title)
+                                .font(.caption)
+                            Text(check.detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+            }
+            .padding(.bottom, 14)
+            .accessibilityElement(children: .combine)
+        }
+
+        private func readinessSymbol(_ readiness: PlanReadiness) -> String {
+            if !readiness.isConfigured { return "circle.dashed" }
+            if !readiness.blocked.isEmpty { return "exclamationmark.circle.fill" }
+            if !readiness.warnings.isEmpty { return "exclamationmark.triangle.fill" }
+            return "checkmark.circle.fill"
+        }
+
+        private func readinessTint(_ readiness: PlanReadiness) -> AnyShapeStyle {
+            if !readiness.isConfigured { return AnyShapeStyle(.tertiary) }
+            if !readiness.blocked.isEmpty { return AnyShapeStyle(.red) }
+            if !readiness.warnings.isEmpty { return AnyShapeStyle(.orange) }
+            return AnyShapeStyle(.green)
         }
 
         private func nominalRow(_ stage: ReleaseStage, done: Bool) -> some View {
