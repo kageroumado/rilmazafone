@@ -53,7 +53,7 @@ struct CanvasCompositeTests {
     }
 
     private static func composite(_ config: DMGConfiguration, excluding: UUID?) throws -> CGImage {
-        try #require(CompositeRenderer.renderPanelBackdrop(
+        try #require(CompositeRenderer.renderCanvasComposite(
             configuration: config, layerImages: [:], scale: 2, excluding: excluding,
         ))
     }

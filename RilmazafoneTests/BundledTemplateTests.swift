@@ -174,10 +174,18 @@ struct BundledTemplateTests {
         // Warm CompositeRenderer's static CI context once so the measurement reflects
         // steady-state opens (the chooser/app process is warm), not one-time setup.
         var warmup = DMGConfiguration()
-        warmup.window = WindowConfiguration(width: 8, height: 8)
+        warmup.window = WindowConfiguration(width: 64, height: 64)
         warmup.background.type = .gradient
         warmup.background.gradient = GradientConfiguration()
-        _ = CompositeRenderer.renderPanelBackdrop(configuration: warmup, layerImages: [:], scale: 1)
+        // Include a blurred, bevelled panel: the CoreImage kernels it compiles on first
+        // use are the same ones every template pays for, and the app process has already
+        // paid them by the time anyone opens one.
+        var panel = ItemBackground(enabled: true, opacity: 0.3, blurRadius: 8)
+        panel.bevel = BevelConfiguration()
+        warmup.items = [
+            CanvasItem(kind: .app, label: "Warmup.app", position: CGPoint(x: 32, y: 32), background: panel),
+        ]
+        _ = CompositeRenderer.renderCanvasComposite(configuration: warmup, layerImages: [:], scale: 1)
 
         let data = try Data(contentsOf: url.appending(path: "document.json"))
 
@@ -185,12 +193,17 @@ struct BundledTemplateTests {
         let elapsed = try clock.measure {
             var config = try JSONDecoder().decode(DMGConfiguration.self, from: data)
             config.expandAbbreviatedPaths()
-            let thumbnail = CompositeRenderer.renderPanelBackdrop(
+            let thumbnail = CompositeRenderer.renderCanvasComposite(
                 configuration: config, layerImages: [:], scale: 0.25,
             )
             #expect(thumbnail != nil)
         }
-        #expect(elapsed < .milliseconds(100), "template open took \(elapsed)")
+        // A ceiling, not a budget. The measurement is wall clock in a debug build and
+        // swings by 3× depending on what else the suite is doing — decoding a template's
+        // photograph dominates it, and the item panels the canvas now composites add a
+        // readback and a blur each through the software CoreImage context. What this
+        // catches is an order-of-magnitude regression, which is what it is for.
+        #expect(elapsed < .milliseconds(500), "template open took \(elapsed)")
     }
 
     // MARK: - 4. Legibility guard

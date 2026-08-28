@@ -66,6 +66,19 @@ struct ItemPanelRenderingTests {
         return (Int(bytes[i]), Int(bytes[i + 1]), Int(bytes[i + 2]))
     }
 
+    /// Draws `image` over `base`, the way the canvas layers a panel onto its backdrop.
+    private static func compositing(_ image: CGImage, over base: CGImage) -> CGImage? {
+        guard let ctx = CGContext(
+            data: nil, width: base.width, height: base.height,
+            bitsPerComponent: 8, bytesPerRow: 0, space: sRGB,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
+        ) else { return nil }
+        let bounds = CGRect(x: 0, y: 0, width: base.width, height: base.height)
+        ctx.draw(base, in: bounds)
+        ctx.draw(image, in: bounds)
+        return ctx.makeImage()
+    }
+
     private static func composite(_ config: DMGConfiguration, scale: CGFloat) throws -> CGImage {
         try #require(CompositeRenderer.renderAnalysisComposite(
             configuration: config, layerImages: [:], scale: scale,
@@ -155,52 +168,48 @@ struct ItemPanelRenderingTests {
 
     // MARK: - Canvas / Bake Parity
 
-    /// The canvas draws panels through `renderPanelPreview`, which composites over the
-    /// shared backdrop with the build's own code. Both paths must therefore agree pixel
-    /// for pixel; a divergence here is the editor promising something the DMG will not show.
-    @Test(arguments: [
-        ItemBackground(
-            enabled: true, opacity: 0.35, cornerRadius: cornerRadius, padding: padding,
-            blurRadius: 12, blendMode: .normal,
-        ),
-        ItemBackground(
-            enabled: true, opacity: 0.5, cornerRadius: cornerRadius, padding: padding,
-            blurRadius: 0, blendMode: .overlay,
-        ),
-        ItemBackground(
-            enabled: true, opacity: 0.2, cornerRadius: cornerRadius, padding: padding,
-            blurRadius: 8, blurFeather: 0.3, blendMode: .multiply,
-        ),
-        ItemBackground(
-            enabled: false, cornerRadius: cornerRadius, padding: padding,
-            shadow: Self.shadow(opacity: 0.6, radius: 10, offsetY: 12),
-            bevel: BevelConfiguration(enabled: true, depth: 4, lightAngle: 135, intensity: 0.6),
-        ),
-    ])
-    func `The canvas preview of a panel matches the baked background`(background: ItemBackground) throws {
-        let scale = CanvasBackdrop.renderScale
-        let config = Self.configuration(background: background)
+    /// The canvas paints `renderCanvasComposite`; the build bakes `renderBackgroundTIFF`.
+    /// Both have to be the same picture, or the editor is promising something the disk
+    /// image will not show. This is the guard that made the panel work worth doing.
+    @Test
+    func `The canvas composite is the baked background`() throws {
+        var background = ItemBackground(
+            enabled: true, opacity: 0.3, cornerRadius: 22, padding: 16, blurRadius: 34,
+        )
+        background.shadow = Self.shadow(opacity: 0.4, radius: 14, offsetY: 8)
+        background.bevel = BevelConfiguration()
 
-        let baked = try Self.composite(config, scale: scale)
-        let backdrop = try #require(CompositeRenderer.renderPanelBackdrop(
-            configuration: config, layerImages: [:], scale: scale,
-        ))
-        let preview = try #require(CompositeRenderer.renderPanelPreview(
-            bg: background,
-            panelRect: Self.panelRect(),
-            backdrop: backdrop,
-            backdropPointSize: Self.canvas,
-            scale: scale,
+        var config = Self.configuration(background: background)
+        config.window = WindowConfiguration(width: 400, height: 400)
+        config.background.type = .gradient
+        config.background.gradient = GradientConfiguration()
+        config.textLayers = [
+            TextLayerConfiguration(
+                text: "Install", position: CGPoint(x: 200, y: 60), fontSize: 28,
+                color: RGBColor(red: 1, green: 1, blue: 1),
+            ),
+        ]
+        // Overlapping panels: the case that broke when panels were composited one by one.
+        config.items = [
+            CanvasItem(kind: .app, label: "A.app", position: CGPoint(x: 130, y: 150), background: background),
+            CanvasItem(kind: .folder, label: "B", position: CGPoint(x: 270, y: 150), background: background),
+            CanvasItem(kind: .file, label: "C", position: CGPoint(x: 200, y: 300), background: background),
+        ]
+
+        let canvas = try #require(CompositeRenderer.renderCanvasComposite(
+            configuration: config, layerImages: [:], scale: 2,
         ))
 
-        let regionPx = preview.region.applying(CGAffineTransform(scaleX: scale, y: scale))
-        let bakedCrop = try #require(baked.cropping(to: regionPx))
-        #expect(bakedCrop.width == preview.image.width)
-        #expect(bakedCrop.height == preview.image.height)
+        let tiff = try #require(CompositeRenderer.renderBackgroundTIFF(
+            configuration: config, assetsDirectory: FileManager.default.temporaryDirectory,
+        ))
+        let reps = try #require(NSBitmapImageRep.imageReps(with: tiff) as? [NSBitmapImageRep])
+        let retina = try #require(reps.first { $0.pixelsWide == canvas.width })
+        let baked = try #require(retina.cgImage)
 
-        let expected = Self.rgbaBytes(of: bakedCrop)
-        let actual = Self.rgbaBytes(of: preview.image)
+        let expected = Self.rgbaBytes(of: baked)
+        let actual = Self.rgbaBytes(of: canvas)
         let worst = zip(expected, actual).map { abs(Int($0) - Int($1)) }.max() ?? 0
-        #expect(worst <= 1, "canvas preview drifted from the baked background by \(worst)/255")
+        #expect(worst == 0, "the canvas composite differs from the baked background by \(worst)/255")
     }
 }

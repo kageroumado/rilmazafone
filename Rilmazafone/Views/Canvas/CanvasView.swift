@@ -20,7 +20,11 @@ struct CanvasView: View {
     @State private var isFileImporterPresented = false
     @State private var titleBarIcon: NSImage?
     @State private var activeGuides = AlignmentGuides.none
-    @State private var backdrop: CanvasBackdrop?
+    @State private var backdrop: CanvasComposite?
+
+    /// True while an item or layer is being dragged on the canvas. The composite drops
+    /// to 1× for the duration so the drag keeps up.
+    @State private var isDraggingOnCanvas = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -107,29 +111,49 @@ struct CanvasView: View {
         .task(id: firstAppSourcePath) {
             titleBarIcon = await generateTitleBarIcon()
         }
-        .task(id: backdropGeneration) {
-            await refreshBackdrop()
+        .task(id: compositeGeneration) {
+            await refreshComposite()
         }
     }
 
-    // MARK: - Panel Backdrop
+    // MARK: - Canvas Composite
 
-    /// Fingerprint of every input to the backdrop composite: the background itself
-    /// (base, image layers and their loaded images, text, symbols, window size) plus
-    /// the selected layer, which is left out of the composite because the canvas draws
-    /// it live. Built from the document's slice generation counters instead of
-    /// deep-hashing content, so evaluating it is O(1) in document size. Item positions
-    /// are deliberately excluded (no `itemsGeneration`) so dragging an icon never
-    /// re-composites; each panel re-renders over this image itself.
-    private var backdropGeneration: Int {
+    /// Fingerprint of every input to the canvas composite: the background, the item
+    /// panels drawn into it, the selected layer that is left out because the canvas
+    /// draws it live, and the density it renders at. Built from the document's slice
+    /// generation counters instead of deep-hashing content, so evaluating it is O(1)
+    /// in document size.
+    private var compositeGeneration: Int {
         var hasher = Hasher()
         hasher.combine(document.restGeneration)
         hasher.combine(document.backgroundGeneration)
         hasher.combine(document.textLayersGeneration)
         hasher.combine(document.sfSymbolLayersGeneration)
         hasher.combine(document.imagesGeneration)
-        hasher.combine(selectedItemID)
+        hasher.combine(document.itemsGeneration)
+        hasher.combine(excludedLayerID)
+        hasher.combine(isDraggingOnCanvas)
         return hasher.finalize()
+    }
+
+    /// The layer the composite leaves out, because the canvas is drawing it live.
+    ///
+    /// Only while it is actually being dragged. A selected layer that is sitting still
+    /// belongs in the composite: its SwiftUI copy draws the same pixels in the same
+    /// place, so nothing shows twice — and leaving it out would make every panel's glass
+    /// blur a background the layer is missing from, which turns the panels dark the
+    /// moment you select the image behind them.
+    private var excludedLayerID: UUID? {
+        isDraggingOnCanvas ? selectedItemID : nil
+    }
+
+    /// Pixels per point the composite renders at. A drag re-composites on every step —
+    /// panels move with their items and their glass has to re-blur — so it drops to 1×
+    /// for the duration and settles back at 2× on release. Half the linear resolution
+    /// is a quarter of the work, which is the difference between a drag that tracks the
+    /// pointer and one that trails it.
+    private var compositeScale: CGFloat {
+        isDraggingOnCanvas ? 1 : CanvasComposite.renderScale
     }
 
     /// Bundles the composite inputs for the detached render below; NSImage is
@@ -140,24 +164,24 @@ struct CanvasView: View {
         let layerImages: [UUID: NSImage]
     }
 
-    /// Re-composites the backdrop the canvas paints and panels blur out of. Runs on
-    /// background-affecting edits and on selection changes; the composite renders off
-    /// the main thread because it costs a few milliseconds and would otherwise land in
-    /// the middle of a keystroke.
-    private func refreshBackdrop() async {
-        let generation = backdropGeneration
+    /// Re-composites everything the canvas paints beneath the icons — background, type,
+    /// symbols, item panels, grain. Renders off the main thread: with blurred panels it
+    /// costs tens of milliseconds and would otherwise land in the middle of a keystroke.
+    private func refreshComposite() async {
+        let generation = compositeGeneration
+        let scale = compositeScale
         guard backdrop?.generation != generation else { return }
 
         let input = BackdropRenderInput(
             configuration: document.configuration,
             layerImages: document.backgroundImages,
         )
-        let excluded = selectedItemID
-        let image = await Task.detached(name: "Canvas Backdrop Composite", priority: .userInitiated) {
-            CompositeRenderer.renderPanelBackdrop(
+        let excluded = excludedLayerID
+        let image = await Task.detached(name: "Canvas Composite", priority: .userInitiated) {
+            CompositeRenderer.renderCanvasComposite(
                 configuration: input.configuration,
                 layerImages: input.layerImages,
-                scale: CanvasBackdrop.renderScale,
+                scale: scale,
                 excluding: excluded,
             )
         }.value
@@ -169,13 +193,13 @@ struct CanvasView: View {
         }
         let configuration = input.configuration
 
-        backdrop = CanvasBackdrop(
+        backdrop = CanvasComposite(
             image: image,
             pointSize: CGSize(
                 width: configuration.window.width,
                 height: configuration.window.height,
             ),
-            scale: CanvasBackdrop.renderScale,
+            scale: scale,
             generation: generation,
         )
     }
@@ -286,10 +310,6 @@ struct CanvasView: View {
 
                 sfSymbolLayersOverlay(zoom: currentZoom)
 
-                itemBackgroundsOverlay(zoom: currentZoom)
-
-                grainOverlay
-
                 iconsOverlay(zoom: currentZoom)
 
                 alignmentGuidesOverlay(zoom: currentZoom, geoSize: geo.size)
@@ -297,11 +317,15 @@ struct CanvasView: View {
         }
     }
 
-    /// The DMG window's content, painted from the composite the build bakes rather than
-    /// rebuilt in SwiftUI — so a gradient's interpolation, a layer's effects, and the
-    /// type in a text layer are the ones Finder will show, not a second interpretation
-    /// of them. `windowBackgroundFill` sits underneath for the `.none` background type,
-    /// whose composite is transparent because no background image is written at all.
+    /// The DMG window's content, painted from the composite the build bakes — every
+    /// layer of it, panels included.
+    ///
+    /// Panels are part of this picture rather than views over it because each one's
+    /// glass blurs whatever is beneath, and beneath can be another panel: their regions
+    /// overlap freely once a blur widens them. Drawn separately they either paint over
+    /// each other or blur the wrong thing. `windowBackgroundFill` sits underneath for
+    /// the `.none` background type, whose composite is transparent because no background
+    /// image is written at all.
     private var windowContentBackground: some View {
         ZStack {
             Rectangle()
@@ -327,10 +351,11 @@ struct CanvasView: View {
                     zoom: currentZoom,
                     windowWidth: windowWidth,
                     onDragChanged: { proposed in
-                        snapToGuides(proposed: proposed, excludingItemID: layer.id)
+                        snapToGuidesDuringDrag(proposed: proposed, excludingItemID: layer.id)
                     },
                 ) { newPosition in
                     activeGuides = .none
+                    endDrag()
                     document.moveBackgroundLayer(
                         layer.id,
                         to: newPosition,
@@ -353,10 +378,11 @@ struct CanvasView: View {
                 isSelected: selectedItemID == layer.id,
                 zoom: currentZoom,
                 onDragChanged: { proposed in
-                    snapToGuides(proposed: proposed, excludingItemID: layer.id)
+                    snapToGuidesDuringDrag(proposed: proposed, excludingItemID: layer.id)
                 },
             ) { newPosition in
                 activeGuides = .none
+                endDrag()
                 document.moveTextLayer(
                     layer.id,
                     to: newPosition,
@@ -378,10 +404,11 @@ struct CanvasView: View {
                 isSelected: selectedItemID == layer.id,
                 zoom: currentZoom,
                 onDragChanged: { proposed in
-                    snapToGuides(proposed: proposed, excludingItemID: layer.id)
+                    snapToGuidesDuringDrag(proposed: proposed, excludingItemID: layer.id)
                 },
             ) { newPosition in
                 activeGuides = .none
+                endDrag()
                 document.moveSFSymbolLayer(
                     layer.id,
                     to: newPosition,
@@ -390,36 +417,6 @@ struct CanvasView: View {
             } onSelect: {
                 selectedItemID = layer.id
             }
-            .equatable()
-        }
-    }
-
-    // MARK: - Item Backgrounds
-
-    private func itemBackgroundsOverlay(zoom currentZoom: CGFloat) -> some View {
-        let iconSize = document.iconSize
-
-        return ForEach(document.items.filter { $0.background?.draws == true }) { item in
-            ItemBackgroundPanel(
-                item: item,
-                bg: item.background!,
-                currentZoom: currentZoom,
-                iconSize: iconSize,
-                backdrop: backdrop,
-            )
-            .equatable()
-        }
-    }
-
-    // MARK: - Grain
-
-    @ViewBuilder
-    private var grainOverlay: some View {
-        if let grain = document.background.grain, grain.enabled {
-            GrainOverlayView(
-                grain: grain,
-                pointSize: CGSize(width: windowWidth, height: windowHeight),
-            )
             .equatable()
         }
     }
@@ -440,10 +437,11 @@ struct CanvasView: View {
                 ),
                 hideExtensions: document.hideExtensions,
                 onDragChanged: { proposed in
-                    snapToGuides(proposed: proposed, excludingItemID: item.id)
+                    snapToGuidesDuringDrag(proposed: proposed, excludingItemID: item.id)
                 },
             ) { newPosition in
                 activeGuides = .none
+                endDrag()
                 document.moveItem(item.id, to: newPosition, undoManager: undoManager)
             } onSelect: {
                 selectedItemID = item.id
@@ -494,6 +492,19 @@ struct CanvasView: View {
 
     /// Snaps a proposed position to structural and sibling guides.
     /// Returns the snapped position (rounded to integers) and updates `activeGuides`.
+    /// Called on every step of a canvas drag. Marks the drag active so the composite
+    /// renders at the cheaper density, and schedules the return to full density.
+    private func snapToGuidesDuringDrag(proposed: CGPoint, excludingItemID id: UUID) -> CGPoint {
+        if !isDraggingOnCanvas {
+            isDraggingOnCanvas = true
+        }
+        return snapToGuides(proposed: proposed, excludingItemID: id)
+    }
+
+    private func endDrag() {
+        isDraggingOnCanvas = false
+    }
+
     private func snapToGuides(
         proposed: CGPoint,
         excludingItemID id: UUID,

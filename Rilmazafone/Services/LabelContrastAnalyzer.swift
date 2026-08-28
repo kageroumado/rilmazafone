@@ -31,7 +31,7 @@ nonisolated enum FinderWindowBackdrop: String, CaseIterable, Hashable {
 ///
 /// `@unchecked Sendable` because of the `NSImage` values; they are treated as
 /// immutable after import (the document never mutates a loaded layer image),
-/// matching `CanvasBackdrop`'s precedent for shipping render inputs off-main.
+/// matching `CanvasComposite`'s precedent for shipping render inputs off-main.
 nonisolated struct LegibilityAnalysisInput: @unchecked Sendable {
     let configuration: DMGConfiguration
     let layerImages: [UUID: NSImage]
