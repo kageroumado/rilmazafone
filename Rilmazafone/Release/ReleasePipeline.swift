@@ -868,13 +868,30 @@
             )
 
             let message = "Bump version to v\(context.version) (build \(context.build))"
+
+            // Only commit when the bump actually changed something. `git commit`
+            // on an empty index exits 1 with "nothing to commit" on stdout — not
+            // stderr — so a string match can't catch it. Ask git directly instead:
+            // `diff --cached --quiet` exits 0 with a clean index, 1 with staged
+            // changes.
+            let hasStagedChanges: Bool
             do {
+                try await ProcessRunner.run(
+                    ExternalTool.git,
+                    arguments: ["-C", resolved.repoRoot.path, "diff", "--cached", "--quiet"],
+                )
+                hasStagedChanges = false
+            } catch let error as ProcessRunner.ProcessError where error.exitCode == 1 {
+                hasStagedChanges = true
+            }
+
+            if hasStagedChanges {
                 try await ProcessRunner.run(
                     ExternalTool.git,
                     arguments: ["-C", resolved.repoRoot.path, "commit", "-m", message],
                 )
-            } catch let error as ProcessRunner.ProcessError where error.stderr.contains("nothing to commit") {
-                await emit(.log(.commitPush, "Nothing to commit — bump already committed"))
+            } else {
+                await emit(.log(.commitPush, "Nothing to commit — bump already applied"))
             }
             context.releaseSHA = try await ProcessRunner.runString(
                 ExternalTool.git,
