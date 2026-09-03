@@ -168,6 +168,7 @@ nonisolated enum CompositeRenderer {
                 layers: configuration.background.layers.filter { $0.id != excluding },
                 canvasWidth: width,
                 canvasHeight: height,
+                scale: scale,
                 imageProvider: imageProvider,
             )
         }
@@ -317,6 +318,7 @@ nonisolated enum CompositeRenderer {
         layers: [BackgroundLayer],
         canvasWidth: CGFloat,
         canvasHeight: CGFloat,
+        scale: CGFloat,
         imageProvider: (BackgroundLayer) -> NSImage?,
     ) {
         for layer in layers {
@@ -334,6 +336,7 @@ nonisolated enum CompositeRenderer {
                 to: layerImage,
                 layer: layer,
                 displaySize: CGSize(width: displayWidth, height: displayHeight),
+                scale: scale,
             )
 
             let originX = layer.position.x - displayWidth / 2
@@ -604,11 +607,15 @@ nonisolated enum CompositeRenderer {
         to image: NSImage,
         layer: BackgroundLayer,
         displaySize: CGSize,
+        scale: CGFloat = 1,
     ) -> NSImage {
-        // Resize to target display size before applying effects
-        let source: NSImage = if abs(image.size.width - displaySize.width) > 1
-            || abs(image.size.height - displaySize.height) > 1 {
-            resizeImage(image, to: displaySize)
+        let targetPixelSize = CGSize(
+            width: (displaySize.width * scale).rounded(),
+            height: (displaySize.height * scale).rounded(),
+        )
+        let source: NSImage = if abs(image.size.width - targetPixelSize.width) > 1
+            || abs(image.size.height - targetPixelSize.height) > 1 {
+            resizeImage(image, to: targetPixelSize)
         } else {
             image
         }
@@ -619,11 +626,11 @@ nonisolated enum CompositeRenderer {
 
         // 1. Blur (variable or gaussian, not both)
         if let vb = layer.variableBlur {
-            ciImage = applyVariableBlur(to: ciImage, config: vb)
+            ciImage = applyVariableBlur(to: ciImage, config: vb, scale: scale)
         } else if layer.blurRadius > 0 {
             let f = CIFilter.gaussianBlur()
             f.inputImage = ciImage
-            f.radius = Float(layer.blurRadius)
+            f.radius = Float(layer.blurRadius * scale)
             if let out = f.outputImage {
                 ciImage = out.cropped(to: extent)
             }
@@ -644,7 +651,7 @@ nonisolated enum CompositeRenderer {
             let f = CIFilter.vignette()
             f.inputImage = ciImage
             f.intensity = Float(v.intensity)
-            f.radius = Float(v.radius)
+            f.radius = Float(v.radius * scale)
             if let out = f.outputImage {
                 ciImage = out.cropped(to: extent)
             }
@@ -655,7 +662,7 @@ nonisolated enum CompositeRenderer {
             let f = CIFilter.bloom()
             f.inputImage = ciImage
             f.intensity = Float(b.intensity)
-            f.radius = Float(b.radius)
+            f.radius = Float(b.radius * scale)
             if let out = f.outputImage {
                 ciImage = out.cropped(to: extent)
             }
@@ -713,7 +720,7 @@ nonisolated enum CompositeRenderer {
         return NSImage(cgImage: resized, size: size)
     }
 
-    static func applyVariableBlur(to image: CIImage, config: VariableBlurConfiguration) -> CIImage {
+    static func applyVariableBlur(to image: CIImage, config: VariableBlurConfiguration, scale: CGFloat = 1) -> CIImage {
         let extent = image.extent
 
         // Generate gradient mask based on maskType
@@ -755,7 +762,7 @@ nonisolated enum CompositeRenderer {
         let filter = CIFilter.maskedVariableBlur()
         filter.inputImage = image
         filter.mask = mask
-        filter.radius = Float(config.radius)
+        filter.radius = Float(config.radius * scale)
         return filter.outputImage?.cropped(to: extent) ?? image
     }
 
