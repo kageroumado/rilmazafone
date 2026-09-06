@@ -70,6 +70,13 @@
             /// Extra `KEY=VALUE` settings passed to `xcodebuild archive`.
             var extraBuildSettings: [String: String] = [:]
 
+            /// Extra argv flags passed to `xcodebuild archive` — actual flags, not
+            /// `KEY=VALUE` settings. For a project whose package build-tool plugin
+            /// or macro is not trusted in a fresh archive (e.g.
+            /// `-skipPackagePluginValidation`, `-skipMacroValidation` for a build
+            /// that pulls mlx-swift), which xcodebuild cannot prompt for.
+            var extraArchiveFlags: [String] = []
+
             init() {}
 
             init(from decoder: any Decoder) throws {
@@ -82,6 +89,8 @@
                 self.versionConstant = try container.decodeIfPresent(String.self, forKey: .versionConstant)
                 self.extraBuildSettings = try container
                     .decodeIfPresent([String: String].self, forKey: .extraBuildSettings) ?? [:]
+                self.extraArchiveFlags = try container
+                    .decodeIfPresent([String].self, forKey: .extraArchiveFlags) ?? []
             }
         }
 

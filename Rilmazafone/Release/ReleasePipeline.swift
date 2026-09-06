@@ -443,6 +443,10 @@
                 "ONLY_ACTIVE_ARCH=NO",
                 "SWIFT_COMPILATION_MODE=incremental",
             ]
+            // Plan-supplied archive flags (e.g. -skipPackagePluginValidation for an
+            // untrusted package build-tool plugin) — argv flags, ahead of the KEY=VALUE
+            // settings so a plan can turn off a check xcodebuild can't prompt for.
+            arguments += resolved.plan.project.extraArchiveFlags
             for (key, value) in resolved.plan.project.extraBuildSettings.sorted(by: { $0.key < $1.key }) {
                 arguments.append("\(key)=\(value)")
             }
