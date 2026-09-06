@@ -185,6 +185,7 @@
                         if let logURL {
                             print("  log:      \(logURL.path)")
                         }
+                        await printUpdateNotice()
                     }
                     printer.logLine("RESULT: success")
                     return 0
@@ -253,7 +254,25 @@
                 print("  notarization: \(record.notarized ? "accepted + stapled" : "skipped")")
             }
             print("  published: \(record.publishedURL ?? "not yet")")
+            printUpdateNoticeSync()
             return 0
+        }
+
+        // MARK: - Update Notice
+
+        /// Appends a one-line pointer to a newer Rilmazafone when GitHub has one.
+        /// Silent when up to date or offline — a check never nags or blocks.
+        private static func printUpdateNotice() async {
+            guard let result = await UpdateCheck.fetchLatest(), result.updateAvailable else { return }
+            print("")
+            print("\u{26A0} Rilmazafone \(result.latest) is available \u{2014} \(result.pageURL.absoluteString) (you have \(result.current))")
+        }
+
+        private static func printUpdateNoticeSync() {
+            _ = waitFor {
+                await printUpdateNotice()
+                return 0
+            }
         }
 
         private static func doctor(arguments: [String]) -> Int32 {

@@ -65,6 +65,8 @@ And the release pipeline (2.0, GitHub build):
 - **Xcode Organizer Integration** — Archives land in Organizer's store and existing archives can be reused instead of rebuilding
 - **Auto-Detection** — Repo from the git remote, schemes from the project, identity from the keychain, push access verified through `gh`
 - **Release CLI** — `release build / publish / staple / status / doctor`, NDJSON stage events for CI, proper exit codes, persistent per-plan logs
+- **Build Hooks & Flags** — A *pre-sign hook* runs after archive and before signing, so an app can inject anything that must carry its own Developer ID — e.g. a separately-built CLI dropped into `Contents/Resources`, so one signature and one notarization cover both. *Extra archive flags* pass straight to `xcodebuild archive` for projects whose package build-tool plugins or macros aren't trusted headlessly (`-skipPackagePluginValidation`, `-skipMacroValidation` — what an mlx-swift build needs)
+- **Update Check** — The GitHub build checks its own latest release: a **Check for Updates…** menu item, a **Settings** button, and a one-line pointer in the CLI output when a newer build exists. It's tooling, so it points you to the releases page rather than updating in place
 - **Finder Thumbnails** — Both document types show their design as the file icon, via a QuickLook extension
 
 ## Download

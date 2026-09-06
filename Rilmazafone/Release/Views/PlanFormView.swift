@@ -67,6 +67,11 @@
                 signingSection
                 artifactsSection
                 designSection
+                if isEditing
+                    || !document.plan.project.extraArchiveFlags.isEmpty
+                    || document.plan.hooks.preSign != nil {
+                    advancedSection
+                }
             }
             .formStyle(.grouped)
         }
@@ -279,6 +284,65 @@
                         Image(systemName: "photo")
                             .foregroundStyle(.secondary)
                     }
+            }
+        }
+
+        // MARK: - Advanced Section
+
+        /// The escape hatches most plans never touch: extra archive flags and
+        /// the pre-sign hook. Hidden entirely in execute mode when unset.
+        @ViewBuilder
+        private var advancedSection: some View {
+            Section("Advanced") {
+                HStack(spacing: 6) {
+                    if isEditing {
+                        TextField(
+                            "Archive flags",
+                            text: archiveFlagsBinding,
+                            prompt: Text("none"),
+                        )
+                        .autocorrectionDisabled()
+                    } else if !document.plan.project.extraArchiveFlags.isEmpty {
+                        staticRow(
+                            "Archive flags",
+                            document.plan.project.extraArchiveFlags.joined(separator: " "),
+                        )
+                    }
+                    if isEditing || !document.plan.project.extraArchiveFlags.isEmpty {
+                        InfoPopoverButton(
+                            title: "Archive flags",
+                            text: "Extra flags passed straight to xcodebuild archive \u{2014} "
+                                + "actual flags, not KEY=VALUE settings. Needed when a package "
+                                + "build-tool plugin or macro isn\u{2019}t trusted in a fresh "
+                                + "archive, which xcodebuild can\u{2019}t prompt for headlessly.",
+                            command: "-skipPackagePluginValidation -skipMacroValidation",
+                            footnote: "Space-separated. The example is what an mlx-swift build needs.",
+                        )
+                    }
+                }
+
+                HStack(spacing: 6) {
+                    if isEditing {
+                        TextField(
+                            "Pre-sign hook",
+                            text: optionalPlanBinding("Change Pre-sign Hook", \.hooks.preSign),
+                            prompt: Text("script path (optional)"),
+                        )
+                    } else if let hook = document.plan.hooks.preSign {
+                        staticRow("Pre-sign hook", hook)
+                    }
+                    if isEditing || document.plan.hooks.preSign != nil {
+                        InfoPopoverButton(
+                            title: "Pre-sign hook",
+                            text: "An executable (repo-relative or absolute) run after archive, "
+                                + "before signing, with the archived .app path as its first "
+                                + "argument (also RILMAZAFONE_APP_PATH). Where an app injects "
+                                + "anything that must carry its own Developer ID \u{2014} a "
+                                + "separately-built CLI dropped into Contents/Resources, so one "
+                                + "signature and one notarization cover both.",
+                        )
+                    }
+                }
             }
         }
 
@@ -624,6 +688,20 @@
 
         private var bumpBinding: Binding<ReleasePlan.BumpPolicy> {
             planBinding("Change Bump Policy", \.versioning.bump)
+        }
+
+        /// Whitespace-separated flags ↔ the stored `[String]`.
+        private var archiveFlagsBinding: Binding<String> {
+            Binding(
+                get: { document.plan.project.extraArchiveFlags.joined(separator: " ") },
+                set: { newValue in
+                    document.updatePlan("Change Archive Flags", undoManager: undoManager) { plan in
+                        plan.project.extraArchiveFlags = newValue
+                            .split(whereSeparator: \.isWhitespace)
+                            .map(String.init)
+                    }
+                },
+            )
         }
 
         // MARK: - Actions

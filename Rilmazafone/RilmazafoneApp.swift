@@ -33,6 +33,13 @@ struct RilmazafoneApp: App {
         // (AppDelegate) instead of DocumentGroup's automatic untitled window.
         .defaultLaunchBehavior(.suppressed)
         .commands {
+            #if !APPSTORE
+                CommandGroup(after: .appInfo) {
+                    Button("Check for Updates\u{2026}") {
+                        UpdateCheckPresenter.present()
+                    }
+                }
+            #endif
             SidebarCommands()
             InspectorCommands()
             CommandGroup(replacing: .newItem) {
