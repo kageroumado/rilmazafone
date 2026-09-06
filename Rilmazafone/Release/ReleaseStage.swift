@@ -26,6 +26,7 @@
             case preflight
             case versionBump
             case archive
+            case preSign
             case sign
             case notarizeApp
             case buildDMG
@@ -56,6 +57,7 @@
             case .preflight: ReleaseStage(id: id, phase: .build, title: "Preflight")
             case .versionBump: ReleaseStage(id: id, phase: .build, title: "Version bump")
             case .archive: ReleaseStage(id: id, phase: .build, title: "Archive")
+            case .preSign: ReleaseStage(id: id, phase: .build, title: "Pre-sign hook")
             case .sign: ReleaseStage(id: id, phase: .build, title: "Sign")
             case .notarizeApp: ReleaseStage(id: id, phase: .build, title: "Notarize app")
             case .buildDMG: ReleaseStage(id: id, phase: .build, title: "Build DMG")

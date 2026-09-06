@@ -35,7 +35,10 @@
         static func stagePlan(for request: ReleaseRunRequest) -> [ReleaseStage] {
             var ids: [ReleaseStage.ID] = [.preflight]
             if request.phases.contains(.build) {
-                ids += [.versionBump, .archive, .sign]
+                ids += [.versionBump, .archive]
+                // After the archive produces the .app, before signing seals it.
+                if request.plan.hooks.preSign != nil { ids.append(.preSign) }
+                ids.append(.sign)
                 if request.notarization == .wait { ids.append(.notarizeApp) }
                 ids.append(.buildDMG)
                 if request.notarization != .skip { ids.append(.notarizeDMG) }
@@ -187,6 +190,7 @@
             case .preflight: try await preflight(context, emit)
             case .versionBump: try versionBump(context)
             case .archive: try await archive(context, emit)
+            case .preSign: try await preSignHook(context, emit)
             case .sign: try await sign(context, emit)
             case .notarizeApp: try await notarizeApp(context, emit)
             case .buildDMG: try await buildDMG(context, emit)
@@ -240,6 +244,15 @@
                         )
                     }
                     checks.append("notary profile")
+                }
+
+                if let hookURL = resolved.preSignHookURL {
+                    guard FileManager.default.isExecutableFile(atPath: hookURL.path) else {
+                        throw ReleasePipelineError(
+                            "Pre-sign hook is not an executable file: \(hookURL.path)",
+                        )
+                    }
+                    checks.append("pre-sign hook")
                 }
             } else {
                 // Publish-only: a current, intact build record is the input.
@@ -463,6 +476,35 @@
                   let regex = try? Regex(pattern)
             else { return [] }
             return text.split(separator: "\n").filter { $0.starts(with: regex) }.map(String.init)
+        }
+
+        // MARK: - Pre-sign Hook
+
+        /// The app-specific step between archive and sign: run the plan's `preSign`
+        /// hook against the archived `.app`, so anything it injects (a separately
+        /// built CLI, generated resources) is in place before the inside-out signing
+        /// seals the bundle and carries the app's Developer ID.
+        private func preSignHook(_ context: RunContext, _ emit: Emit) async throws -> StageOutcome {
+            guard let scriptURL = context.resolved.preSignHookURL else {
+                return .skipped(reason: "no pre-sign hook")
+            }
+            await emit(.log(.preSign, "Running \(scriptURL.lastPathComponent)…"))
+            // Environment travels via a wrapper invocation of /usr/bin/env so
+            // ProcessRunner stays environment-agnostic; the app path is also $1 so a
+            // hook can take it positionally without reading the environment.
+            let environment = [
+                "RILMAZAFONE_APP=\(context.resolved.appName)",
+                "RILMAZAFONE_APP_PATH=\(context.appSource.path)",
+                "RILMAZAFONE_VERSION=\(context.version)",
+                "RILMAZAFONE_BUILD=\(context.build)",
+                "RILMAZAFONE_REPO_ROOT=\(context.resolved.repoRoot.path)",
+            ]
+            try await ProcessRunner.run(
+                "/usr/bin/env",
+                arguments: environment + [scriptURL.path, context.appSource.path],
+                currentDirectory: context.resolved.repoRoot,
+            )
+            return .ok(detail: scriptURL.lastPathComponent)
         }
 
         // MARK: - Sign

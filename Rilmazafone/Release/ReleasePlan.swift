@@ -25,6 +25,7 @@
         var artifacts: Artifacts = .init()
         var versioning: Versioning = .init()
         var publish: Publish = .init()
+        var hooks: Hooks = .init()
 
         init() {}
 
@@ -39,6 +40,7 @@
             self.artifacts = try container.decodeIfPresent(Artifacts.self, forKey: .artifacts) ?? .init()
             self.versioning = try container.decodeIfPresent(Versioning.self, forKey: .versioning) ?? .init()
             self.publish = try container.decodeIfPresent(Publish.self, forKey: .publish) ?? .init()
+            self.hooks = try container.decodeIfPresent(Hooks.self, forKey: .hooks) ?? .init()
         }
 
         // MARK: - Project
@@ -276,6 +278,27 @@
                 self.notesFile = try container.decodeIfPresent(String.self, forKey: .notesFile)
             }
         }
+
+        // MARK: - Hooks
+
+        /// Repo-relative scripts the pipeline runs at fixed build points, for
+        /// app-specific steps the generic pipeline cannot know about.
+        nonisolated struct Hooks: Codable, Hashable {
+            /// Executable run **after archive, before signing**, with the
+            /// archived `.app` path as its first argument (also
+            /// `RILMAZAFONE_APP_PATH` in the environment). This is where an app
+            /// injects anything that must carry the app's own Developer ID —
+            /// e.g. a separately-built CLI embedded into `Contents/Resources`,
+            /// so one signature and one notarization cover both.
+            var preSign: String?
+
+            init() {}
+
+            init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.preSign = try container.decodeIfPresent(String.self, forKey: .preSign)
+            }
+        }
     }
 
     // MARK: - Resolution
@@ -331,6 +354,10 @@
 
         var notesFileURL: URL? {
             plan.publish.notesFile.map { ReleasePlan.resolve($0, against: repoRoot) }
+        }
+
+        var preSignHookURL: URL? {
+            plan.hooks.preSign.map { ReleasePlan.resolve($0, against: repoRoot) }
         }
 
         /// Where finished artifacts land.
