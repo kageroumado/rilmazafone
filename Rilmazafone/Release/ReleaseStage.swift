@@ -39,6 +39,7 @@
             case caskBump
             case runScript
             case postScript
+            case install
         }
 
         let id: ID
@@ -46,9 +47,12 @@
         let title: String
 
         var failurePolicy: FailurePolicy {
+            // Installing runs after the artifacts exist; a failed copy must not
+            // revert a finished build.
+            if id == .install { return .forwardFix }
             switch phase {
-            case .build: .revert
-            case .publish: .forwardFix
+            case .build: return .revert
+            case .publish: return .forwardFix
             }
         }
 
@@ -70,6 +74,7 @@
             case .caskBump: ReleaseStage(id: id, phase: .publish, title: "Cask bump")
             case .runScript: ReleaseStage(id: id, phase: .publish, title: "Publish script")
             case .postScript: ReleaseStage(id: id, phase: .publish, title: "Post script")
+            case .install: ReleaseStage(id: id, phase: .build, title: "Install")
             }
         }
     }
@@ -129,6 +134,15 @@
         /// Reuse this Xcode Organizer archive instead of archiving fresh —
         /// the Archive stage validates and adopts it.
         var existingArchive: URL?
+
+        /// Copy the finished app into /Applications at the end of the run,
+        /// replacing the installed copy. The plan's `installToApplications`
+        /// turns this on for every run.
+        var install = false
+
+        var installsToApplications: Bool {
+            install || plan.publish.installToApplications
+        }
     }
 
     // MARK: - Summary

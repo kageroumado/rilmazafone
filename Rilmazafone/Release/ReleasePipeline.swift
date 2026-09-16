@@ -63,6 +63,7 @@
                     ids.append(.postScript)
                 }
             }
+            if request.installsToApplications { ids.append(.install) }
             return ids.map(ReleaseStage.stage)
         }
 
@@ -91,8 +92,9 @@
             var lockAcquired = false
 
             /// Where this run's archive lives — a fresh Organizer-visible
-            /// archive, or the existing one the request reuses.
-            let archivePath: URL
+            /// archive, the existing one the request reuses, or the recorded
+            /// build's archive in a publish-only run.
+            var archivePath: URL
 
             var appSource: URL {
                 archivePath.appending(path: "Products/Applications/\(resolved.appName).app")
@@ -203,6 +205,7 @@
             case .caskBump: await caskBump(context, emit)
             case .runScript: try await runScript(context, script: context.resolved.plan.publish.script)
             case .postScript: try await runScript(context, script: context.resolved.plan.publish.postScript)
+            case .install: try await install(context, emit)
             }
         }
 
@@ -271,6 +274,9 @@
                 context.build = record.build
                 context.dmgSizeBytes = record.dmgSizeBytes
                 context.artifacts = record.artifactURLs
+                if let archivePath = record.archivePath {
+                    context.archivePath = URL(fileURLWithPath: archivePath)
+                }
                 checks.append("build #\(record.build) (v\(record.version))")
             }
 
@@ -895,6 +901,30 @@
             ])
             context.artifacts.append(zipURL)
             return .ok(detail: zipURL.lastPathComponent)
+        }
+
+        // MARK: - Install
+
+        /// Copies the signed app from the archive into /Applications. The copy
+        /// already there goes to the Trash first, so a running instance keeps
+        /// its mapped binary and the old bundle stays recoverable.
+        private func install(_ context: RunContext, _ emit: Emit) async throws -> StageOutcome {
+            let source = context.appSource
+            guard FileManager.default.fileExists(atPath: source.path) else {
+                throw ReleasePipelineError("App not found in archive at \(source.path)")
+            }
+            let destination = URL(fileURLWithPath: "/Applications")
+                .appending(path: source.lastPathComponent)
+
+            var replaced = false
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.trashItem(at: destination, resultingItemURL: nil)
+                replaced = true
+                await emit(.log(.install, "Previous copy moved to the Trash"))
+            }
+            try await ProcessRunner.run("/usr/bin/ditto", arguments: [source.path, destination.path])
+
+            return .ok(detail: "\(destination.path)\(replaced ? " (replaced)" : "")")
         }
 
         // MARK: - Commit + Push

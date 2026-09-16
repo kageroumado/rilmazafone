@@ -200,6 +200,25 @@
             Section("Artifacts") {
                 HStack(spacing: 6) {
                     if isEditing {
+                        Toggle(
+                            "Install to /Applications",
+                            isOn: planBinding("Toggle Install", \.publish.installToApplications),
+                        )
+                    } else {
+                        staticRow(
+                            "Install to /Applications",
+                            document.plan.publish.installToApplications ? "on" : "off",
+                        )
+                    }
+                    InfoPopoverButton(
+                        title: "Install to /Applications",
+                        text: "Copies the finished app into /Applications at the end of every run, "
+                            + "moving the installed copy to the Trash first. The CLI's --install "
+                            + "flag does the same for a single run.",
+                    )
+                }
+                HStack(spacing: 6) {
+                    if isEditing {
                         Toggle("App zip", isOn: planBinding("Toggle App Zip", \.artifacts.appZip))
                     } else {
                         staticRow("App zip", document.plan.artifacts.appZip ? "on" : "off")

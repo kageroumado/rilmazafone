@@ -49,6 +49,7 @@
               --skip-notarize         No notarization (Gatekeeper will block it elsewhere)
               --async-notarize        Submit, then `release staple` later
               --republish             Rebuild current version, clobber release assets
+              --install               Copy the finished app into /Applications
               --json                  Stage events as NDJSON on stdout
 
             Exit codes: 0 success · 1 pipeline failure · 2 usage error.
@@ -67,6 +68,7 @@
             var prerelease = false
             var notarization: NotarizationMode = .wait
             var republish = false
+            var install = false
             var json = false
         }
 
@@ -80,6 +82,7 @@
             var prerelease = false
             var notarization = NotarizationMode.wait
             var republish = false
+            var install = false
             var json = false
 
             while let argument = iterator.next() {
@@ -106,6 +109,8 @@
                     notarization = .async
                 case "--republish":
                     republish = true
+                case "--install":
+                    install = true
                 case "--json":
                     json = true
                 default:
@@ -136,7 +141,7 @@
             return Options(
                 planURL: planURL, plan: plan, version: version, notes: notes,
                 prerelease: prerelease, notarization: notarization,
-                republish: republish, json: json,
+                republish: republish, install: install, json: json,
             )
         }
 
@@ -176,6 +181,7 @@
                 prerelease: options.prerelease,
                 notarization: options.notarization,
                 republish: options.republish,
+                install: options.install,
             )
 
             // Every run appends its transcript to the plan's release log —

@@ -273,6 +273,10 @@
             /// on the CLI override it.
             var notesFile: String?
 
+            /// Copy the finished app into /Applications at the end of every run,
+            /// replacing the installed copy (the CLI's `--install` does it once).
+            var installToApplications: Bool = false
+
             init() {}
 
             init(from decoder: any Decoder) throws {
@@ -285,6 +289,7 @@
                 self.script = try container.decodeIfPresent(String.self, forKey: .script)
                 self.postScript = try container.decodeIfPresent(String.self, forKey: .postScript)
                 self.notesFile = try container.decodeIfPresent(String.self, forKey: .notesFile)
+                self.installToApplications = try container.decodeIfPresent(Bool.self, forKey: .installToApplications) ?? false
             }
         }
 

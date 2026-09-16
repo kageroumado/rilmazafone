@@ -179,6 +179,8 @@ rilmazafone release status  MyApp.releaseplan            # build record · notar
 rilmazafone release doctor  MyApp.releaseplan            # preflight: identity · notary · gh access
 ```
 
+`--install` on `build` or `publish` copies the finished app into `/Applications` (the installed copy goes to the Trash); the plan's `installToApplications` does it on every run.
+
 `--json` streams stage events as NDJSON for CI. Exit codes: 0 success, 1 pipeline failure, 2 usage error; every run appends a transcript to the plan's `release.log`.
 
 **Key `document.json` fields for CLI use:**
