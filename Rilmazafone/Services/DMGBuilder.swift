@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Security
 
@@ -273,10 +274,26 @@ nonisolated enum DMGBuilder {
         try await ProcessRunner.run(
             Executable.codesign,
             arguments: [
-                "--sign", resolvedIdentity,
+                "--sign", codesignIdentityArgument(for: resolvedIdentity),
                 dmgPath.path,
             ],
         )
+    }
+
+    /// The value to hand `codesign --sign` for a keychain identity name: the
+    /// certificate's SHA-1 fingerprint when the name is in the keychain, else
+    /// the name itself.
+    ///
+    /// codesign on macOS 27 decodes a non-ASCII identity name from its command
+    /// line as MacRoman, so "Muñoz" never matches and signing fails with
+    /// "no identity found" in either Unicode normalization. The fingerprint is
+    /// ASCII and names exactly one certificate.
+    static func codesignIdentityArgument(for name: String) -> String {
+        guard let match = signingIdentityCertificates().first(where: { $0.name == name }) else {
+            return name
+        }
+        let der = SecCertificateCopyData(match.certificate) as Data
+        return Insecure.SHA1.hash(data: der).map { String(format: "%02X", $0) }.joined()
     }
 
     /// Lists the common names of keychain identities capable of code signing —
@@ -349,6 +366,12 @@ nonisolated enum DMGBuilder {
     /// plus the `-v` validity evaluation, so expired, revoked, and untrusted
     /// identities are never listed, matched, or auto-selected.
     private static func signingIdentities() -> [String] {
+        signingIdentityCertificates().map(\.name)
+    }
+
+    /// The code-signing identities of `signingIdentities()` with their leaf
+    /// certificates, for callers that need the certificate itself.
+    private static func signingIdentityCertificates() -> [(name: String, certificate: SecCertificate)] {
         let query: [String: Any] = [
             kSecClass as String: kSecClassIdentity,
             kSecMatchLimit as String: kSecMatchLimitAll,
@@ -367,9 +390,10 @@ nonisolated enum DMGBuilder {
             guard SecIdentityCopyCertificate(identity, &certificate) == errSecSuccess,
                   let certificate,
                   canSignCode(certificate),
-                  isTrustedForCodeSigning(certificate)
+                  isTrustedForCodeSigning(certificate),
+                  let name = commonName(of: certificate)
             else { return nil }
-            return commonName(of: certificate)
+            return (name, certificate)
         }
     }
 

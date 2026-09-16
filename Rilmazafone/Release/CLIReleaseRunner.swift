@@ -34,8 +34,9 @@
 
             Commands:
               build     Archive, sign, notarize, build + verify the DMG (artifacts only)
-              publish   Ship the latest build through the plan's channel
-                        (builds first when no current build exists)
+              publish   Ship the build waiting from `release build` through the
+                        plan's channel; builds first when none is waiting or the
+                        last one was already published
               staple    Finish an --async-notarize build once Apple accepts it
               status    Show the latest build record
               doctor    Preflight checks without running anything
@@ -144,13 +145,24 @@
         private static func runPhase(_ phases: Set<ReleaseStage.Phase>, arguments: [String]) -> Int32 {
             guard let options = parse(arguments) else { return 2 }
 
-            // `publish` with no current build runs the whole pipeline.
+            // `publish` ships the build waiting from `release build`; with none
+            // waiting it runs the whole pipeline. A record that has already been
+            // published is spent: shipping it again would recreate the same
+            // release, so it counts as "nothing waiting".
             var effectivePhases = phases
-            if phases == [.publish] {
+            if phases == [.publish], !options.republish {
                 let record = BuildRecordStore.load(planIdentity: options.plan.identity)
-                let current = record.map { $0.dmgExists && $0.pendingSubmissionID == nil } ?? false
-                if !current {
-                    progress("No current build — running build + publish.")
+                let waiting = record.map {
+                    $0.dmgExists && $0.pendingSubmissionID == nil && $0.publishedURL == nil
+                } ?? false
+                if let record, waiting {
+                    progress("Publishing the waiting build #\(record.build) (v\(record.version)).")
+                } else {
+                    if let record, record.publishedURL != nil {
+                        progress("Build #\(record.build) (v\(record.version)) is already published — running build + publish.")
+                    } else {
+                        progress("No build waiting — running build + publish.")
+                    }
                     effectivePhases = [.build, .publish]
                 }
             }

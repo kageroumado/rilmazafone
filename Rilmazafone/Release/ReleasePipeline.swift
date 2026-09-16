@@ -233,7 +233,7 @@
                             + "Set an explicit signing identity in the plan.",
                     )
                 }
-                context.signingIdentity = identity
+                context.signingIdentity = DMGBuilder.codesignIdentityArgument(for: identity)
                 checks.append("identity")
 
                 if request.notarization != .skip {
