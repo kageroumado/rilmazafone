@@ -20,6 +20,7 @@ import UniformTypeIdentifiers
     "Template authoring",
     .enabled(if: ProcessInfo.processInfo.environment["GENERATE_TEMPLATES"] == "1"),
 )
+@MainActor
 struct TemplateAuthoring {
     typealias RGBColor = Rilmazafone.RGBColor
 
