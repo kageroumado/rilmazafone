@@ -9,11 +9,14 @@ nonisolated enum DMGBuilder {
         case conversionFailed(String)
         case noSigningIdentity
         case detachFailed(String)
+        case notMounted(mountPoint: String, hdiutilOutput: String)
 
         var errorDescription: String? {
             switch self {
             case .mountPointNotFound:
                 "Could not determine mount point from hdiutil output."
+            case let .notMounted(mountPoint, hdiutilOutput):
+                "hdiutil reported success but no volume is mounted at \(mountPoint). hdiutil said: \(hdiutilOutput)"
             case let .conversionFailed(detail):
                 "DMG conversion failed: \(detail)"
             case .noSigningIdentity:
@@ -74,7 +77,7 @@ nonisolated enum DMGBuilder {
 
         try FileManager.default.createDirectory(at: tempMount, withIntermediateDirectories: true)
 
-        try await ProcessRunner.run(
+        let result = try await ProcessRunner.run(
             Executable.hdiutil,
             arguments: [
                 "attach", dmgPath.path,
@@ -84,8 +87,26 @@ nonisolated enum DMGBuilder {
                 "-mountpoint", tempMount.path,
             ],
         )
+        try requireMounted(tempMount, hdiutilOutput: result)
 
         return tempMount
+    }
+
+    /// Throws unless a volume is mounted at `mountPoint`.
+    ///
+    /// hdiutil can exit 0 without mounting; every later step would then write
+    /// into the plain directory and the finished image would be empty.
+    private static func requireMounted(_ mountPoint: URL, hdiutilOutput: ProcessRunner.ProcessResult) throws {
+        let mountID = try mountPoint.resourceValues(forKeys: [.volumeIdentifierKey]).volumeIdentifier
+        let parentID = try mountPoint.deletingLastPathComponent()
+            .resourceValues(forKeys: [.volumeIdentifierKey]).volumeIdentifier
+        guard let mountID, let parentID, !mountID.isEqual(parentID) else {
+            let output = [hdiutilOutput.stdout, hdiutilOutput.stderr]
+                .compactMap { String(data: $0, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " | ")
+            throw DMGError.notMounted(mountPoint: mountPoint.path, hdiutilOutput: output)
+        }
     }
 
     /// Mounts a DMG read-only for inspection and returns the mount point URL.
@@ -100,7 +121,7 @@ nonisolated enum DMGBuilder {
         try FileManager.default.createDirectory(at: tempMount, withIntermediateDirectories: true)
 
         do {
-            try await ProcessRunner.run(
+            let result = try await ProcessRunner.run(
                 Executable.hdiutil,
                 arguments: [
                     "attach", dmgPath.path,
@@ -111,6 +132,7 @@ nonisolated enum DMGBuilder {
                     "-mountpoint", tempMount.path,
                 ],
             )
+            try requireMounted(tempMount, hdiutilOutput: result)
         } catch {
             try? FileManager.default.removeItem(at: tempMount)
             throw error
