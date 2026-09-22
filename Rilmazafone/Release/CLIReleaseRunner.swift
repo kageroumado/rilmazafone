@@ -34,9 +34,9 @@
 
             Commands:
               build     Archive, sign, notarize, build + verify the DMG (artifacts only)
-              publish   Ship the build waiting from `release build` through the
-                        plan's channel; builds first when none is waiting or the
-                        last one was already published
+              publish   Build, then ship through the plan's channel. A build
+                        waiting from `release build` is superseded, and said so;
+                        --skip-build ships it instead of building
               staple    Finish an --async-notarize build once Apple accepts it
               status    Show the latest build record
               doctor    Preflight checks without running anything
@@ -48,6 +48,8 @@
               -p, --prerelease        Mark the GitHub release as a prerelease
               --skip-notarize         No notarization (Gatekeeper will block it elsewhere)
               --async-notarize        Submit, then `release staple` later
+              --skip-build            publish: ship the waiting `release build` as it is;
+                                      refused when none is waiting or it was published
               --republish             Rebuild current version, clobber release assets
               --install               Copy the finished app into /Applications
               --json                  Stage events as NDJSON on stdout
@@ -68,6 +70,7 @@
             var prerelease = false
             var notarization: NotarizationMode = .wait
             var republish = false
+            var skipBuild = false
             var install = false
             var json = false
         }
@@ -82,6 +85,7 @@
             var prerelease = false
             var notarization = NotarizationMode.wait
             var republish = false
+            var skipBuild = false
             var install = false
             var json = false
 
@@ -109,6 +113,8 @@
                     notarization = .async
                 case "--republish":
                     republish = true
+                case "--skip-build":
+                    skipBuild = true
                 case "--install":
                     install = true
                 case "--json":
@@ -141,7 +147,7 @@
             return Options(
                 planURL: planURL, plan: plan, version: version, notes: notes,
                 prerelease: prerelease, notarization: notarization,
-                republish: republish, install: install, json: json,
+                republish: republish, skipBuild: skipBuild, install: install, json: json,
             )
         }
 
@@ -150,26 +156,39 @@
         private static func runPhase(_ phases: Set<ReleaseStage.Phase>, arguments: [String]) -> Int32 {
             guard let options = parse(arguments) else { return 2 }
 
-            // `publish` ships the build waiting from `release build`; with none
-            // waiting it runs the whole pipeline. A record that has already been
-            // published is spent: shipping it again would recreate the same
-            // release, so it counts as "nothing waiting".
+            // `publish` builds, then ships. A build waiting from `release build`
+            // is shipped only when asked (--skip-build): shipping it unasked is
+            // how a stale dry run ends up on the releases page under a new
+            // version's name. A record already published is spent either way.
             var effectivePhases = phases
             if phases == [.publish], !options.republish {
                 let record = BuildRecordStore.load(planIdentity: options.plan.identity)
                 let waiting = record.map {
                     $0.dmgExists && $0.pendingSubmissionID == nil && $0.publishedURL == nil
                 } ?? false
-                if let record, waiting {
-                    progress("Publishing the waiting build #\(record.build) (v\(record.version)).")
+                if options.skipBuild {
+                    guard let record, waiting else {
+                        if let record, record.publishedURL != nil {
+                            error("--skip-build: build #\(record.build) (v\(record.version)) is already published at \(record.publishedURL!) — nothing waiting to ship.")
+                        } else {
+                            error("--skip-build: no build waiting — run `release build` first, or publish without --skip-build.")
+                        }
+                        return 2
+                    }
+                    if options.version != nil {
+                        error("--skip-build ships build #\(record.build) as it is; --version cannot change it.")
+                        return 2
+                    }
+                    progress("Publishing the waiting build #\(record.build) (v\(record.version), \(record.createdAt.formatted())) as it is.")
                 } else {
-                    if let record, record.publishedURL != nil {
-                        progress("Build #\(record.build) (v\(record.version)) is already published — running build + publish.")
-                    } else {
-                        progress("No build waiting — running build + publish.")
+                    if let record, waiting {
+                        progress("Build #\(record.build) (v\(record.version), \(record.createdAt.formatted())) is waiting from `release build` and will be superseded — pass --skip-build to ship it as it is.")
                     }
                     effectivePhases = [.build, .publish]
                 }
+            } else if options.skipBuild {
+                error("--skip-build only applies to `release publish`.")
+                return 2
             }
 
             let request = ReleaseRunRequest(
