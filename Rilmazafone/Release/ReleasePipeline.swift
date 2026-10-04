@@ -1023,6 +1023,14 @@
             if notes.isEmpty, let notesURL = context.resolved.notesFileURL {
                 notes = (try? String(contentsOf: notesURL, encoding: .utf8)) ?? ""
             }
+            // The Releases page lists every asset with equal weight; this line names
+            // the one a visitor wants.
+            if let dmg = assetPaths.first(where: { $0.hasSuffix(".dmg") }) {
+                let name = URL(filePath: dmg).lastPathComponent
+                let path = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? name
+                let line = "**Download:** [\(name)](https://github.com/\(repo)/releases/download/\(tag)/\(path))"
+                notes = notes.isEmpty ? line : "\(line)\n\n\(notes)"
+            }
 
             var arguments = ["release", "create", tag] + assetPaths + [
                 "--repo", repo,
