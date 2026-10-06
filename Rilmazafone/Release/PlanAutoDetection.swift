@@ -147,16 +147,25 @@
             return pbxproj.replacing(try! Regex("\(key) = [^;]+;")) { _ in "\(key) = \(value);" }
         }
 
+        /// The next version, always `X.Y.Z`. Tag, DMG name and cask version all carry it
+        /// verbatim, and mxcl/AppUpdater only finds `<repo>-X.Y.Z.dmg`: a `v1.9` release with
+        /// `App-1.9.dmg` is invisible to every installed copy.
         static func bumped(_ version: String, policy: ReleasePlan.BumpPolicy) -> String {
             var parts = version.split(separator: ".").map { Int($0) ?? 0 }
-            while parts.count < 2 { parts.append(0) }
+            while parts.count < 3 { parts.append(0) }
             switch policy {
             case .minor:
-                return "\(parts[0]).\(parts[1] + 1)"
+                return "\(parts[0]).\(parts[1] + 1).0"
             case .patch:
-                while parts.count < 3 { parts.append(0) }
                 return "\(parts[0]).\(parts[1]).\(parts[2] + 1)"
             }
+        }
+
+        /// `version` as `X.Y.Z`, missing components filled with zero.
+        static func semantic(_ version: String) -> String {
+            var parts = version.split(separator: ".").map(String.init)
+            while parts.count < 3 { parts.append("0") }
+            return parts.joined(separator: ".")
         }
 
         // MARK: Identity

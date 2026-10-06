@@ -345,7 +345,7 @@
                 guard override.wholeMatch(of: /\d+\.\d+(\.\d+)?/) != nil else {
                     throw ReleasePipelineError("Invalid version format: \(override) (expected X.Y or X.Y.Z)")
                 }
-                context.version = override
+                context.version = PlanAutoDetection.semantic(override)
             } else {
                 context.version = PlanAutoDetection.bumped(
                     current.marketing, policy: context.resolved.plan.versioning.bump,
