@@ -13,6 +13,9 @@
         static let spctl = "/usr/sbin/spctl"
         static let hdiutil = "/usr/bin/hdiutil"
         static let ditto = "/usr/bin/ditto"
+        static let killall = "/usr/bin/killall"
+        static let lsregister =
+            "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 
         /// `gh` and Homebrew-installed `openssl` live outside the default PATH.
         static func find(_ name: String) -> String? {

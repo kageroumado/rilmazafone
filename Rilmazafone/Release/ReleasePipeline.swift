@@ -908,6 +908,14 @@
         /// Copies the signed app from the archive into /Applications. The copy
         /// already there goes to the Trash first, so a running instance keeps
         /// its mapped binary and the old bundle stays recoverable.
+        ///
+        /// The installed copy is then force-registered with LaunchServices: the
+        /// archive build registered its own copy of every appex under
+        /// `ArchiveIntermediates`, and until a newer registration wins, hosts
+        /// such as `WallpaperAgent` launch the extension from that path, which
+        /// the next build deletes. A running WallpaperAgent also caches the
+        /// record it last launched, so an app that hosts a wallpaper extension
+        /// restarts the agent as well.
         private func install(_ context: RunContext, _ emit: Emit) async throws -> StageOutcome {
             let source = context.appSource
             guard FileManager.default.fileExists(atPath: source.path) else {
@@ -922,9 +930,37 @@
                 replaced = true
                 await emit(.log(.install, "Previous copy moved to the Trash"))
             }
-            try await ProcessRunner.run("/usr/bin/ditto", arguments: [source.path, destination.path])
+            try await ProcessRunner.run(ExternalTool.ditto, arguments: [source.path, destination.path])
+
+            try await ProcessRunner.run(ExternalTool.lsregister, arguments: ["-f", destination.path])
+            await emit(.log(.install, "Registered with LaunchServices"))
+
+            if Self.hostsWallpaperExtension(destination) {
+                do {
+                    try await ProcessRunner.run(ExternalTool.killall, arguments: ["WallpaperAgent"])
+                    await emit(.log(.install, "Restarted WallpaperAgent so it launches the installed extension"))
+                } catch let error as ProcessRunner.ProcessError where error.exitCode == 1 {
+                    // killall exits 1 when no such process is running.
+                }
+            }
 
             return .ok(detail: "\(destination.path)\(replaced ? " (replaced)" : "")")
+        }
+
+        /// Whether any appex inside the bundle targets the `com.apple.wallpaper`
+        /// extension point.
+        private static func hostsWallpaperExtension(_ app: URL) -> Bool {
+            let extensionsDir = app.appending(path: "Contents/Extensions")
+            guard let appexes = try? FileManager.default.contentsOfDirectory(
+                at: extensionsDir, includingPropertiesForKeys: nil,
+            ) else { return false }
+            return appexes.contains { appex in
+                guard appex.pathExtension == "appex",
+                      let plist = NSDictionary(contentsOf: appex.appending(path: "Contents/Info.plist")),
+                      let attributes = plist["EXAppExtensionAttributes"] as? [String: Any]
+                else { return false }
+                return attributes["EXExtensionPointIdentifier"] as? String == "com.apple.wallpaper"
+            }
         }
 
         // MARK: - Commit + Push
