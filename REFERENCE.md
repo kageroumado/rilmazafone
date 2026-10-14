@@ -151,7 +151,7 @@ Rilmazafone builds two products from the same codebase. The designer, the build 
 
 | | GitHub build (`Rilmazafone`) | App Store build (`Rilmazafone AS`) |
 |---|---|---|
-| **Price** | Free | [$19.99](https://apps.apple.com/app/apple-store/id6790960011?pt=128650112&ct=GitHub&mt=8) — a convenience build that supports development |
+| **Price** | Free | [$19.99](https://kagerou.glass/rilmazafone/) — a convenience build that supports development |
 | **CLI** (`build` / `init` / `release`) | ✓ | — (any argv launches the GUI) |
 | **Release pipeline** (`.releaseplan`) | ✓ | — (the sandbox can't run `xcodebuild`, `codesign`, or `notarytool`) |
 | **Finder thumbnails** (QuickLook) | ✓ | — |
@@ -160,7 +160,7 @@ Rilmazafone builds two products from the same codebase. The designer, the build 
 
 The private-API glass preview lives in `BackdropBlurView.swift`, which is a member of the GitHub target only; the App Store target's release build additionally fails if private symbols ever appear in the product. These APIs may break in future macOS versions — everything else uses only public APIs.
 
-If you build from source, the GitHub build is the full experience. The [App Store copy](https://apps.apple.com/app/apple-store/id6790960011?pt=128650112&ct=GitHub&mt=8) exists for people who prefer the convenience of Mac App Store installs and updates — and as the way to pay for this work if you want it to continue.
+If you build from source, the GitHub build is the full experience. The [App Store copy](https://kagerou.glass/rilmazafone/) exists for people who prefer the convenience of Mac App Store installs and updates — and as the way to pay for this work if you want it to continue.
 
 ### Document Format
 

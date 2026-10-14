@@ -2,8 +2,7 @@
 
 Rilmazafone combines visual DMG design with the release pipeline in one saved document. Arrange the installer as it will appear in Finder, then archive the app and publish it to GitHub from the same release plan.
 
-<a href="https://kagerou.glass/get/rilmazafone?from=readme"><img src=".github/download.svg" alt="Download Rilmazafone for Mac" width="360" height="80"></a>
-<a href="https://apps.apple.com/app/apple-store/id6790960011?pt=128650112&ct=GitHub&mt=8"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-mac-app-store/black/en-us" alt="Download on the Mac App Store" height="48"></a>
+<a href="https://kagerou.glass/rilmazafone/"><img src=".github/download.svg" alt="Download Rilmazafone for Mac" width="360" height="80"></a>
 
 ![Rilmazafone’s DMG design canvas](screenshot.png)
 
